@@ -30,18 +30,33 @@ pub fn install_color_choice(choice: ColorChoice) {
 }
 
 pub fn resolve(is_terminal: bool) -> bool {
-    match COLOR_OVERRIDE.load(Ordering::Relaxed) {
-        COLOR_ALWAYS => true,
-        COLOR_NEVER => false,
-        _ => {
-            if std::env::var_os("NO_COLOR").is_some() {
-                return false;
-            }
-            if env_flag("FORCE_COLOR") || env_flag("CLICOLOR_FORCE") {
-                return true;
-            }
-            is_terminal
-        }
+    let choice = match COLOR_OVERRIDE.load(Ordering::Relaxed) {
+        COLOR_ALWAYS => ColorChoice::Always,
+        COLOR_NEVER => ColorChoice::Never,
+        _ => ColorChoice::Auto,
+    };
+    resolve_policy(
+        choice,
+        is_terminal,
+        std::env::var_os("NO_COLOR").is_some(),
+        env_flag("FORCE_COLOR"),
+        env_flag("CLICOLOR_FORCE"),
+    )
+}
+
+fn resolve_policy(
+    choice: ColorChoice,
+    is_terminal: bool,
+    no_color: bool,
+    force_color: bool,
+    clicolor_force: bool,
+) -> bool {
+    match choice {
+        ColorChoice::Always => true,
+        ColorChoice::Never => false,
+        ColorChoice::Auto if no_color => false,
+        ColorChoice::Auto if force_color || clicolor_force => true,
+        ColorChoice::Auto => is_terminal,
     }
 }
 

@@ -1,0 +1,2 @@
+# Historical fixture: intentionally invalid bearer token used to assert HTTP 401.
+6e716cfc859e4c644fad499776c4c07061844712:tests/mcporter/test-mcp.sh:curl-auth-header:504

@@ -65,4 +65,5 @@ fn strips_global_color_flags_before_command_parsing() {
         parse_args_from(args).unwrap(),
         Some(Command::FluxContainer(_))
     ));
+    crate::color_policy::install_color_choice(crate::color_policy::ColorChoice::Auto);
 }
