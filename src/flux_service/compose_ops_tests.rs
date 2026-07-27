@@ -234,7 +234,7 @@ async fn logs_argv_service_filter() {
     let _: anyhow::Result<serde_json::Value> =
         logs_on_host(&exec, HOST, PROJECT, CONFIG, &opts).await;
     let argv = exec.last_argv();
-    assert!(argv.contains(&"web".to_owned()));
+    assert_eq!(&argv[argv.len() - 2..], &["--", "web"]);
 }
 
 #[tokio::test]
@@ -255,7 +255,7 @@ async fn build_argv_with_service() {
     let _: anyhow::Result<serde_json::Value> =
         build_on_host(&exec, HOST, PROJECT, CONFIG, Some("worker")).await;
     let argv = exec.last_argv();
-    assert!(argv.contains(&"worker".to_owned()));
+    assert_eq!(&argv[argv.len() - 2..], &["--", "worker"]);
 }
 
 #[tokio::test]
@@ -266,6 +266,37 @@ async fn pull_argv_is_correct() {
         pull_on_host(&exec, HOST, PROJECT, CONFIG, None).await;
     let argv = exec.last_argv();
     assert_eq!(argv[4], "pull");
+}
+
+#[tokio::test]
+async fn service_names_are_option_terminated_and_validated() {
+    let exec = MockExec::new();
+    exec.add_compose("ps", "{}");
+    status_on_host(&exec, HOST, PROJECT, CONFIG, Some("web-1"))
+        .await
+        .unwrap();
+    let argv = exec.last_argv();
+    assert_eq!(&argv[argv.len() - 2..], &["--", "web-1"]);
+
+    let error = status_on_host(&exec, HOST, PROJECT, CONFIG, Some("--all"))
+        .await
+        .unwrap_err();
+    assert!(error.to_string().contains("invalid compose service"));
+}
+
+#[tokio::test]
+async fn build_and_pull_reject_option_like_services_before_io() {
+    let exec = MockExec::new();
+    assert!(
+        build_on_host(&exec, HOST, PROJECT, CONFIG, Some("-q"))
+            .await
+            .is_err()
+    );
+    assert!(
+        pull_on_host(&exec, HOST, PROJECT, CONFIG, Some("--ignore-pull-failures"))
+            .await
+            .is_err()
+    );
 }
 
 #[tokio::test]

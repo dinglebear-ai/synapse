@@ -135,10 +135,18 @@ fn command_policy_rejects_relative_and_option_carried_paths() {
 }
 
 #[test]
-fn command_policy_rejects_untyped_custom_commands() {
+fn command_policy_allows_custom_commands_only_without_args() {
     let mut host = HostConfig::local();
-    host.exec_allowlist.push("find".into());
-    assert!(validate_command_args(&host, "find", &["/tmp", "-exec", "sh"]).is_err());
+    host.exec_allowlist.push("sensors".into());
+    assert!(validate_command_args(&host, "sensors", &[]).is_ok());
+    assert!(validate_command_args(&host, "sensors", &["--json"]).is_err());
+}
+
+#[test]
+fn omitted_protocol_defaults_to_ssh() {
+    let host: HostConfig = serde_json::from_str(r#"{"name":"remote","host":"localhost"}"#).unwrap();
+    assert_eq!(host.protocol, HostProtocol::Ssh);
+    assert!(!host.is_local());
 }
 
 #[test]
@@ -198,4 +206,22 @@ fn scout_read_roots_include_configured_compose_paths() {
 
     assert!(validate_scout_read_path(&host, "/srv/compose/app/docker-compose.yml").is_ok());
     assert!(validate_scout_read_path(&host, "/srv/other/app.env").is_err());
+}
+
+#[cfg(unix)]
+#[test]
+fn remote_path_policy_does_not_consult_local_symlink_metadata() {
+    let local = tempfile::tempdir().unwrap();
+    let outside = tempfile::tempdir().unwrap();
+    let root = local.path().join("remote-root");
+    std::os::unix::fs::symlink(outside.path(), &root).unwrap();
+
+    let mut host = HostConfig::local();
+    host.name = "remote".into();
+    host.host = "remote.example".into();
+    host.protocol = HostProtocol::Ssh;
+    host.scout_read_roots = vec![root.to_string_lossy().into_owned()];
+
+    let path = root.join("logs/app.log");
+    assert!(validate_scout_read_path(&host, &path.to_string_lossy()).is_ok());
 }

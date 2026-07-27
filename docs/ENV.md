@@ -31,7 +31,7 @@ Synapse2 uses `SYNAPSE_*` variables for service configuration and
 | `SYNAPSE_MCP_TOKEN` | unset | Static bearer token. Required for bearer-only mounted HTTP. |
 | `SYNAPSE_MCP_ALLOWED_HOSTS` | unset | Extra accepted Host header values (comma-separated). |
 | `SYNAPSE_MCP_ALLOWED_ORIGINS` | unset | Extra CORS origins (comma-separated). |
-| `SYNAPSE_MCP_PUBLIC_URL` | unset | Public URL used for OAuth metadata endpoints. |
+| `SYNAPSE_MCP_PUBLIC_URL` | unset | Public URL used for OAuth metadata endpoints. HTTPS is required except for loopback development URLs; userinfo is rejected. |
 | `SYNAPSE_MCP_AUTH_MODE` | `bearer` | `bearer` or `oauth`. |
 | `SYNAPSE_MCP_AUTH_SQLITE_PATH` | `/data/auth.db` | OAuth session/client database path. |
 | `SYNAPSE_MCP_AUTH_KEY_PATH` | `/data/auth-jwt.pem` | OAuth JWT signing key path. |
@@ -52,8 +52,7 @@ Synapse2 uses `SYNAPSE_*` variables for service configuration and
 | `SYNAPSE_CONFIG_FILE` | Path to a host config file; used when inline hosts are unset. |
 | `SYNAPSE_HOME` | Override appdata directory. Defaults to `~/.synapse2` outside containers and `/data` in containers. |
 
-When no host topology variable is set, Synapse2 falls back to `~/.ssh/config`
-discovery.
+When no host topology variable is set, Synapse2 falls back to `~/.ssh/config` discovery. Host `protocol` is authoritative and defaults to `ssh` when omitted; local execution requires `protocol: "local"`. Recursive SSH `Include` dependencies are monitored for topology refresh.
 
 ## OAuth mode
 
@@ -81,6 +80,7 @@ Only required when `SYNAPSE_MCP_AUTH_MODE=oauth`:
 | `RUST_LOG` | `info,rmcp=warn` | Tracing filter. |
 | `NO_COLOR` | `1` | Disable ANSI color in console logs. |
 | `FORCE_COLOR` | `1` | Force ANSI color even when stderr is not a TTY. |
+| `LOG_FORMAT` / `RUST_LOG_FORMAT` | `json` | Emit JSON to stderr. HTTP server mode also writes rotating JSON logs under `${SYNAPSE_HOME:-~/.synapse2}/logs/`. |
 
 ## `.env` file structure
 

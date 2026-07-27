@@ -212,6 +212,7 @@ host when the local `sccache-wrapper` mishandles `--check-cfg`:
 ```bash
 env -u RUSTC_WRAPPER \
   RUSTC=/home/jmagar/.rustup/toolchains/1.94.0-x86_64-unknown-linux-gnu/bin/rustc \
+  LLVM_PROFILE_FILE=target/llvm-cov/profiles/%p-%m.profraw \
   cargo llvm-cov --locked --workspace --lcov --output-path target/llvm-cov/lcov.info
 ```
 

@@ -24,6 +24,7 @@ keywords = ["mcp", "docker", "ssh", "zfs", "homelab"]
 repository = "https://github.com/jmagar/synapse"
 homepage = "https://github.com/jmagar/synapse#readme"
 description = "Rust MCP and CLI server for local Synapse workflows: Docker/Compose control, host inspection, SSH, logs, ZFS, and files."
+license = "MIT"
 autobins = false
 
 [[bin]]
@@ -76,6 +77,8 @@ dirs = "6"
 
 # SSH config parser for ~/.ssh/config auto-discovery
 ssh2-config = "0.7"
+# Track every file matched by SSH Include directives for cache invalidation.
+glob = "0.3"
 
 # Errors
 anyhow = "1"

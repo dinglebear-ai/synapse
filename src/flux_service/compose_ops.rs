@@ -41,6 +41,20 @@ fn compose_base(config_file: &str) -> Vec<&str> {
     vec!["compose", "-f", config_file]
 }
 
+/// Validate a user-selected Compose service before placing it in argv.
+fn validate_service_name(service: &str) -> Result<()> {
+    if service.is_empty() || service.len() > 256 {
+        bail!("compose service name must contain 1-256 characters");
+    }
+    let mut chars = service.chars();
+    if !chars.next().is_some_and(|c| c.is_ascii_alphanumeric())
+        || !chars.all(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '-' | '.'))
+    {
+        bail!("invalid compose service name: {service:?}");
+    }
+    Ok(())
+}
+
 // ─────────────────────────────── list ─────────────────────────────────────────
 
 /// Run `docker compose ls --format json` and return the structured project list.
@@ -69,7 +83,8 @@ pub async fn status_on_host(
     let mut args = compose_base(config_file);
     args.extend_from_slice(&["ps", "--format", "json"]);
     if let Some(svc) = service_filter {
-        args.push(svc);
+        validate_service_name(svc)?;
+        args.extend_from_slice(&["--", svc]);
     }
     let out = exec.run("docker", &args).await?;
     Ok(json!({
@@ -243,7 +258,8 @@ pub async fn logs_on_host(
         args.push(since.as_str());
     }
     if let Some(ref svc) = opts.service {
-        args.push(svc.as_str());
+        validate_service_name(svc)?;
+        args.extend_from_slice(&["--", svc.as_str()]);
     }
     let out = exec.run("docker", &args).await?;
     Ok(json!({
@@ -268,7 +284,8 @@ pub async fn build_on_host(
     let mut args = compose_base(config_file);
     args.push("build");
     if let Some(svc) = service {
-        args.push(svc);
+        validate_service_name(svc)?;
+        args.extend_from_slice(&["--", svc]);
     }
     let out = exec.run("docker", &args).await?;
     Ok(json!({
@@ -296,7 +313,8 @@ pub async fn pull_on_host(
     let mut args = compose_base(config_file);
     args.push("pull");
     if let Some(svc) = service {
-        args.push(svc);
+        validate_service_name(svc)?;
+        args.extend_from_slice(&["--", svc]);
     }
     let out = exec.run("docker", &args).await?;
     Ok(json!({

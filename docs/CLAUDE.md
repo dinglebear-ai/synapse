@@ -55,6 +55,7 @@ Use the right layer for the job:
 | `API.md` | MCP, CLI, and REST action reference | Actions, parameters, scopes, or parity behavior changes |
 | `MCP_SCHEMA.md` | Generated MCP schema contract | `OPERATION_SPECS` changes |
 | `AUTH.md` | Bearer/OAuth/auth-policy behavior | Auth mode, scope, token, or gateway behavior changes |
+| `SECURITY.md` | End-to-end service and CI trust boundaries | Auth, SSH, paths, transfer, container, or runner policy changes |
 | `CONFIG.md` / `ENV.md` | Config loading and environment variables | `src/config.rs` or host-config loading changes |
 | `ARCHITECTURE.md` | Module map and layering | Service/module boundaries change |
 | `DEPLOYMENT.md`, `DOCKER.md`, `SYSTEMD.md` | Runtime deployment guides | Container, systemd, port, or appdata behavior changes |

@@ -41,24 +41,13 @@ fn plugin_manifests_share_identity_and_connection_settings() {
     assert_eq!(codex["name"], "synapse2");
     assert_eq!(gemini["name"], "synapse2");
 
+    let repository = claude["repository"].as_str().unwrap();
     assert!(
-        claude["repository"]
-            .as_str()
-            .unwrap()
-            .ends_with("synapse-rmcp")
+        repository.ends_with("/synapse"),
+        "plugin repository must identify the Synapse repository: {repository}"
     );
-    assert!(
-        codex["repository"]
-            .as_str()
-            .unwrap()
-            .ends_with("synapse-rmcp")
-    );
-    assert!(
-        gemini["repository"]
-            .as_str()
-            .unwrap()
-            .ends_with("synapse-rmcp")
-    );
+    assert_eq!(codex["repository"], claude["repository"]);
+    assert_eq!(gemini["repository"], claude["repository"]);
 
     let user_config = claude["userConfig"].as_object().unwrap();
     for key in [

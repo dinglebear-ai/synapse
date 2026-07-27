@@ -6,16 +6,18 @@
 use crate::{
     actions::{
         ScoutBeamArgs, ScoutDeltaArgs, ScoutEmitArgs, ScoutEmitTarget, ScoutExecArgs,
-        ScoutFindArgs, ScoutLogsArgs, ScoutPsArgs, ScoutZfsArgs,
+        ScoutFindArgs, ScoutPsArgs,
     },
     app::SynapseService,
     elicitation_gate::CliStderrWarn,
-    scout_service::logs::{DEFAULT_LINES, MAX_LINES},
 };
 use anyhow::{Result, anyhow, bail};
 use serde_json::Value;
 
 use super::Command;
+
+#[path = "scout_extended.rs"]
+mod extended;
 
 // ── parse ─────────────────────────────────────────────────────────────────────
 
@@ -199,8 +201,12 @@ pub(super) fn parse_scout(args: &[String]) -> Result<Command> {
                 dest_path: super::parse_required_named_value(rest, "--dest-path")?,
             })))
         }
-        [action, subaction, rest @ ..] if action == "zfs" => parse_scout_zfs(subaction, rest),
-        [action, subaction, rest @ ..] if action == "logs" => parse_scout_logs(subaction, rest),
+        [action, subaction, rest @ ..] if action == "zfs" => {
+            extended::parse_scout_zfs(subaction, rest)
+        }
+        [action, subaction, rest @ ..] if action == "logs" => {
+            extended::parse_scout_logs(subaction, rest)
+        }
         _ => Err(anyhow!("unknown scout command")),
     }
 }
@@ -224,124 +230,6 @@ fn parse_variadic_args(args: &[String]) -> Result<(Vec<String>, Vec<String>)> {
     let mut remaining = args[..start].to_vec();
     remaining.extend_from_slice(&args[end..]);
     Ok((remaining, args[start + 1..end].to_vec()))
-}
-
-fn parse_scout_zfs(subaction: &str, rest: &[String]) -> Result<Command> {
-    super::validate_named_args(
-        rest,
-        &[
-            "--host",
-            "--pool",
-            "--type",
-            "--dataset",
-            "--limit",
-            "--response-format",
-        ],
-        &["--recursive"],
-    )?;
-    let recursive = rest.iter().any(|a| a == "--recursive");
-    let value_args: Vec<String> = rest
-        .iter()
-        .filter(|a| *a != "--recursive")
-        .cloned()
-        .collect();
-    let host = super::parse_required_named_value(&value_args, "--host")?;
-    match subaction {
-        "pools" => Ok(Command::ScoutZfs(Box::new(ScoutZfsArgs {
-            response_format: super::parse_optional_response_format(&value_args)?,
-            host,
-            subaction: "pools".to_owned(),
-            pool: super::parse_optional_named_value(&value_args, "--pool")?,
-            ..Default::default()
-        }))),
-        "datasets" => Ok(Command::ScoutZfs(Box::new(ScoutZfsArgs {
-            response_format: super::parse_optional_response_format(&value_args)?,
-            host,
-            subaction: "datasets".to_owned(),
-            pool: super::parse_optional_named_value(&value_args, "--pool")?,
-            dataset_type: super::parse_optional_named_value(&value_args, "--type")?,
-            recursive,
-            ..Default::default()
-        }))),
-        "snapshots" => {
-            let limit = super::parse_optional_number::<u32>(rest, "--limit")?;
-            Ok(Command::ScoutZfs(Box::new(ScoutZfsArgs {
-                response_format: super::parse_optional_response_format(&value_args)?,
-                host,
-                subaction: "snapshots".to_owned(),
-                pool: super::parse_optional_named_value(&value_args, "--pool")?,
-                dataset: super::parse_optional_named_value(&value_args, "--dataset")?,
-                limit,
-                ..Default::default()
-            })))
-        }
-        other => {
-            bail!("unknown zfs subaction `{other}`; must be one of: pools, datasets, snapshots")
-        }
-    }
-}
-
-fn parse_scout_logs(subaction: &str, rest: &[String]) -> Result<Command> {
-    super::validate_named_args(
-        rest,
-        &[
-            "--host",
-            "--lines",
-            "--grep",
-            "--unit",
-            "--priority",
-            "--since",
-            "--until",
-            "--response-format",
-        ],
-        &[],
-    )?;
-    let host = super::parse_required_named_value(rest, "--host")?;
-    let lines = super::parse_optional_number::<u32>(rest, "--lines")?
-        .unwrap_or(DEFAULT_LINES)
-        .clamp(1, MAX_LINES);
-    let grep = super::parse_optional_named_value(rest, "--grep")?;
-
-    match subaction {
-        "syslog" => Ok(Command::ScoutLogs(Box::new(ScoutLogsArgs {
-            response_format: super::parse_optional_response_format(rest)?,
-            host,
-            subaction: "syslog".to_owned(),
-            lines,
-            grep,
-            ..Default::default()
-        }))),
-        "journal" => Ok(Command::ScoutLogs(Box::new(ScoutLogsArgs {
-            response_format: super::parse_optional_response_format(rest)?,
-            host,
-            subaction: "journal".to_owned(),
-            lines,
-            grep,
-            unit: super::parse_optional_named_value(rest, "--unit")?,
-            priority: super::parse_optional_named_value(rest, "--priority")?,
-            since: super::parse_optional_named_value(rest, "--since")?,
-            until: super::parse_optional_named_value(rest, "--until")?,
-        }))),
-        "dmesg" => Ok(Command::ScoutLogs(Box::new(ScoutLogsArgs {
-            response_format: super::parse_optional_response_format(rest)?,
-            host,
-            subaction: "dmesg".to_owned(),
-            lines,
-            grep,
-            ..Default::default()
-        }))),
-        "auth" => Ok(Command::ScoutLogs(Box::new(ScoutLogsArgs {
-            response_format: super::parse_optional_response_format(rest)?,
-            host,
-            subaction: "auth".to_owned(),
-            lines,
-            grep,
-            ..Default::default()
-        }))),
-        other => {
-            bail!("unknown logs subaction `{other}`; must be one of: syslog, journal, dmesg, auth")
-        }
-    }
 }
 
 // ── run helpers ───────────────────────────────────────────────────────────────

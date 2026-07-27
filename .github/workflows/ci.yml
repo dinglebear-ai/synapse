@@ -105,7 +105,10 @@ jobs:
           tool: cargo-llvm-cov
 
       - name: Enforce line coverage floor
-        run: cargo llvm-cov --locked --workspace --all-features --fail-under-lines 65
+        run: |
+          mkdir -p target/llvm-cov/profiles
+          LLVM_PROFILE_FILE="target/llvm-cov/profiles/%p-%m.profraw" \
+            cargo llvm-cov --locked --workspace --all-features --fail-under-lines 65
 
   live-integration:
     name: Live JSON-RPC + SSH
@@ -356,7 +359,41 @@ jobs:
             sleep 1
           done
           exit 1
-      - name: Smoke container CLI entrypoint
+      - name: Smoke container runtime dependencies
         run: |
-          docker run --rm synapse2:ci flux --help >/dev/null
-          docker run --rm synapse2:ci scout --help >/dev/null
+          docker run --rm synapse2:ci docker compose version
+          docker run --rm synapse2:ci python3 --version
+
+      - name: Smoke real local Scout execution
+        run: |
+          set -euo pipefail
+          fixture="$RUNNER_TEMP/synapse-scout"
+          mkdir -p "$fixture"
+          printf '%s\n' 'container-scout-ok' >"$fixture/input.txt"
+          output="$(docker run --rm \
+            -v "$fixture:/tmp/synapse-scout:ro" \
+            synapse2:ci scout exec \
+              --host local \
+              --command cat \
+              --args /tmp/synapse-scout/input.txt \
+              --response-format json)"
+          grep -F 'container-scout-ok' <<<"$output"
+
+      - name: Smoke real local Compose discovery
+        run: |
+          set -euo pipefail
+          fixture="$RUNNER_TEMP/synapse-compose/smoke"
+          mkdir -p "$fixture"
+          cat >"$fixture/compose.yml" <<'EOF'
+          name: synapse-ci-smoke
+          services:
+            noop:
+              image: busybox:1.36
+          EOF
+          output="$(docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            -v "$RUNNER_TEMP/synapse-compose:/compose:ro" \
+            synapse2:ci flux compose list \
+              --host local \
+              --response-format json)"
+          grep -F 'synapse-ci-smoke' <<<"$output"

@@ -70,3 +70,65 @@ async fn concurrency_limit_sheds_overload_without_queueing() {
     release.notify_one();
     assert!(first.await.unwrap().is_ok());
 }
+
+#[tokio::test]
+async fn public_probe_stays_available_while_protected_router_is_saturated() {
+    use axum::{Router, routing::get};
+    use std::sync::Arc;
+
+    let entered = Arc::new(tokio::sync::Notify::new());
+    let release = Arc::new(tokio::sync::Notify::new());
+    let slow = Router::new().route(
+        "/slow",
+        get({
+            let entered = Arc::clone(&entered);
+            let release = Arc::clone(&release);
+            move || {
+                let entered = Arc::clone(&entered);
+                let release = Arc::clone(&release);
+                async move {
+                    entered.notify_one();
+                    release.notified().await;
+                    "done"
+                }
+            }
+        }),
+    );
+    let protected = slow.layer(super::ConcurrencyLimitLayer::new(1));
+    let app = Router::new()
+        .merge(protected)
+        .route("/health", get(|| async { "ok" }));
+
+    let first = tokio::spawn(
+        app.clone()
+            .oneshot(Request::builder().uri("/slow").body(Body::empty()).unwrap()),
+    );
+    entered.notified().await;
+
+    let probe = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri("/health")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(probe.status(), axum::http::StatusCode::OK);
+
+    let overloaded = app
+        .oneshot(Request::builder().uri("/slow").body(Body::empty()).unwrap())
+        .await
+        .unwrap();
+    assert_eq!(
+        overloaded.status(),
+        axum::http::StatusCode::TOO_MANY_REQUESTS
+    );
+
+    release.notify_one();
+    assert_eq!(
+        first.await.unwrap().unwrap().status(),
+        axum::http::StatusCode::OK
+    );
+}

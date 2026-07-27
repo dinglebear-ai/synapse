@@ -45,18 +45,33 @@ fn remote_host(name: &str) -> HostConfig {
     }
 }
 
+#[test]
+fn remote_socket_path_defaults_and_honors_override() {
+    let mut host = remote_host("remote");
+    assert_eq!(
+        super::bollard_client::remote_socket_path(&host),
+        std::path::Path::new(crate::ssh::REMOTE_DOCKER_SOCKET)
+    );
+    host.docker_socket_path = Some("/run/user/1000/docker.sock".into());
+    assert_eq!(
+        super::bollard_client::remote_socket_path(&host),
+        std::path::Path::new("/run/user/1000/docker.sock")
+    );
+}
+
 // --- cache classification ---
 
 #[test]
-fn is_local_matches_protocol_and_localhost() {
+fn is_local_uses_authoritative_protocol() {
     assert!(DockerClientCache::is_local(&local_host("a")));
 
     let mut h = remote_host("b");
     assert!(!DockerClientCache::is_local(&h));
 
-    // localhost host string forces local even if protocol is non-local.
+    // Loopback SSH endpoints must retain SSH user/port/key semantics.
     h.host = "localhost".to_string();
-    assert!(DockerClientCache::is_local(&h));
+    h.ssh_port = Some(2222);
+    assert!(!DockerClientCache::is_local(&h));
 }
 
 #[tokio::test]

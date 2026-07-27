@@ -10,7 +10,7 @@ scope: "synapse2"
 source_of_truth: true
 upstream_refs:
   - "docs/PATTERNS.md"
-last_reviewed: "2026-06-12"
+last_reviewed: "2026-07-27"
 ---
 
 # Observability
@@ -28,7 +28,7 @@ Synapse2 exposes fast, redacted status surfaces for humans, agents, and deployme
 | `/mcp` | Auth policy | MCP Streamable HTTP endpoint. |
 | `/v1/synapse2` | Auth policy | REST action dispatch. |
 
-`/health` must remain fast (no database calls). Return HTTP 200 even when upstream is down — use `"status": "degraded"` to signal partial failure.
+`/health` remains a constant-time liveness response with no topology or database calls. `/ready` performs the bounded topology check. Public probes are outside the operational concurrency limiter, so overload shedding on MCP/REST traffic does not make the service appear dead.
 
 ## /health response shape
 
@@ -68,7 +68,7 @@ Two destinations simultaneously — console and file:
 | Destination | Format | Writer |
 |---|---|---|
 | Console (stderr) | Human-readable, Aurora colors | `tracing_subscriber::fmt` with `AuroraFormatter` |
-| File (`~/.synapse2/logs/synapse.log`) | Structured JSON | `tracing_subscriber::fmt::json()` |
+| File (`${SYNAPSE_HOME:-~/.synapse2}/logs/synapse2.log`) | Structured JSON | rotating `tracing_subscriber::fmt::json()` writer |
 
 Use `RUST_LOG` to control log level:
 
@@ -76,7 +76,7 @@ Use `RUST_LOG` to control log level:
 RUST_LOG=info,rmcp=warn synapse serve
 ```
 
-Log file: one file, 10 MB cap. On overflow, truncate and restart. Never multiple files.
+The active file rotates at 10 MiB with three retained archives (`synapse2.log.1` through `.3`). Set `LOG_FORMAT=json` or `RUST_LOG_FORMAT=json` to make stderr JSON as well; the file sink is always JSON in HTTP server mode. Stdio and one-shot CLI modes remain stderr-only so MCP stdout stays clean.
 
 Aurora console color palette (ANSI 256): `SERVICE_NAME=211` (pink), `ACCENT_PRIMARY=39` (blue), `SUCCESS=115` (teal), `WARN=180` (amber), `ERROR=174` (muted red). Respect `NO_COLOR`; force color with `FORCE_COLOR`.
 

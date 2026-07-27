@@ -11,7 +11,7 @@ use dashmap::DashMap;
 use tokio::sync::{Mutex, OnceCell};
 
 use crate::ssh::SshPool;
-use crate::synapse::{HostConfig, HostProtocol};
+use crate::synapse::HostConfig;
 
 use super::bollard_client::BollardClient;
 
@@ -93,7 +93,7 @@ impl DockerClientCache {
 
     /// Is this host served by the local docker daemon (no SSH forward needed)?
     pub(crate) fn is_local(host: &HostConfig) -> bool {
-        host.protocol == HostProtocol::Local || host.host == "localhost"
+        host.is_local()
     }
 
     /// Evict a host's cached client **and** its SSH session.

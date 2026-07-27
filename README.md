@@ -49,7 +49,8 @@ workflows through two MCP tools and the equivalent CLI:
 - `flux` manages Docker infrastructure, containers, Compose projects, and host
   inspection.
 - `scout` handles SSH/local host inspection, safe file reads, allowlisted
-  command execution, ZFS introspection, and log retrieval.
+  command execution, bounded descriptor-confined file transfer, ZFS introspection,
+  and log retrieval.
 - REST exists only as a compatibility shim for a subset of actions.
 - The web surface is a lightweight static admin shell, not a full dashboard.
 
@@ -83,6 +84,12 @@ From source:
 ```bash
 cargo build --release
 ```
+
+The production image includes Python 3 plus the official Docker CLI/Compose
+plugin because Scout's remote descriptor wrappers and Flux Compose operations
+invoke those runtime tools. The image does not contain a Docker daemon; Flux
+uses the mounted socket or SSH-forwarded remote socket. Persistent appdata lives
+at `~/.synapse2` on the host and `/data` in the container.
 
 ## Quickstart
 
@@ -212,9 +219,12 @@ matrix.
 
 Synapse separates read and write scopes (`synapse:read`, `synapse:write`) and
 uses confirmation gates for destructive operations. `SYNAPSE_MCP_ALLOW_DESTRUCTIVE`
-can skip prompts only in loopback-safe contexts. SSH host trust is delegated to
-OpenSSH known-hosts behavior, and command execution uses execvp/argv semantics
-without shell interpolation.
+can skip prompts only in loopback-safe contexts. Host `protocol` is authoritative
+and defaults to SSH when omitted; local execution requires the explicit built-in
+`local` host or `protocol: "local"`. SSH host trust is delegated to OpenSSH
+known-hosts behavior, and command execution uses execvp/argv semantics without
+shell interpolation. `scout beam` enforces both endpoints' configured read roots,
+blocks sensitive and symlinked paths, and caps each transfer at 64 MiB.
 
 ## Distribution Contract
 
@@ -390,7 +400,7 @@ Across the rmcp family, naming follows `repo=<service>-rmcp`, `npm=<service>-rmc
 | `delta` | `synapse:read` | Compare files or content; requires `source_host`, `source_path`; then either `target_host`+`target_path` or `content` |
 | `exec` | `synapse:write` | Execute allowlisted command (destructive, execvp); requires `host`, `command`; optional `path`, `args`, `timeout_secs` |
 | `emit` | `synapse:write` | Multi-host execution (destructive); requires `targets` array, `command`; optional `args`, `timeout_secs` |
-| `beam` | `synapse:write` | File transfer between hosts (destructive); requires `source_host`, `source_path`, `dest_host`, `dest_path` |
+| `beam` | `synapse:write` | Bounded root-confined file transfer (destructive); requires `source_host`, `source_path`, `dest_host`, `dest_path`; both paths must be under configured Scout/Compose roots |
 
 #### `scout zfs` — ZFS introspection (3 subactions)
 
@@ -452,10 +462,13 @@ Key environment variables:
 | `SYNAPSE_MCP_NO_AUTH` | `false` | Disable auth for loopback development only. |
 | `SYNAPSE_NOAUTH` | `false` | Delegate auth/authz to an isolated trusted upstream gateway. |
 | `SYNAPSE_MCP_ALLOW_DESTRUCTIVE` | `false` | Skip destructive-operation confirmation prompts (loopback only). |
-| `SYNAPSE_MCP_MAX_CONCURRENCY` | `50` | Maximum simultaneous in-flight requests on `/mcp` and `/v1/synapse2`. Excess requests receive HTTP 429 with `Retry-After`. Set to `0` to disable. `/health`, `/ready`, and `/status` are exempt. |
+| `SYNAPSE_MCP_MAX_CONCURRENCY` | `50` | Maximum simultaneous in-flight operational requests. Excess requests receive HTTP 429 with `Retry-After`. Set to `0` to disable. Public probes, OAuth discovery, and static assets are exempt from concurrency shedding. |
+| `SYNAPSE_MCP_PUBLIC_URL` | unset | OAuth public URL; HTTPS required except loopback development. |
+| `SYNAPSE_HOSTS_CONFIG` | unset | Inline host topology. Omitted host protocols default to SSH; local execution requires `protocol: "local"`. |
 
-See `.env.example` for the full list of variables and `docs/CONFIG.md` for auth
-configuration details.
+See `.env.example` for the full list of variables, `docs/CONFIG.md` for
+configuration details, and `docs/SECURITY.md` for transport, path, transfer,
+container, and CI runner trust boundaries.
 
 ## Run
 

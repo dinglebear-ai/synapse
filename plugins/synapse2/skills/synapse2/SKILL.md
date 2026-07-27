@@ -90,10 +90,14 @@ package or the live MCP help topics (`flux(action="help")`,
   container (literal argv array, so `--command sh -c "..."` is valid when you
   explicitly want a shell inside the container); `scout exec` runs on the host
   via SSH (allowlisted commands only, no shell).
-- **`scout exec` is allowlisted** — only:
-  `cat`, `head`, `tail`, `grep`, `rg`, `find`, `ls`, `tree`, `wc`, `sort`,
-  `uniq`, `diff`, `stat`, `file`, `du`, `df`, `pwd`, `hostname`, `uptime`,
-  `whoami`. `git` is explicitly denied.
+- **`scout exec` has typed command policies** for:
+  `cat`, `head`, `tail`, `grep`, `rg`, `ls`, `tree`, `wc`, `uniq`, `diff`,
+  `stat`, `file`, `du`, `df`, `pwd`, `hostname`, `uptime`, `whoami`. `git` is
+  explicitly denied. Per-host custom commands are zero-argument only; use the
+  dedicated `scout find` action for filesystem search.
+- **`scout beam` is bounded and root-confined** — both endpoints must be under
+  configured Scout/Compose roots; sensitive/symlinked paths are rejected and
+  one transfer is capped at 64 MiB.
 - **For `scout exec`, never pass shell metacharacters** (`|`, `>`, `&&`, `..`);
   host command execution is execvp-style and does not run through `sh -c`.
 - **Destructive ops need confirmation** via the MCP elicitation gate; declining

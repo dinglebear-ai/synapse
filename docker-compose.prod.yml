@@ -31,7 +31,7 @@ x-common-service: &common-service
 services:
   synapse:
     <<: *common-service
-    image: ghcr.io/jmagar/synapse:latest
+    image: ghcr.io/jmagar/synapse:${SYNAPSE2_VERSION:-latest}
     container_name: synapse
     env_file:
       - path: .env
@@ -58,7 +58,7 @@ services:
     volumes:
       # Persistent appdata — config.toml, .env, auth.db, JWT key. The binary reads
       # config.toml / .env from here (it maps to /data inside the container).
-      - ${HOME}/.synapse:/data
+      - ${HOME}/.synapse2:/data
       # Docker control plane for the `flux` tools.
       # SECURITY: bind-mounting the daemon socket grants this container
       # root-equivalent control of the host's Docker. Only enable on hosts you
@@ -94,9 +94,6 @@ services:
         limits:
           memory: 2G
           cpus: '0.5'
-
-volumes:
-  synapse-data:
 
 networks:
   mcp:

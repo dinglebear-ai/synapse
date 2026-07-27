@@ -83,6 +83,20 @@ pub async fn run_local_command(
     })
 }
 
+pub(crate) async fn read_bytes_limited<R>(reader: R, cap: usize) -> Result<Vec<u8>>
+where
+    R: tokio::io::AsyncRead + Unpin,
+{
+    use tokio::io::AsyncReadExt;
+    let mut bytes = Vec::with_capacity(cap.min(8192));
+    let mut limited = reader.take((cap as u64).saturating_add(1));
+    limited.read_to_end(&mut bytes).await?;
+    if bytes.len() > cap {
+        return Err(anyhow!("stream exceeded {cap} byte limit"));
+    }
+    Ok(bytes)
+}
+
 pub(crate) async fn drain_bounded<R>(mut reader: R, cap: usize) -> Result<String>
 where
     R: tokio::io::AsyncRead + Unpin,

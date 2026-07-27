@@ -42,7 +42,8 @@ This directory contains focused guides for operating, testing, and releasing the
 |---|---|
 | `API.md` | REST and HTTP endpoints. |
 | `WEB.md` | Optional static Next.js web UI. |
-| `AUTH.md` | Auth policies and security model. |
+| `AUTH.md` | Authentication flows, token modes, and scope behavior. |
+| `SECURITY.md` | End-to-end trust boundaries, runner policy, SSH/path safety, and verification. |
 | `PLUGINS.md` | Claude/Codex/Gemini plugin packaging. |
 | `MCP_SCHEMA.md` | Generated MCP tool schema/action contract. |
 | `MCP-REGISTRY-PUBLISH-GUIDE.md` | MCP registry publishing guidance. |

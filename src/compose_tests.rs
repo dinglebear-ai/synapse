@@ -130,6 +130,30 @@ fn project_name_from_path_uses_parent_dir() {
     assert_eq!(project_name_from_path("compose.yaml"), "");
 }
 
+#[tokio::test]
+async fn embedded_compose_name_parser_runs_in_real_python() {
+    let dir = tempfile::tempdir().unwrap();
+    let file = dir.path().join("compose.yml");
+    std::fs::write(&file, "name: \"explicit-project\"\nservices: {}\n").unwrap();
+    let path = file.to_str().unwrap();
+
+    let output = crate::runtime_budget::run_local_command(
+        "python3",
+        &["-c", COMPOSE_NAME_BATCH_SCRIPT, path],
+        None,
+    )
+    .await
+    .unwrap();
+    assert!(output.success(), "python stderr: {}", output.stderr);
+
+    let names: std::collections::HashMap<String, String> =
+        serde_json::from_str(&output.stdout).unwrap();
+    assert_eq!(
+        names.get(path).map(String::as_str),
+        Some("explicit-project")
+    );
+}
+
 #[test]
 fn validate_search_path_rejects_relative_and_traversal() {
     assert!(validate_search_path("/compose").is_ok());

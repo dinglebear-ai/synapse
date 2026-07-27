@@ -42,7 +42,14 @@ pub fn validate_command(command: &str, host_allowlist: &[String]) -> Result<()> 
 pub fn validate_command_args(host: &HostConfig, command: &str, args: &[&str]) -> Result<()> {
     validate_command(command, &host.exec_allowlist)?;
     if !ALLOWED_READ_COMMANDS.contains(&command) {
-        bail!("custom scout commands require a registered typed argument policy");
+        // A configured custom command receives the conservative NoArgs policy.
+        // This makes `execAllowlist` useful for fixed probes such as `sensors`
+        // without granting an untyped argument channel. Commands that need
+        // arguments must be promoted into the built-in typed policy table.
+        if args.is_empty() {
+            return Ok(());
+        }
+        bail!("custom scout commands are allowlisted with a zero-argument policy");
     }
     if args.iter().any(|arg| arg.contains('\0')) {
         bail!("command arguments must not contain NUL bytes");

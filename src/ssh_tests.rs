@@ -150,13 +150,20 @@ fn scan_known_hosts_missing_file_is_none() {
 // ── forward socket path ─────────────────────────────────────────────────────
 
 #[test]
-fn forward_socket_path_format() {
-    let p = forward_socket_path(&host("dookie"));
+fn forward_socket_path_uses_private_runtime_directory() {
+    let p = forward_socket_path(&host("dookie")).unwrap();
     let name = p.file_name().unwrap().to_str().unwrap();
-    assert!(name.starts_with("synapse2-dookie-"));
+    assert!(name.starts_with("synapse2-"));
     assert!(name.ends_with(".sock"));
-    // Round-trips through the sweep parser.
+    assert!(
+        !name.contains("dookie"),
+        "host aliases must not enter socket paths"
+    );
     assert_eq!(parse_socket_pid(name), Some(std::process::id()));
+    assert_eq!(
+        p.parent().unwrap().metadata().unwrap().permissions().mode() & 0o777,
+        0o700
+    );
 }
 
 // ── mock executor (the seam downstream beads depend on) ─────────────────────
@@ -205,6 +212,18 @@ async fn mock_executor_is_object_safe_and_records_calls() {
         .expect("mock exec");
     assert!(out.success());
     assert_eq!(out.stdout, "ran hostname");
+}
+
+#[tokio::test]
+async fn pooled_executor_routes_explicit_local_without_ssh() {
+    let pool = SshPool::new();
+    let local = HostConfig::local();
+    let out = pool.exec(&local, "printf", &["local-ok"]).await.unwrap();
+    assert_eq!(out.stdout, "local-ok");
+    assert!(
+        pool.is_empty(),
+        "local execution must not create an SSH session"
+    );
 }
 
 #[tokio::test]
@@ -378,7 +397,13 @@ async fn forwarded_socket_has_0600_perms_and_is_removed_on_close() {
         Instant::now().elapsed().as_nanos()
     ));
 
-    let forwarded = match ForwardedSocket::open(Arc::clone(&session), local_path.clone()).await {
+    let forwarded = match ForwardedSocket::open(
+        Arc::clone(&session),
+        local_path.clone(),
+        REMOTE_DOCKER_SOCKET.into(),
+    )
+    .await
+    {
         Ok(f) => f,
         Err(e) => {
             eprintln!("skipping: forward unsupported in this environment: {e}");

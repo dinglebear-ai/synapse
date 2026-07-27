@@ -12,7 +12,7 @@ upstream_refs:
   - "config/Dockerfile"
   - "docker-compose.yml"
   - "docker-compose.prod.yml"
-last_reviewed: "2026-06-12"
+last_reviewed: "2026-07-27"
 ---
 
 # Docker
@@ -34,13 +34,18 @@ just runtime-current   # compare running service with the local binary
 
 ## Image layout
 
-`config/Dockerfile` uses three stages:
+`config/Dockerfile` uses four digest-pinned stages:
 
 | Stage | Purpose |
 |---|---|
 | `web` | Build `apps/web/out` with pnpm. |
+| `docker-cli` | Supply only the official Docker client and Compose plugin. |
 | `builder` | Compile package `synapse2` and copy `target/release/synapse` to `/usr/local/bin/synapse`. |
-| `runtime` | Minimal Debian runtime with `curl`, `gosu`, and `openssh-client`. Docker access uses Bollard over the mounted socket; the Docker CLI is not installed. |
+| `runtime` | Debian runtime with TLS/health tools, `findutils`, privilege drop, OpenSSH, Python 3, process/network inspection, and the copied Docker CLI plugins. It contains no Docker daemon. |
+
+Bollard handles Docker Engine API operations. Flux Compose intentionally invokes
+`docker compose`, while Scout's descriptor-confined remote wrappers use Python 3.
+Container CI runs real operations through both paths.
 
 The runtime image exposes `40080/tcp`, healthchecks `http://localhost:40080/health`,
 and starts with:
@@ -73,7 +78,7 @@ services:
     ports:
       - "${SYNAPSE_MCP_BIND_HOST:-127.0.0.1}:${SYNAPSE_MCP_HOST_PORT:-40080}:40080/tcp"
     volumes:
-      - ${HOME}/.synapse:/data
+      - ${HOME}/.synapse2:/data
       - /var/run/docker.sock:/var/run/docker.sock
       - ${HOME}/.ssh:/home/synapse/.ssh:ro
     group_add:

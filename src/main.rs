@@ -1,3 +1,6 @@
+#![forbid(unsafe_op_in_unsafe_fn)]
+#![deny(unused_must_use)]
+
 //! Binary entry point — mode dispatch only.
 //!
 //! Modes:
@@ -64,37 +67,40 @@ async fn run() -> Result<()> {
         "info"
     };
 
-    // In stdio and CLI modes use a lightweight inline subscriber.
-    // Stdio mode MUST stay at warn-level so log lines don't corrupt the
-    // JSON-RPC stream on stdout. In serve_mode the full logging::init()
-    // path (with file sink) is used instead — see below.
-    //
-    // When LOG_FORMAT=json or RUST_LOG_FORMAT=json, emit JSON lines so that
-    // container log aggregators (Loki, Datadog, etc.) receive structured data.
-    let json_format = synapse2::logging::json_format_requested();
-    let env_filter =
-        EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new(log_level));
-    if json_format {
-        fmt()
-            .json()
-            .with_env_filter(env_filter)
-            .with_writer(std::io::stderr)
-            .with_target(true)
-            .init();
+    if serve_mode {
+        // HTTP server mode gets the full dual-output subscriber: operator
+        // console output plus bounded rotating JSON logs in appdata.
+        let data_dir = synapse2::config::service_data_dir()?;
+        synapse2::logging::init(&data_dir, "synapse2")?;
     } else {
-        fmt()
-            .with_env_filter(env_filter)
-            .with_writer(std::io::stderr)
-            .with_target(true)
-            .init();
+        // Stdio and one-shot CLI modes use a lightweight stderr-only subscriber.
+        // Stdio stays at warn level so stdout remains a clean JSON-RPC channel.
+        let json_format = synapse2::logging::json_format_requested();
+        let env_filter =
+            EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new(log_level));
+        if json_format {
+            fmt()
+                .json()
+                .with_env_filter(env_filter)
+                .with_writer(std::io::stderr)
+                .with_target(true)
+                .init();
+        } else {
+            fmt()
+                .with_env_filter(env_filter)
+                .with_writer(std::io::stderr)
+                .with_target(true)
+                .init();
+        }
     }
 
     if serve_mode || stdio_mode {
         // Startup sweep: remove stale forwarded sockets from prior runs whose
         // owning pid is dead (sockets persist on SIGKILL/panic). Must run before
         // any SSH pool / port-forward initialisation so a leftover
-        // `/tmp/synapse2-*-*.sock` cannot shadow a fresh forward. Server modes
-        // only — a one-shot CLI invocation should not sweep shared `/tmp`.
+        // stale private-runtime or legacy `/tmp/synapse2-*-*.sock` entries
+        // cannot shadow a fresh forward. Server modes only; one-shot CLI
+        // invocations do not sweep shared runtime state.
         synapse2::ssh::sweep_stale_sockets();
         // Warn if known_hosts has wildcard patterns that defeat strict host-key
         // checking (suppressed in stdio mode since logs are warn-level only and

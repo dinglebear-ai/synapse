@@ -232,7 +232,15 @@ impl ScoutService {
     ) -> Result<Value> {
         let source_host = scout::resolve_host(self.host_repo.as_ref(), source_host_name)?;
         let dest_host = scout::resolve_host(self.host_repo.as_ref(), dest_host_name)?;
-        exec::beam(&source_host, source_path, &dest_host, dest_path, confirmer).await
+        exec::beam(
+            &source_host,
+            source_path,
+            &dest_host,
+            dest_path,
+            self.ssh_pool.as_ref(),
+            confirmer,
+        )
+        .await
     }
 
     // ── zfs.pools ────────────────────────────────────────────────────────────

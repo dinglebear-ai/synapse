@@ -102,7 +102,8 @@ watch:
 
 # Generate Rust coverage report (requires cargo-llvm-cov)
 test-cov:
-    cargo llvm-cov --html --workspace --all-features
+    mkdir -p target/llvm-cov/profiles
+    LLVM_PROFILE_FILE="target/llvm-cov/profiles/%p-%m.profraw" cargo llvm-cov --html --workspace --all-features
 
 # Report dependency updates without modifying Cargo.lock
 deps-check:

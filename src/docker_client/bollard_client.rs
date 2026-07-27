@@ -3,6 +3,7 @@
 //! Owns the transport guard (SSH-forwarded socket + session for remote hosts,
 //! nothing extra for local). The unit of caching in [`DockerClientCache`](super::DockerClientCache).
 
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use anyhow::{Context, Result};
@@ -24,13 +25,23 @@ use bollard::query_parameters::{
 };
 use bollard::{API_DEFAULT_VERSION, Docker};
 
-use crate::ssh::{ForwardedSocket, PooledSession, SshPool, forward_socket_path};
+use crate::ssh::{
+    ForwardedSocket, PooledSession, REMOTE_DOCKER_SOCKET, SshPool, forward_socket_path,
+};
 use crate::synapse::HostConfig;
 
 use super::CLIENT_TIMEOUT_SECS;
 use super::traits::{
     BoxStream, ContainerAction, ContainerOps, ImageOps, NetworkOps, SystemOps, VolumeOps,
 };
+
+pub(crate) fn remote_socket_path(host: &HostConfig) -> &Path {
+    Path::new(
+        host.docker_socket_path
+            .as_deref()
+            .unwrap_or(REMOTE_DOCKER_SOCKET),
+    )
+}
 
 // ---------------------------------------------------------------------------
 // BollardClient — the real implementation + its owned transport guard.
@@ -79,13 +90,14 @@ impl BollardClient {
 
     /// Connect to a **remote** docker daemon via a B1 SSH-forwarded unix socket.
     ///
-    /// Checks out the shared SSH session, opens a 0600 forward to the remote
-    /// `/var/run/docker.sock`, and points bollard at the local socket path. The
-    /// forward + session are held inside the returned bundle for its lifetime.
+    /// Checks out the shared SSH session, opens an owner-only forward to the
+    /// configured remote Docker socket, and points bollard at the local path.
+    /// The forward + session are held inside the returned bundle for its lifetime.
     pub async fn connect_remote(pool: &SshPool, host: &HostConfig) -> Result<Self> {
         let pooled = pool.checkout(host).await?;
         let session = pooled.session();
-        let forward = ForwardedSocket::open(session, forward_socket_path(host))
+        let remote_path = PathBuf::from(remote_socket_path(host));
+        let forward = ForwardedSocket::open(session, forward_socket_path(host)?, remote_path)
             .await
             .with_context(|| format!("forward docker socket for host {}", host.name))?;
 

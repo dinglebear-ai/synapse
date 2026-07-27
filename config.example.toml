@@ -172,6 +172,12 @@ allowed_client_redirect_uris = []
 #                                 ~/.ssh/config and Synapse picks it up.
 #   5. Built-in `local` host    — always appended (Docker over /var/run/docker.sock).
 #
+# Host protocol is authoritative. Explicit host objects default to `ssh` when
+# protocol is omitted; local execution requires `protocol: "local"`. Loopback
+# SSH endpoints therefore retain their configured user/key/port. Recursive SSH
+# Include files are tracked for live topology refresh. Per-host Scout/Compose
+# roots constrain reads and both endpoints of bounded `scout beam` transfers.
+#
 # In Docker, bind-mount the operator's SSH config so discovery works — the image
 # sets HOME=/home/synapse, so the mount target is /home/synapse/.ssh (see
 # docker-compose.prod.yml). The `local` Docker host additionally needs the daemon

@@ -23,13 +23,13 @@
 //!   minutes. No active liveness probe.
 //! - **execvp-style exec only.** Commands run as `session.command(prog).arg(..)`
 //!   — never `sh -c`. LOCKED INVARIANT.
-//! - **Forwarded unix sockets** are created at `/tmp/synapse2-{host}-{pid}.sock`,
-//!   chmod 0600 immediately, and removed on drop. A startup sweep removes stale
-//!   sockets whose owning pid is dead.
+//! - **Forwarded unix sockets** live in an owner-only runtime directory, are
+//!   chmod 0600, and are removed on drop. A startup sweep removes stale sockets
+//!   whose owning pid is dead.
 
 use std::time::Duration;
 
-use anyhow::Result;
+use anyhow::{Context, Result, bail};
 use async_trait::async_trait;
 
 use crate::synapse::HostConfig;
@@ -37,6 +37,7 @@ use crate::synapse::HostConfig;
 pub mod forward;
 pub mod known_hosts;
 pub mod pool;
+pub mod transfer;
 
 pub use forward::{ForwardedSocket, forward_socket_path};
 pub use known_hosts::{
@@ -73,6 +74,33 @@ pub const EVICTION_INTERVAL: Duration = Duration::from_secs(60);
 /// Remote docker socket that forwarded sockets connect to.
 pub const REMOTE_DOCKER_SOCKET: &str = "/var/run/docker.sock";
 
+/// Create an owner-only runtime subdirectory shared by SSH control and forward
+/// sockets. This avoids creating privileged daemon sockets directly in the
+/// world-writable `/tmp` namespace.
+pub(crate) fn runtime_subdir(name: &str) -> Result<std::path::PathBuf> {
+    use std::os::unix::fs::{MetadataExt, PermissionsExt};
+
+    let uid = std::fs::metadata("/proc/self")
+        .context("read current process metadata")?
+        .uid();
+    let base = std::env::var_os("XDG_RUNTIME_DIR")
+        .map(std::path::PathBuf::from)
+        .unwrap_or_else(|| std::env::temp_dir().join(format!("synapse2-{uid}")));
+    let dir = base.join("synapse2").join(name);
+    std::fs::create_dir_all(&dir)
+        .with_context(|| format!("create runtime directory {}", dir.display()))?;
+    let metadata = std::fs::metadata(&dir)?;
+    if metadata.uid() != uid {
+        bail!(
+            "runtime directory {} is not owned by uid {uid}",
+            dir.display()
+        );
+    }
+    std::fs::set_permissions(&dir, std::fs::Permissions::from_mode(0o700))
+        .with_context(|| format!("chmod 0700 runtime directory {}", dir.display()))?;
+    Ok(dir)
+}
+
 /// The output of a single remote command.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CommandOutput {
@@ -94,6 +122,19 @@ impl CommandOutput {
 pub trait SshExecutor: Send + Sync {
     /// Run `program` with `args` on the host (execvp-style — no shell).
     async fn exec(&self, host: &HostConfig, program: &str, args: &[&str]) -> Result<CommandOutput>;
+
+    /// Copy one descriptor-confined file between managed hosts. Implementations
+    /// that do not support transfer fail closed rather than spawning ambient
+    /// `scp` with unverified configuration.
+    async fn transfer_file(
+        &self,
+        _source_host: &HostConfig,
+        _source_path: &str,
+        _dest_host: &HostConfig,
+        _dest_path: &str,
+    ) -> Result<u64> {
+        bail!("file transfer is not supported by this SSH executor")
+    }
 }
 
 #[cfg(test)]

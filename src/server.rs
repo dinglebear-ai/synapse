@@ -123,6 +123,16 @@ fn validate_public_url(config: &Config) -> Result<()> {
     if host.contains('*') {
         anyhow::bail!("SYNAPSE_MCP_PUBLIC_URL must not contain wildcard hosts");
     }
+    let loopback = host.eq_ignore_ascii_case("localhost")
+        || host
+            .parse::<std::net::IpAddr>()
+            .is_ok_and(|address| address.is_loopback());
+    if parsed.scheme() != "https" && !(parsed.scheme() == "http" && loopback) {
+        anyhow::bail!("SYNAPSE_MCP_PUBLIC_URL must use https except for loopback development URLs");
+    }
+    if !parsed.username().is_empty() || parsed.password().is_some() {
+        anyhow::bail!("SYNAPSE_MCP_PUBLIC_URL must not contain userinfo");
+    }
     Ok(())
 }
 

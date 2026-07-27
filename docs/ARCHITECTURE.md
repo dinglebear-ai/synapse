@@ -11,7 +11,7 @@ source_of_truth: false
 upstream_refs:
   - "src/actions.rs"
   - "docs/API.md"
-last_reviewed: "2026-06-12"
+last_reviewed: "2026-07-27"
 ---
 
 # Architecture
@@ -48,7 +48,8 @@ src/
   flux_service.rs           ← FluxService domain entry point
   flux_service/
     docker_driver.rs        ← Flux Docker driver methods
-    container_driver.rs     ← Flux container driver methods
+    container_driver.rs     ← container read/lookup driver methods
+    container_mutation.rs   ← lifecycle/pull/recreate/exec drivers
     host_driver.rs          ← Flux host inspection driver methods
     compose_driver.rs       ← Flux Compose driver methods
     docker.rs               ← pure Docker helpers and validation
@@ -89,7 +90,8 @@ src/
   cli/
     flux.rs                 ← flux subcommand parsing and dispatch
     flux/                   ← per-family flux CLI helpers
-    scout.rs                ← scout subcommand parsing and dispatch
+    scout.rs                ← core scout subcommand parsing and dispatch
+    scout_extended.rs       ← ZFS/log command-family parsers
     doctor.rs               ← pre-flight checks: env, connectivity, config validation
     setup.rs                ← interactive first-run / plugin setup wizard
     watch.rs                ← polls /health and emits state-change lines for plugin monitor
@@ -101,7 +103,11 @@ src/
     cache.rs                ← per-host client cache with transport-death eviction
     mock.rs                 ← MockDockerClient for unit tests
   ssh.rs                    ← SSH execution/session pool entry point
-  ssh/                      ← pool, config, executor, transport implementations
+  ssh/
+    pool.rs                 ← topology-aware pooled exec and shutdown
+    forward.rs              ← private runtime Docker socket forwards
+    known_hosts.rs          ← trust warnings and stale-socket cleanup
+    transfer.rs             ← bounded descriptor-confined file transfer
   fanout.rs                 ← cross-host fan-out with concurrency cap, timeout, partial-failure
   elicitation_gate.rs       ← Confirmer trait + MCP/Cli/NoConfirm/DenyConfirm impls
   cache.rs                  ← generic TTL-keyed async cache
@@ -278,6 +284,17 @@ Zero validation, zero defaults, zero error message crafting in shims. All of tha
 | > 400 non-test lines | Must add split/refactor note in PR |
 | > 600 non-test lines | Requires documented exception |
 | > 800 total lines | Must split unless generated/fixture/schema |
+
+## Crate boundary decision
+
+Synapse intentionally remains one production crate plus `xtask` for now. The
+protocol, Flux, Scout, Docker, SSH, and web boundaries are enforced as named
+modules with private internals and focused test sidecars. Extracting crates now
+would publish unstable cross-domain APIs and increase versioning overhead without
+reducing runtime coupling. A crate split becomes appropriate only when a boundary
+has an independent consumer, a stable public contract, or materially independent
+build/release cadence. The module-size and sibling-test gates prevent the single
+crate from becoming a monolith in the meantime.
 
 ## Modern Rust requirements
 

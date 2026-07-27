@@ -3030,6 +3030,7 @@ dependencies = [
  "dirs",
  "futures",
  "futures-util",
+ "glob",
  "include_dir",
  "lab-auth",
  "openssh",

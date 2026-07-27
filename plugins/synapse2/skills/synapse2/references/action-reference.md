@@ -169,9 +169,11 @@ No parameters besides `action`.
 |---|---|---|---|
 | `action` | string | yes | `"beam"` |
 | `source_host` | string | yes | Source host |
-| `source_path` | string | yes | Source absolute path |
+| `source_path` | string | yes | Source absolute path beneath configured Scout/Compose roots |
 | `dest_host` | string | yes | Destination host |
-| `dest_path` | string | yes | Destination absolute path |
+| `dest_path` | string | yes | Destination absolute path beneath configured Scout/Compose roots |
+
+Transfers reject sensitive paths and symlink traversal, use configured SSH topology, and are capped at 64 MiB.
 
 ## `scout zfs` Parameters
 

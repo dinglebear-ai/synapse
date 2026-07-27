@@ -318,13 +318,5 @@ fn visit_local_find(
 }
 
 fn glob_matches(pattern: &str, name: &str) -> bool {
-    if pattern == "*" {
-        true
-    } else if let Some(suffix) = pattern.strip_prefix('*') {
-        name.ends_with(suffix)
-    } else if let Some(prefix) = pattern.strip_suffix('*') {
-        name.starts_with(prefix)
-    } else {
-        name == pattern
-    }
+    glob::Pattern::new(pattern).is_ok_and(|compiled| compiled.matches(name))
 }

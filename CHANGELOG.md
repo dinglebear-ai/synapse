@@ -46,17 +46,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
+- **Topology-safe host routing** — host `protocol` is now authoritative. Omitted protocols default to SSH, and loopback SSH endpoints retain their configured user, key, port, and namespace instead of executing on the Synapse host.
+- **Descriptor-confined `scout beam`** — file transfer now enforces both hosts' configured read roots and sensitive-path policy, uses bounded local/SSH descriptor IO, rejects symlink traversal, and no longer spawns ambient `scp`.
+- **Private SSH runtime sockets** — ControlMaster and forwarded Docker sockets now live in owner-only runtime directories; forwarded paths contain no host-controlled text and honor per-host remote Docker socket overrides.
+- **Compose argv hardening** — service selectors are grammar-validated and passed after an option terminator to prevent flag smuggling.
+- **OAuth public URL hardening** — non-loopback public URLs must use HTTPS and may not contain userinfo.
 - **RBAC scope corrections** — `flux docker pull`, `flux container start/restart/pause/resume/pull`, and `flux compose up/build/pull` are now documented (and enforced) as `synapse:write`. Read-only tokens that appeared to allow these actions will be denied. Enforcement was already write-scoped in practice; this corrects the documentation and schema to match.
 - **Global concurrency cap** — new `SYNAPSE_MCP_MAX_CONCURRENCY` env var (default `50`) caps simultaneous in-flight requests on `/mcp` and `/v1/synapse2`. Excess requests receive HTTP 429 with `Retry-After`; `/health`, `/ready`, and `/status` are exempt. Set to `0` to disable.
 - **`/openapi.json` now requires auth** on non-loopback (`Mounted`) deployments to prevent unauthenticated schema enumeration. The endpoint remains public under `LoopbackDev`.
 - **`journalctl` filter args validated** — `unit`, `priority`, `since`, and `until` arguments for `scout logs journal` are now validated before being passed to `journalctl`. Extended priority range syntax (e.g. `err..warning`) is rejected; only the RFC 5424 named levels are accepted.
-- **`scout beam` hardened** — `ssh_user` and `host` are validated; the SSH port is now passed as a separate `-P` flag rather than interpolated into the host string.
 - **Remote `scout peek`/`find`/`delta` reject symlinks** — a pre-read `stat` check over SSH rejects symbolic links before content is read (S-M1 TOCTOU guard).
 - **Secrets redacted in debug output** — `SYNAPSE_MCP_TOKEN` and the Google OAuth client secret are redacted to `[REDACTED]` in all `Debug` formatting and log output.
 - **Removed unauthenticated trusted-gateway mode.** Non-loopback HTTP now always requires local bearer or OAuth authentication, including behind a gateway.
 
 ### Fixed
 
+- **Production image capability parity** — the runtime now includes Python 3 and the official Docker CLI/Compose plugin required by advertised Scout and Compose actions; container CI exercises real operations.
+- **Local Compose discovery** now uses the topology-aware executor rather than attempting SSH for explicit local hosts.
+- **Monitoring availability under load** — concurrency and body limits apply only to operational API/MCP traffic, keeping liveness, readiness, status, OAuth discovery, and static assets reachable during overload.
+- **Server logging activation** — HTTP server mode now initializes the documented console plus rotating JSON file logger in appdata.
+- **SSH topology refresh and shutdown** — recursive SSH `Include` dependencies invalidate cached hosts, including new wildcard matches, and pooled sessions can now close deterministically.
+- **Remote path validation** no longer consults the Synapse host's filesystem when evaluating paths on an SSH target.
+- **IPv6 bind formatting** now brackets bare IPv6 addresses correctly.
 - **Agent-native MCP contracts** now provide conditional operation schemas, caller-visible structured execution errors, accurate quick-start calls and CLI naming, tool-specific schema resources, and conservative safety annotations.
 - **Shared runtime context** adds read-scoped `synapse://status` and `synapse://activity` resources plus a bounded `/activity` feed consumed by the operator dashboard across REST and MCP calls.
 - **REST destructive-op denials return HTTP 403** (was 500) for both flux and scout actions when no elicitation channel is available.
@@ -67,6 +78,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Reproducible container bases** — all official Docker base images are pinned by multi-platform manifest digest.
+- **Custom Scout command policy** — per-host `exec_allowlist` entries now enable explicitly trusted zero-argument commands; commands with arguments still require a built-in typed policy.
+- **Source organization** — Scout extended parsing and container mutations moved into focused sibling modules, eliminating module-size advisories.
+- **Coverage artifact hygiene** — raw LLVM profiles are written under `target/llvm-cov/profiles` instead of the repository root.
 - **JSON logging mode** — set `LOG_FORMAT=json` or `RUST_LOG_FORMAT=json` to emit structured NDJSON log lines instead of the default human-readable format.
 - **Rust edition 2024** — workspace updated to `edition = "2024"`. Release profile now uses `lto = "thin"` and `strip = "symbols"`.
 - **`rust-toolchain.toml` added** — pins the toolchain channel for reproducible builds.

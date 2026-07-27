@@ -169,6 +169,10 @@ pub fn router(state: AppState) -> Router {
     } else {
         api_and_mcp_resolved
     };
+    // Resource limits belong only to operational API/MCP traffic. Keeping them
+    // on this sub-router leaves liveness, readiness, status, OAuth discovery,
+    // and static web assets available while the control plane sheds overload.
+    let protected = authenticated.layer(ConcurrencyLimitLayer::new(state.config.max_concurrency));
 
     let oauth_router: Option<Router> = if let AuthPolicy::Mounted {
         auth_state: Some(ref state_arc),
@@ -232,7 +236,7 @@ pub fn router(state: AppState) -> Router {
 
     let public: Router<()> = always_public.merge(openapi_route);
 
-    let mut base: Router<()> = Router::new().merge(authenticated).merge(public);
+    let mut base: Router<()> = Router::new().merge(protected).merge(public);
 
     if let Some(oauth) = oauth_router {
         base = base.merge(oauth);
@@ -244,8 +248,7 @@ pub fn router(state: AppState) -> Router {
         base.fallback(|| async { (StatusCode::NOT_FOUND, Json(json!({"error": "not_found"}))) })
     };
 
-    base.layer(ConcurrencyLimitLayer::new(state.config.max_concurrency))
-        .layer(RequestBodyLimitLayer::new(MCP_BODY_LIMIT_BYTES))
+    base.layer(RequestBodyLimitLayer::new(MCP_BODY_LIMIT_BYTES))
         .layer(cors_layer(&state.config))
 }
 

@@ -13,7 +13,7 @@
 | `SYNAPSE_MCP_MAX_CONCURRENCY` | `50` | Maximum active API/MCP requests; `0` disables the cap |
 | `SYNAPSE_MCP_ALLOWED_HOSTS` | unset | Extra Host header values |
 | `SYNAPSE_MCP_ALLOWED_ORIGINS` | unset | Extra CORS origins |
-| `SYNAPSE_MCP_PUBLIC_URL` | unset | Public base URL for OAuth metadata |
+| `SYNAPSE_MCP_PUBLIC_URL` | unset | Public base URL for OAuth metadata; HTTPS required except loopback development |
 | `SYNAPSE_MCP_AUTH_MODE` | `bearer` | `bearer` or `oauth` |
 | `SYNAPSE_MCP_AUTH_ADMIN_EMAIL` | unset | OAuth admin email |
 | `SYNAPSE_MCP_GOOGLE_CLIENT_ID` | unset | Google OAuth client ID |
@@ -35,8 +35,9 @@
 | `SYNAPSE_HOSTS_CONFIG` | Inline host topology as a JSON array; highest priority |
 | `SYNAPSE_CONFIG_FILE` | Path to a hosts config file; used when inline hosts are unset |
 
-When neither variable is set, Synapse2 falls back to `~/.ssh/config` discovery.
-Per-host `exec_allowlist` entries extend the built-in safe read command list.
+When neither variable is set, Synapse2 falls back to `~/.ssh/config` discovery. The declared host `protocol` is authoritative; omitted protocols default to `ssh`, while the built-in `local` host explicitly selects local execution. Loopback SSH endpoints therefore retain their configured user, key, and port. Recursive SSH `Include` files are tracked for live topology refresh.
+
+Per-host `exec_allowlist` entries enable explicitly trusted custom commands with a zero-argument policy. Commands that require arguments must have a built-in typed argument policy. `scoutReadRoots` and `composeSearchPaths` also constrain both endpoints of `scout beam`; sensitive paths and symlink traversal remain blocked.
 
 ## Auth Policy
 

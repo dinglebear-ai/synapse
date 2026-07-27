@@ -26,7 +26,8 @@
 #   docker inspect --format '{{index .RepoDigests 0}}' node:26-bookworm-slim
 # Then replace the tag below with:
 #   FROM node@sha256:<digest> AS web  # node:26-bookworm-slim
-FROM node:26.5.0-bookworm-slim AS web
+# node:26.5.0-bookworm-slim
+FROM node@sha256:2d49d876e96237d76de412761cf05dbfe5aee325cc4406a4d41d5824c5bb8beb AS web
 
 WORKDIR /app/apps/web
 
@@ -37,13 +38,20 @@ RUN npm install -g "$(node -p "require('./package.json').packageManager")" && \
 COPY apps/web/ ./
 RUN pnpm build
 
-# ── Stage 2: Builder ──────────────────────────────────────────────────────────
+# ── Stage 2: Docker CLI runtime assets ────────────────────────────────────────
+# Compose operations intentionally use the official Docker CLI and Compose
+# plugin. Copying them from the CLI image avoids installing a daemon in Synapse.
+# docker:cli, resolved 2026-07-27
+FROM docker@sha256:be132a9f282288de4afaf63379dff75711fda0147c6b72a9df44e51841402144 AS docker-cli
+
+# ── Stage 3: Builder ──────────────────────────────────────────────────────────
 # DIGEST-PIN: Refresh with:
 #   docker pull rust:1.90-slim-bookworm
 #   docker inspect --format '{{index .RepoDigests 0}}' rust:1.90-slim-bookworm
 # Then replace the tag below with:
 #   FROM rust@sha256:<digest> AS builder  # rust:1.90-slim-bookworm
-FROM rust:1.90-slim-bookworm AS builder
+# rust:1.90-slim-bookworm
+FROM rust@sha256:64232e656c058f4468e8d024e990acff04f0fd5a5c0a88a574dc37773d7325c9 AS builder
 
 WORKDIR /app
 
@@ -81,15 +89,17 @@ RUN --mount=type=cache,id=synapse2-cargo-registry,target=/usr/local/cargo/regist
     touch src/main.rs && cargo build --release --locked -p synapse2 && \
     cp target/release/synapse /usr/local/bin/synapse
 
-# ── Stage 3: Runtime ──────────────────────────────────────────────────────────
+# ── Stage 4: Runtime ──────────────────────────────────────────────────────────
 # Minimal Debian image — no Rust toolchain, no build tools.
-# Only ca-certificates (for TLS) and curl (for HEALTHCHECK).
+# Runtime includes TLS/health tooling, OpenSSH, Python 3, and the Docker CLI
+# plus Compose plugin required by advertised Scout and Flux operations.
 # DIGEST-PIN: Update quarterly with:
 #   docker pull debian:bookworm-slim
 #   docker inspect --format '{{index .RepoDigests 0}}' debian:bookworm-slim
 # Then replace the tag below with:
 #   FROM debian@sha256:<digest>  # debian:bookworm-slim YYYY-MM-DD
-FROM debian:bookworm-slim
+# debian:bookworm-slim, resolved 2026-07-27
+FROM debian@sha256:7b140f374b289a7c2befc338f42ebe6441b7ea838a042bbd5acbfca6ec875818
 
 # Install runtime dependencies:
 #   ca-certificates — TLS certificate verification for outbound HTTPS calls
@@ -101,12 +111,21 @@ FROM debian:bookworm-slim
 #           statically linked). Alpine users: replace gosu with su-exec and update
 #           entrypoint.sh accordingly.
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends ca-certificates curl gosu openssh-client procps iproute2 && \
+    apt-get install -y --no-install-recommends \
+        ca-certificates \
+        curl \
+        findutils \
+        gosu \
+        iproute2 \
+        openssh-client \
+        procps \
+        python3 && \
     rm -rf /var/lib/apt/lists/*
-# NOTE: docker.io (the Docker daemon CLI) was removed. Bollard communicates with
-# the Docker daemon entirely via the mounted socket (/var/run/docker.sock) and
-# does not invoke the docker binary at runtime. Installing the full daemon added
-# ~100-200 MB to the image for zero benefit.
+
+# Flux Compose invokes `docker compose`; Scout's descriptor-confined remote
+# wrappers use Python 3. Copy only the CLI and its plugins, never the daemon.
+COPY --from=docker-cli /usr/local/bin/docker /usr/local/bin/docker
+COPY --from=docker-cli /usr/local/libexec/docker/cli-plugins/ /usr/local/libexec/docker/cli-plugins/
 
 # TEMPLATE: Replace "example" with your binary name in both COPY and target path.
 COPY --from=builder /usr/local/bin/synapse /usr/local/bin/synapse
@@ -132,6 +151,9 @@ RUN groupadd --gid 1000 synapse && \
 # bind-mounts the operator's SSH config (see docker-compose.prod.yml) lands it
 # at /home/synapse/.ssh and is discovered automatically.
 ENV HOME=/home/synapse
+# The production root filesystem is read-only; Docker CLI state belongs on the
+# writable /tmp tmpfs rather than under HOME.
+ENV DOCKER_CONFIG=/tmp/docker-config
 
 # Default log level. Override with RUST_LOG env var in docker-compose or at runtime.
 ENV RUST_LOG=info

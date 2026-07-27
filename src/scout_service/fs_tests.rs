@@ -484,6 +484,15 @@ async fn delta_remote_stat_failure_is_not_silently_bypassed() {
     );
 }
 
+#[test]
+fn local_glob_matching_matches_remote_fnmatch_shapes() {
+    assert!(super::glob_matches("config?.toml", "config1.toml"));
+    assert!(super::glob_matches("config[0-9].toml", "config7.toml"));
+    assert!(super::glob_matches("*.service", "docker.service"));
+    assert!(!super::glob_matches("config[0-9].toml", "configx.toml"));
+    assert!(!super::glob_matches("[", "anything"));
+}
+
 struct NoopExec;
 
 #[async_trait]

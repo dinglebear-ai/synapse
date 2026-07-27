@@ -72,6 +72,45 @@ pub(crate) fn bind_read_path(host: &HostConfig, path: &str) -> Result<BoundPath>
     Ok(BoundPath { file: fd.into() })
 }
 
+pub(crate) fn bind_write_path(host: &HostConfig, path: &str) -> Result<BoundPath> {
+    validate_scout_read_path(host, path)?;
+    let root = matching_root(host, path)
+        .ok_or_else(|| anyhow::anyhow!("path is outside configured scout read roots"))?;
+    let root_relative = root.trim_start_matches('/');
+    let target_relative = Path::new(path)
+        .strip_prefix(&root)
+        .context("path is outside selected scout read root")?;
+    if target_relative.as_os_str().is_empty() {
+        bail!("beam destination must name a file, not the read root itself");
+    }
+
+    let slash: OwnedFd = open(
+        "/",
+        OFlags::RDONLY | OFlags::DIRECTORY | OFlags::CLOEXEC,
+        Mode::empty(),
+    )?;
+    let root_fd = openat2(
+        &slash,
+        if root_relative.is_empty() {
+            "."
+        } else {
+            root_relative
+        },
+        OFlags::RDONLY | OFlags::DIRECTORY | OFlags::CLOEXEC,
+        Mode::empty(),
+        ResolveFlags::BENEATH | ResolveFlags::NO_SYMLINKS | ResolveFlags::NO_MAGICLINKS,
+    )?;
+    let fd = openat2(
+        &root_fd,
+        target_relative,
+        OFlags::WRONLY | OFlags::CREATE | OFlags::TRUNC | OFlags::CLOEXEC | OFlags::NOFOLLOW,
+        Mode::RUSR | Mode::WUSR,
+        ResolveFlags::BENEATH | ResolveFlags::NO_SYMLINKS | ResolveFlags::NO_MAGICLINKS,
+    )
+    .with_context(|| format!("securely open scout destination {path}"))?;
+    Ok(BoundPath { file: fd.into() })
+}
+
 pub(crate) fn root_and_relative(host: &HostConfig, path: &str) -> Result<(String, String)> {
     validate_scout_read_path(host, path)?;
     let root = matching_root(host, path)

@@ -102,6 +102,32 @@ fn invalid_public_url_is_rejected() {
 }
 
 #[test]
+fn non_loopback_http_public_url_is_rejected() {
+    let mut config = config("0.0.0.0");
+    config.mcp.auth.public_url = Some("http://synapse.example".into());
+    let error = resolve_auth_policy_kind(&config).unwrap_err();
+    assert!(error.to_string().contains("must use https"));
+}
+
+#[test]
+fn loopback_http_public_url_is_allowed() {
+    let mut config = config("127.0.0.1");
+    config.mcp.auth.public_url = Some("http://localhost:40080".into());
+    assert_eq!(
+        resolve_auth_policy_kind(&config).unwrap(),
+        AuthPolicyKind::LoopbackDev
+    );
+}
+
+#[test]
+fn public_url_userinfo_is_rejected() {
+    let mut config = config("0.0.0.0");
+    config.mcp.auth.public_url = Some("https://user:secret@synapse.example".into());
+    let error = resolve_auth_policy_kind(&config).unwrap_err();
+    assert!(error.to_string().contains("must not contain userinfo"));
+}
+
+#[test]
 fn wildcard_public_url_is_rejected() {
     let mut config = config("0.0.0.0");
     config.mcp.auth.public_url = Some("https://*.synapse2.com".into());

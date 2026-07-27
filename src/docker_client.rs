@@ -22,7 +22,7 @@
 //!   "same instance on repeated lookup" property and prevents two racing callers
 //!   from binding the *same* deterministic forward socket path.
 //! - **Transport selection** mirrors synapse-mcp's `client-factory.ts`:
-//!   - Local (`HostProtocol::Local` / `localhost`): an explicit
+//!   - Local (`HostProtocol::Local` only): an explicit
 //!     `docker_socket_path` wins, else `connect_with_unix_defaults()`.
 //!   - Remote (SSH): `pool.checkout(host)` → `ForwardedSocket::open(session,
 //!     forward_socket_path(host))` → `connect_with_socket(path, …)`.

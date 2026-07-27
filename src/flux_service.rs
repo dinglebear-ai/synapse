@@ -13,7 +13,8 @@
 //!
 //! - `flux_service.rs` — struct, constructors, shared helpers (`target_hosts`,
 //!   `exec_for_host`, `help`, `flatten_*`).
-//! - `flux_service/container_driver.rs` — `impl FluxService` for container ops.
+//! - `flux_service/container_driver.rs` — container read and lookup drivers.
+//! - `flux_service/container_mutation.rs` — lifecycle, pull, recreate, and exec drivers.
 //! - `flux_service/docker_driver.rs`    — `impl FluxService` for docker ops.
 //! - `flux_service/host_driver.rs`      — `impl FluxService` for host ops.
 //! - `flux_service/compose_driver.rs`   — `impl FluxService` for compose ops.
@@ -37,6 +38,7 @@ pub mod compose_driver;
 pub mod compose_ops;
 pub mod container_driver;
 pub mod container_lifecycle;
+pub mod container_mutation;
 pub mod container_read;
 pub mod docker;
 pub mod docker_driver;

@@ -376,7 +376,7 @@ Diff a file between two hosts (or against inline content).
 pub(super) const SCOUT_EXEC: &str = "\
 Execute an allowlisted command on a host. **Destructive — requires confirmation.**
 
-**Allowlist**: `cat`, `head`, `tail`, `grep`, `rg`, `find`, `ls`, `tree`, `wc`, `sort`, `uniq`, `diff`, `stat`, `file`, `du`, `df`, `pwd`, `hostname`, `uptime`, `whoami`.
+**Built-in typed allowlist**: `cat`, `head`, `tail`, `grep`, `rg`, `ls`, `tree`, `wc`, `uniq`, `diff`, `stat`, `file`, `du`, `df`, `pwd`, `hostname`, `uptime`, `whoami`. Per-host custom commands may be enabled with a zero-argument policy. Use the dedicated `find` action for filesystem search.
 
 **Parameters**
 - `host` (required): target host name.
@@ -395,11 +395,13 @@ Run an allowlisted command across multiple hosts. **Destructive — requires con
 - `timeout_secs` (int, optional): per-host timeout (default 30).";
 
 pub(super) const SCOUT_BEAM: &str = "\
-Transfer a file between hosts. **Destructive — requires confirmation.**
+Transfer one bounded file between managed hosts. **Destructive — requires confirmation.**
+
+Both endpoints must be beneath their host's configured Scout/Compose roots. Sensitive paths and symlink traversal are rejected; transfers are capped at 64 MiB.
 
 **Parameters**
-- `host` (required): source host name.
-- `path` (required): source file path (absolute).
+- `source_host` (required): source host name.
+- `source_path` (required): source file path (absolute).
 - `dest_host` (required): destination host name.
 - `dest_path` (required): destination path (absolute).";
 

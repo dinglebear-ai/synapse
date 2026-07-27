@@ -341,11 +341,12 @@ fn is_local_detects_local_protocol() {
 }
 
 #[test]
-fn is_local_detects_localhost_hostname() {
+fn is_local_respects_ssh_protocol_for_loopback_endpoint() {
     let mut h = crate::synapse::HostConfig::local();
     h.protocol = crate::synapse::HostProtocol::Ssh;
     h.host = "localhost".to_owned();
-    assert!(is_local_host(&h));
+    h.ssh_port = Some(2222);
+    assert!(!is_local_host(&h));
 }
 
 #[test]

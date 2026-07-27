@@ -3,9 +3,9 @@
 //! - [`warn_on_known_hosts_wildcards`] scans `~/.ssh/known_hosts` at startup and
 //!   logs a warning if any wildcard host pattern is found (MITM risk).
 //! - [`sweep_stale_sockets`] / [`sweep_stale_sockets_in`] remove leftover
-//!   `/tmp/synapse2-*-*.sock` files whose owning pid is no longer alive. Called
-//!   once from `main.rs` before pool init to prevent socket accumulation across
-//!   crashes.
+//!   forwarded sockets whose owning pid is no longer alive. The normal location
+//!   is the owner-only runtime directory; legacy `/tmp` sockets are swept during
+//!   migration.
 
 use std::path::{Path, PathBuf};
 
@@ -60,10 +60,13 @@ pub fn scan_known_hosts_wildcards(path: &Path) -> Option<Vec<String>> {
 
 // ── Startup sweep ───────────────────────────────────────────────────────────
 
-/// Remove stale `/tmp/synapse2-*-*.sock` files whose owning pid is no longer
-/// running. Called once from `main.rs` before pool init to stop accumulation
-/// across crashes (the socket persists on SIGKILL/panic).
+/// Remove stale forwarded sockets whose owning pid is no longer running.
 pub fn sweep_stale_sockets() {
+    if let Ok(directory) = super::runtime_subdir("forward") {
+        sweep_stale_sockets_in(&directory);
+    }
+    // One-time compatibility sweep for versions that placed sockets directly
+    // under /tmp. Foreign files remain untouched by the strict name parser.
     sweep_stale_sockets_in(Path::new("/tmp"));
 }
 
@@ -90,8 +93,8 @@ pub fn sweep_stale_sockets_in(dir: &Path) -> Vec<PathBuf> {
     removed
 }
 
-/// Parse the pid out of `synapse2-{host}-{pid}.sock`. Host names contain
-/// hyphens, so strip the fixed prefix/suffix and split from the RIGHT.
+/// Parse the pid out of `synapse2-{identity}-{pid}.sock` or the legacy
+/// `synapse2-{host}-{pid}.sock` form by splitting from the right.
 pub(crate) fn parse_socket_pid(name: &str) -> Option<u32> {
     let inner = name.strip_prefix("synapse2-")?.strip_suffix(".sock")?;
     let (_host, pid) = inner.rsplit_once('-')?;

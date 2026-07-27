@@ -29,7 +29,7 @@ use async_trait::async_trait;
 use serde_json::{Value, json};
 
 use crate::ssh::{CommandOutput, SshExecutor};
-use crate::synapse::{HostConfig, HostProtocol};
+use crate::synapse::HostConfig;
 
 #[cfg(test)]
 #[path = "host_tests.rs"]
@@ -69,7 +69,7 @@ impl HostExec for RemoteExec<'_> {
 
 /// Determine whether `host` should use local execution.
 pub fn is_local_host(host: &HostConfig) -> bool {
-    host.protocol == HostProtocol::Local || host.host == "localhost"
+    host.is_local()
 }
 
 // ─── host:info ────────────────────────────────────────────────────────────────

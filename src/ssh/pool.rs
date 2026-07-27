@@ -82,24 +82,7 @@ impl PooledSession {
 /// process-private path prevents other local users from connecting through our
 /// ControlMaster socket.
 fn control_dir() -> Result<std::path::PathBuf> {
-    use std::fs;
-    use std::os::unix::fs::PermissionsExt;
-
-    let dir = if let Some(xdg) = std::env::var_os("XDG_RUNTIME_DIR") {
-        std::path::PathBuf::from(xdg).join("synapse2")
-    } else {
-        std::env::temp_dir().join(format!("synapse2-{}", std::process::id()))
-    };
-
-    if !dir.exists() {
-        fs::create_dir_all(&dir)
-            .with_context(|| format!("create ControlMaster dir {}", dir.display()))?;
-    }
-    // Always enforce 0700 even if the directory already existed.
-    fs::set_permissions(&dir, fs::Permissions::from_mode(0o700))
-        .with_context(|| format!("chmod 0700 ControlMaster dir {}", dir.display()))?;
-
-    Ok(dir)
+    super::runtime_subdir("control")
 }
 
 /// Build the SSH destination string (`[user@]host`) and apply config to the
@@ -257,12 +240,10 @@ impl SshPool {
     /// and triggers a new `connect()`.
     pub fn invalidate(&self, host: &HostConfig) {
         let key = Self::key(host);
-        if let Some((_, cell)) = self.sessions.remove(&key) {
-            // Best-effort close of the old session, if it successfully
-            // initialised before the failure that triggered invalidation.
-            if let Some(pooled) = cell.get() {
-                spawn_close(Arc::clone(pooled));
-            }
+        if let Some((_, cell)) = self.sessions.remove(&key)
+            && let Some(pooled) = take_initialized(cell)
+        {
+            spawn_close(pooled);
         }
     }
 
@@ -300,9 +281,9 @@ impl SshPool {
             .collect();
         for key in stale {
             if let Some((_, cell)) = self.sessions.remove(&key)
-                && let Some(pooled) = cell.get()
+                && let Some(pooled) = take_initialized(cell)
             {
-                spawn_close(Arc::clone(pooled));
+                spawn_close(pooled);
             }
         }
     }
@@ -312,8 +293,9 @@ impl SshPool {
         let keys: Vec<String> = self.sessions.iter().map(|e| e.key().clone()).collect();
         for key in keys {
             if let Some((_, cell)) = self.sessions.remove(&key)
-                && let Some(pooled) = cell.get()
-                && let Ok(session) = Arc::try_unwrap(Arc::clone(&pooled.session))
+                && let Some(pooled) = take_initialized(cell)
+                && let Ok(pooled) = Arc::try_unwrap(pooled)
+                && let Ok(session) = Arc::try_unwrap(pooled.session)
             {
                 let _ = session.close().await;
             }
@@ -341,6 +323,10 @@ impl Default for SshPool {
     }
 }
 
+fn take_initialized(cell: Arc<OnceCell<Arc<PooledSession>>>) -> Option<Arc<PooledSession>> {
+    Arc::try_unwrap(cell).ok()?.into_inner()
+}
+
 /// Best-effort detached close of a pooled session (used when we can't await).
 fn spawn_close(pooled: Arc<PooledSession>) {
     tokio::spawn(async move {
@@ -355,6 +341,14 @@ fn spawn_close(pooled: Arc<PooledSession>) {
 #[async_trait]
 impl SshExecutor for SshPool {
     async fn exec(&self, host: &HostConfig, program: &str, args: &[&str]) -> Result<CommandOutput> {
+        // The shared executor is topology-aware: only an explicit Local
+        // protocol executes on this machine. SSH targets using localhost or a
+        // loopback address still go through OpenSSH with their configured port,
+        // user, key, and namespace.
+        if host.is_local() {
+            return crate::runtime_budget::run_local_command(program, args, None).await;
+        }
+
         let pooled = self.checkout(host).await?;
 
         // LOCKED: acquire the permit INSIDE this call (never before a spawn) to
@@ -420,5 +414,15 @@ impl SshExecutor for SshPool {
                 Err(anyhow!("ssh exec `{program}` on {} failed: {e}", host.name))
             }
         }
+    }
+
+    async fn transfer_file(
+        &self,
+        source_host: &HostConfig,
+        source_path: &str,
+        dest_host: &HostConfig,
+        dest_path: &str,
+    ) -> Result<u64> {
+        super::transfer::transfer_file(self, source_host, source_path, dest_host, dest_path).await
     }
 }

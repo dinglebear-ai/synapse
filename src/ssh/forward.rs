@@ -14,22 +14,20 @@ use openssh::{ForwardType, Session, Socket};
 
 use crate::synapse::HostConfig;
 
-use super::REMOTE_DOCKER_SOCKET;
+use super::runtime_subdir;
 
-/// Local path for a host's forwarded docker socket: `/tmp/synapse2-{host}-{pid}.sock`.
-///
-/// Host names may contain hyphens, so the startup sweep parses the pid from the
-/// RIGHT (`rsplit_once('-')`). Keep this format in sync with [`sweep_stale_sockets`].
-pub fn forward_socket_path(host: &HostConfig) -> PathBuf {
+/// Local path for a host's forwarded Docker socket inside an owner-only
+/// runtime directory. The filename contains only a connection-identity hash and
+/// pid, so untrusted host aliases never become filesystem path components.
+pub fn forward_socket_path(host: &HostConfig) -> Result<PathBuf> {
     use std::hash::{DefaultHasher, Hash, Hasher};
     let mut hasher = DefaultHasher::new();
     host.connection_key().hash(&mut hasher);
     let identity = hasher.finish();
-    PathBuf::from(format!(
-        "/tmp/synapse2-{}-{identity:016x}-{}.sock",
-        host.name,
+    Ok(runtime_subdir("forward")?.join(format!(
+        "synapse2-{identity:016x}-{}.sock",
         std::process::id()
-    ))
+    )))
 }
 
 /// An RAII guard over a forwarded unix socket. On drop it removes the socket
@@ -38,14 +36,19 @@ pub fn forward_socket_path(host: &HostConfig) -> PathBuf {
 pub struct ForwardedSocket {
     pub(super) session: Arc<Session>,
     pub(super) local_path: PathBuf,
+    pub(super) remote_path: PathBuf,
     pub(super) closed: bool,
 }
 
 impl ForwardedSocket {
-    /// Open a local→remote unix-socket forward bridging `local_path` to the
-    /// remote docker socket. The socket is chmod 0600 before this returns so it
-    /// is never world-connectable.
-    pub async fn open(session: Arc<Session>, local_path: PathBuf) -> Result<Self> {
+    /// Open a local-to-remote Unix-socket forward bridging `local_path` to
+    /// `remote_path`. The private parent directory is mode 0700 and the socket
+    /// itself is chmod 0600 before this returns.
+    pub async fn open(
+        session: Arc<Session>,
+        local_path: PathBuf,
+        remote_path: PathBuf,
+    ) -> Result<Self> {
         // Remove any leftover socket at this path (a prior run with our pid that
         // crashed) so the bind does not silently fail.
         if local_path.exists() {
@@ -59,11 +62,17 @@ impl ForwardedSocket {
                     path: local_path.as_path().into(),
                 },
                 Socket::UnixSocket {
-                    path: Path::new(REMOTE_DOCKER_SOCKET).into(),
+                    path: remote_path.as_path().into(),
                 },
             )
             .await
-            .with_context(|| format!("request unix-socket forward at {}", local_path.display()))?;
+            .with_context(|| {
+                format!(
+                    "request unix-socket forward at {} to {}",
+                    local_path.display(),
+                    remote_path.display()
+                )
+            })?;
 
         // native-mux may create the listener slightly after the request returns.
         // Poll briefly, then lock it down to 0600 BEFORE handing the path out.
@@ -72,6 +81,7 @@ impl ForwardedSocket {
         Ok(Self {
             session,
             local_path,
+            remote_path,
             closed: false,
         })
     }
@@ -92,7 +102,7 @@ impl ForwardedSocket {
                     path: self.local_path.as_path().into(),
                 },
                 Socket::UnixSocket {
-                    path: Path::new(REMOTE_DOCKER_SOCKET).into(),
+                    path: self.remote_path.as_path().into(),
                 },
             )
             .await;
@@ -113,6 +123,7 @@ impl Drop for ForwardedSocket {
         if let Ok(handle) = tokio::runtime::Handle::try_current() {
             let session = Arc::clone(&self.session);
             let path = self.local_path.clone();
+            let remote_path = self.remote_path.clone();
             handle.spawn(async move {
                 let _ = session
                     .close_port_forward(
@@ -121,7 +132,7 @@ impl Drop for ForwardedSocket {
                             path: path.as_path().into(),
                         },
                         Socket::UnixSocket {
-                            path: Path::new(REMOTE_DOCKER_SOCKET).into(),
+                            path: remote_path.as_path().into(),
                         },
                     )
                     .await;

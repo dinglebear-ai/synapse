@@ -179,9 +179,11 @@ elicitation confirmation gate.
 {"name":"scout","arguments":{"action":"exec","host":"myhost","command":"tail","args":["-n","50","/var/log/syslog"]}}
 ```
 
-Allowlisted commands: `cat`, `head`, `tail`, `grep`, `rg`, `find`, `ls`,
-`tree`, `wc`, `sort`, `uniq`, `diff`, `stat`, `file`, `du`, `df`, `pwd`,
-`hostname`, `uptime`, `whoami`. `git` is explicitly excluded.
+Built-in typed commands: `cat`, `head`, `tail`, `grep`, `rg`, `ls`,
+`tree`, `wc`, `uniq`, `diff`, `stat`, `file`, `du`, `df`, `pwd`,
+`hostname`, `uptime`, `whoami`. `git` is explicitly excluded. Per-host custom
+commands can be enabled through `execAllowlist`, but receive a zero-argument
+policy until a typed argument policy is registered. Use `scout find` for file search.
 
 #### `action="emit"` — Multi-host execution (destructive)
 
@@ -192,8 +194,13 @@ Allowlisted commands: `cat`, `head`, `tail`, `grep`, `rg`, `find`, `ls`,
 #### `action="beam"` — File transfer (destructive)
 
 ```json
-{"name":"scout","arguments":{"action":"beam","source_host":"host1","source_path":"/etc/nginx/nginx.conf","dest_host":"host2","dest_path":"/etc/nginx/nginx.conf"}}
+{"name":"scout","arguments":{"action":"beam","source_host":"host1","source_path":"/srv/config/nginx.conf","dest_host":"host2","dest_path":"/srv/config/nginx.conf"}}
 ```
+
+Both paths must be beneath the respective host's configured `scoutReadRoots` or
+`composeSearchPaths`. Sensitive paths and symlink traversal are rejected. One
+transfer is capped at 64 MiB and uses the configured SSH topology rather than
+ambient `scp` settings.
 
 #### `action="zfs"` — ZFS introspection (3 subactions)
 

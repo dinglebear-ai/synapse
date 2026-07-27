@@ -100,7 +100,12 @@ impl std::fmt::Debug for McpConfig {
 
 impl McpConfig {
     pub fn bind_addr(&self) -> String {
-        format!("{}:{}", self.host, self.port)
+        let host = self.host.trim();
+        if host.starts_with('[') || !host.contains(':') {
+            format!("{host}:{}", self.port)
+        } else {
+            format!("[{host}]:{}", self.port)
+        }
     }
 
     /// Return true if the configured bind host resolves to a loopback address.
@@ -280,6 +285,13 @@ impl Default for AuthConfig {
 ///
 /// TEMPLATE: Replace `.synapse2` with your service name (e.g. `.unraid`, `.gotify`).
 ///           The name should match the docker-compose.yml volume mount source.
+pub fn service_data_dir() -> anyhow::Result<std::path::PathBuf> {
+    if let Some(home) = std::env::var_os("SYNAPSE_HOME") {
+        return Ok(std::path::PathBuf::from(home));
+    }
+    default_data_dir()
+}
+
 pub fn default_data_dir() -> anyhow::Result<std::path::PathBuf> {
     // Running inside a Docker container — /data is always the mount point.
     // Detection uses /.dockerenv (created by the Docker runtime) or an explicit

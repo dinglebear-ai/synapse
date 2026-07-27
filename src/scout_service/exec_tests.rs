@@ -28,6 +28,10 @@ impl SshExecutor for AlwaysOkExec {
             exit_code: Some(0),
         })
     }
+
+    async fn transfer_file(&self, _: &HostConfig, _: &str, _: &HostConfig, _: &str) -> Result<u64> {
+        Ok(2)
+    }
 }
 
 /// Always fails with a canned error.
@@ -391,106 +395,20 @@ async fn emit_rejects_unsafe_target_path_before_confirmation() {
     );
 }
 
-// ─── SSH identity validation tests (S-M4) ────────────────────────────────────
-
-#[test]
-fn validate_ssh_user_accepts_normal_names() {
-    assert!(super::validate_ssh_user("root").is_ok());
-    assert!(super::validate_ssh_user("jmagar").is_ok());
-    assert!(super::validate_ssh_user("deploy-bot").is_ok());
-    assert!(super::validate_ssh_user("user.name").is_ok());
-    assert!(super::validate_ssh_user("user_name").is_ok());
-}
-
-#[test]
-fn validate_ssh_user_rejects_proxy_command_injection() {
-    // This is the canonical ProxyCommand injection pattern.
-    let result = super::validate_ssh_user("-oProxyCommand=evil");
-    assert!(result.is_err(), "ProxyCommand injection must be rejected");
-    let msg = result.unwrap_err().to_string();
-    assert!(
-        msg.contains("start with `-`") || msg.contains("invalid"),
-        "{msg}"
-    );
-}
-
-#[test]
-fn validate_ssh_user_rejects_at_sign() {
-    let result = super::validate_ssh_user("user@host");
-    assert!(result.is_err(), "@ in ssh_user must be rejected");
-}
-
-#[test]
-fn validate_ssh_user_rejects_whitespace() {
-    let result = super::validate_ssh_user("user name");
-    assert!(result.is_err(), "whitespace in ssh_user must be rejected");
-}
-
-#[test]
-fn validate_ssh_user_rejects_empty() {
-    let result = super::validate_ssh_user("");
-    assert!(result.is_err(), "empty ssh_user must be rejected");
-}
-
-#[test]
-fn validate_ssh_host_accepts_normal_hosts() {
-    assert!(super::validate_ssh_host("192.168.1.1").is_ok());
-    assert!(super::validate_ssh_host("example.com").is_ok());
-    assert!(super::validate_ssh_host("my-server").is_ok());
-}
-
-#[test]
-fn validate_ssh_host_rejects_colon() {
-    // Colon could smuggle [host]:port syntax.
-    let result = super::validate_ssh_host("host:22");
-    assert!(result.is_err(), "colon in host must be rejected");
-}
-
-#[test]
-fn validate_ssh_host_rejects_leading_dash() {
-    let result = super::validate_ssh_host("-oProxyCommand=evil");
-    assert!(result.is_err(), "leading dash host must be rejected");
-}
-
-#[tokio::test]
-async fn beam_rejects_malicious_ssh_user() {
-    // A host config with an ssh_user that contains a ProxyCommand injection
-    // attempt must be rejected before scp is launched.
-    let mut remote_host = HostConfig::local();
-    remote_host.name = "evil-remote".into();
-    remote_host.host = "remote.example".into();
-    remote_host.protocol = crate::synapse::HostProtocol::Ssh;
-    remote_host.ssh_user = Some("-oProxyCommand=id>/tmp/pwned".into());
-
-    let local_host = HostConfig::local();
-
-    let result: anyhow::Result<serde_json::Value> = super::beam(
-        &local_host,
-        "/tmp/source",
-        &remote_host,
-        "/tmp/dest",
-        &ApproveConfirmer,
-    )
-    .await;
-
-    assert!(
-        result.is_err(),
-        "beam must reject malicious ssh_user before launching scp"
-    );
-    let msg = result.unwrap_err().to_string();
-    assert!(
-        msg.contains("invalid") || msg.contains("start with") || msg.contains("`-`"),
-        "error must mention validation failure: {msg}"
-    );
-}
-
 // ─── beam tests ──────────────────────────────────────────────────────────────
 
 #[tokio::test]
 async fn beam_rejects_when_confirmer_declines() {
     let host = HostConfig::local();
-    let result: anyhow::Result<serde_json::Value> =
-        super::beam(&host, "/tmp/source", &host, "/tmp/dest", &DenyConfirmer).await;
+    let result: anyhow::Result<serde_json::Value> = super::beam(
+        &host,
+        "/tmp/source",
+        &host,
+        "/tmp/dest",
+        &AlwaysOkExec,
+        &DenyConfirmer,
+    )
+    .await;
     assert!(result.is_err(), "declined beam must produce error");
     let msg = result.unwrap_err().to_string();
     assert!(
@@ -507,6 +425,7 @@ async fn beam_rejects_relative_source_path() {
         "relative/path",
         &host,
         "/tmp/dest",
+        &AlwaysOkExec,
         &ApproveConfirmer,
     )
     .await;
@@ -524,8 +443,71 @@ async fn beam_rejects_dotdot_dest_path() {
         "/tmp/source",
         &host,
         "/tmp/../etc/dest",
+        &AlwaysOkExec,
         &ApproveConfirmer,
     )
     .await;
     assert!(result.is_err(), "path with .. in dest must be rejected");
+}
+
+#[tokio::test]
+async fn beam_rejects_sensitive_source_before_transfer() {
+    let mut host = HostConfig::local();
+    host.scout_read_roots = vec!["/tmp".into()];
+    let result = super::beam(
+        &host,
+        "/tmp/.ssh/id_ed25519",
+        &host,
+        "/tmp/dest",
+        &AlwaysOkExec,
+        &ApproveConfirmer,
+    )
+    .await;
+    assert!(result.unwrap_err().to_string().contains("sensitive"));
+}
+
+#[tokio::test]
+async fn beam_rejects_source_outside_configured_root() {
+    let mut host = HostConfig::local();
+    host.scout_read_roots = vec!["/tmp/allowed".into()];
+    let result = super::beam(
+        &host,
+        "/tmp/outside",
+        &host,
+        "/tmp/allowed/dest",
+        &AlwaysOkExec,
+        &ApproveConfirmer,
+    )
+    .await;
+    assert!(
+        result
+            .unwrap_err()
+            .to_string()
+            .contains("outside configured")
+    );
+}
+
+#[tokio::test]
+async fn beam_copies_local_file_through_descriptor_bound_executor() {
+    let dir = tempfile::tempdir().unwrap();
+    let source = dir.path().join("source.txt");
+    let destination = dir.path().join("destination.txt");
+    std::fs::write(&source, b"beam payload").unwrap();
+
+    let mut host = HostConfig::local();
+    host.scout_read_roots = vec![dir.path().to_string_lossy().into_owned()];
+    let pool = crate::ssh::SshPool::new();
+    let result = super::beam(
+        &host,
+        &source.to_string_lossy(),
+        &host,
+        &destination.to_string_lossy(),
+        &pool,
+        &ApproveConfirmer,
+    )
+    .await
+    .unwrap();
+
+    assert_eq!(result["bytes"], 12);
+    assert_eq!(std::fs::read(destination).unwrap(), b"beam payload");
 }

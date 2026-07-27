@@ -8,7 +8,7 @@ audience:
   - "agents"
 scope: "synapse2"
 source_of_truth: true
-last_reviewed: "2026-06-12"
+last_reviewed: "2026-07-27"
 ---
 
 # Deployment
@@ -105,9 +105,27 @@ All deployments share `~/.<service>` as the logical data root:
 | Docker | `/data/` in container, mounted from `~/.synapse2/` on host |
 | Plugin | `$CLAUDE_PLUGIN_DATA` (symlinked to `~/.synapse2/`) |
 
+## Managed-host prerequisites
+
+Synapse executes only explicit local targets on the server itself. SSH targets
+use their declared SSH transport, including loopback endpoints with custom ports.
+Managed SSH hosts need:
+
+- OpenSSH server access with strict known-host verification from the Synapse user.
+- Python 3 for descriptor-confined Scout reads, exec, Compose name parsing, and
+  bounded `beam` transfer.
+- Docker CLI with the Compose plugin for remote Flux Compose operations.
+- `find` for Compose filesystem discovery.
+- The native tools requested by host/log/ZFS actions, such as `systemctl`,
+  `journalctl`, `zpool`, and `zfs`, when those actions are used.
+
+Per-host `dockerSocketPath`, `scoutReadRoots`, `composeSearchPaths`, and
+`execAllowlist` should reflect the actual host. Custom allowlisted commands have
+a zero-argument policy unless promoted into the built-in typed policy table.
+
 ## Auth expectations
 
-Non-loopback HTTP deployments must use bearer auth or OAuth. The server refuses to bind to a non-loopback address without authentication unless explicitly configured:
+Non-loopback HTTP deployments must use bearer auth or OAuth. OAuth public URLs must use HTTPS except for loopback development and may not contain userinfo. The server refuses to bind to a non-loopback address without authentication unless explicitly configured:
 
 - Loopback bind or `SYNAPSE_MCP_NO_AUTH=true` → `LoopbackDev` (no auth)
 - Non-loopback + bearer token → mounted bearer auth

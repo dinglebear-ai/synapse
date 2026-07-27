@@ -481,18 +481,10 @@ fn ensure_local_does_not_append_when_present() {
 }
 
 // ---------------------------------------------------------------------------
-// Include directive behavior (verified: natively supported in ssh2-config 0.7.1)
+// Include directive behavior
 // ---------------------------------------------------------------------------
 
-/// Empirically verify that ssh2-config 0.7.1 DOES expand Include directives natively.
-///
-/// The bead spec FACT (2026-05-25) stated Include was NOT handled — that was true for
-/// older crate versions. Empirical testing against 0.7.1 confirms it IS expanded
-/// (via the `glob` dependency in parser.rs). The module doc in `host_config.rs`
-/// reflects the verified behaviour.
-///
-/// If this test starts failing on a future downgrade, Include support was removed.
-/// Update the module doc accordingly.
+/// Verify Synapse expands absolute Include directives before parsing.
 #[test]
 fn ssh_config_include_directives_are_expanded() {
     use std::io::Write as IoWrite;
@@ -524,11 +516,62 @@ fn ssh_config_include_directives_are_expanded() {
         "mainhost should be present: {hosts:?}"
     );
 
-    // included_host SHOULD be present: ssh2-config 0.7.1 natively expands Include.
-    // If this assertion fails, a crate version change removed Include support.
     assert!(
         hosts.iter().any(|h| h.name == "included_host"),
-        "included_host missing — ssh2-config may have lost native Include support: {hosts:?}"
+        "included_host missing after Include expansion: {hosts:?}"
+    );
+}
+
+#[test]
+fn host_snapshot_refreshes_when_included_file_changes() {
+    let dir = tempfile::tempdir().unwrap();
+    let included = dir.path().join("included.conf");
+    let main = dir.path().join("config");
+    std::fs::write(&included, "Host node\n    HostName 10.0.0.1\n").unwrap();
+    std::fs::write(&main, "Include included.conf\n").unwrap();
+
+    let repo = FileHostRepository::for_test(None, Vec::new(), Some(main));
+    let first = repo.load_hosts().unwrap();
+    assert_eq!(
+        first.iter().find(|host| host.name == "node").unwrap().host,
+        "10.0.0.1"
+    );
+
+    std::fs::write(&included, "Host node\n    HostName 10.200.0.25\n").unwrap();
+    let second = repo.load_hosts().unwrap();
+    assert_eq!(
+        second.iter().find(|host| host.name == "node").unwrap().host,
+        "10.200.0.25"
+    );
+}
+
+#[test]
+fn wildcard_include_refreshes_when_new_file_appears() {
+    let dir = tempfile::tempdir().unwrap();
+    let includes = dir.path().join("conf.d");
+    std::fs::create_dir(&includes).unwrap();
+    let main = dir.path().join("config");
+    std::fs::write(&main, "Include conf.d/*.conf\n").unwrap();
+
+    let repo = FileHostRepository::for_test(None, Vec::new(), Some(main));
+    assert!(
+        !repo
+            .load_hosts()
+            .unwrap()
+            .iter()
+            .any(|host| host.name == "new-node")
+    );
+
+    std::fs::write(
+        includes.join("new.conf"),
+        "Host new-node\n    HostName 10.9.8.7\n",
+    )
+    .unwrap();
+    assert!(
+        repo.load_hosts()
+            .unwrap()
+            .iter()
+            .any(|host| host.name == "new-node")
     );
 }
 

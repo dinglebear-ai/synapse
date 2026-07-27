@@ -93,6 +93,20 @@ fn is_loopback_ipv6_bare() {
 }
 
 #[test]
+fn bind_addr_brackets_bare_ipv6() {
+    let mut config = mcp_with_host("::1");
+    config.port = 40080;
+    assert_eq!(config.bind_addr(), "[::1]:40080");
+}
+
+#[test]
+fn bind_addr_preserves_bracketed_ipv6() {
+    let mut config = mcp_with_host("[::1]");
+    config.port = 40080;
+    assert_eq!(config.bind_addr(), "[::1]:40080");
+}
+
+#[test]
 fn is_loopback_ipv6_bracketed() {
     // "[::1]" bracket-quoted IPv6 — brackets are stripped before parse
     assert!(

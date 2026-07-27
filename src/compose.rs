@@ -17,15 +17,10 @@
 //!   (it carries live status), but its empty config path is backfilled from the
 //!   filesystem scan when available.
 //! - **All commands go over [`SshExecutor`] (B1)** — execvp-style, no shell.
-//!   This keeps discovery independent of B2's bollard wiring; the locked
-//!   decision permits the SSH/shell path for `docker compose ls`.
-//!
-//!   LOCALHOST CAVEAT: B1's `SshPool` has no `HostProtocol::Local` branch yet —
-//!   it SSHes even to `localhost`. Running discovery against a *local* host
-//!   therefore requires an executor with a local-exec branch (or `~/.ssh/config`
-//!   set up for loopback). Wiring local routing into the shared executor is a
-//!   merge-time concern (see B12 integration notes); B12 takes the executor as
-//!   an injected `Arc<dyn SshExecutor>` and does not assume a routing strategy.
+//!   The production `SshPool` implementation is topology-aware: explicit local
+//!   hosts execute directly while SSH hosts, including loopback SSH endpoints,
+//!   retain their configured transport. This keeps discovery independent of
+//!   B2's bollard wiring without sacrificing local Compose support.
 //! - **60s TTL cache, per host**, keyed by complete host topology identity.
 //!   `refresh(host)` invalidates one host; `refresh(None)` invalidates all.
 //! - **Project name** comes from the compose file's top-level `name:` field,
@@ -84,7 +79,7 @@ for path in sys.argv[1:]:
             if line[:1].isspace() or not line.startswith('name:'):
                 continue
             value = line[5:].strip()
-            if value[:1] in ('\"', \"'\"):
+            if value[:1] in ('"', "'"):
                 quote = value[0]
                 end = value.find(quote, 1)
                 value = value[1:end] if end >= 0 else value[1:]

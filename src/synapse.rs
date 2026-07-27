@@ -29,6 +29,8 @@ pub struct HostConfig {
     pub host: String,
     #[serde(default)]
     pub port: Option<u16>,
+    /// Transport is authoritative. Omitted protocols default to SSH so an
+    /// incomplete remote host entry can never execute on the Synapse machine.
     #[serde(default = "default_protocol")]
     pub protocol: HostProtocol,
     #[serde(rename = "sshUser", default)]
@@ -70,6 +72,14 @@ impl HostConfig {
         }
     }
 
+    /// Whether this host explicitly selects local execution.
+    ///
+    /// Hostnames such as `localhost` are not sufficient: an SSH endpoint may
+    /// legitimately use loopback with a different port, user, or namespace.
+    pub fn is_local(&self) -> bool {
+        self.protocol == HostProtocol::Local
+    }
+
     /// Complete identity for every transport-affecting topology field.
     /// Caches must never key only by alias: aliases can be retargeted at runtime.
     pub fn connection_key(&self) -> String {
@@ -89,7 +99,7 @@ impl HostConfig {
 }
 
 fn default_protocol() -> HostProtocol {
-    HostProtocol::Local
+    HostProtocol::Ssh
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize, Default)]
@@ -98,16 +108,17 @@ pub struct HostsFile {
     pub hosts: Vec<HostConfig>,
 }
 
-pub fn validate_safe_path(path: &str) -> Result<()> {
+/// Validate transport-independent path syntax.
+///
+/// This function deliberately performs no filesystem lookup. Remote paths must
+/// be judged on the remote host, not against an unrelated path on this machine.
+pub fn validate_path_syntax(path: &str) -> Result<()> {
     if path.is_empty() {
         bail!("path must not be empty");
     }
-
-    // SECURITY FIX: Require absolute path (starts with /)
     if !path.starts_with('/') {
         bail!("absolute path required");
     }
-
     if path.split('/').any(|part| part == "..") {
         bail!("path traversal is not allowed");
     }
@@ -117,28 +128,28 @@ pub fn validate_safe_path(path: &str) -> Result<()> {
     {
         bail!("path contains unsafe characters");
     }
+    Ok(())
+}
 
-    // SECURITY FIX: Reject symlinks via symlink_metadata before any read.
-    // std::fs::read_to_string follows symlinks — this protects against
-    // symlink-based arbitrary file reads in world-writable directories.
+/// Validate a local path before descriptor-bound access.
+pub fn validate_safe_path(path: &str) -> Result<()> {
+    validate_path_syntax(path)?;
+
     match std::fs::symlink_metadata(path) {
-        Ok(metadata) => {
-            if metadata.file_type().is_symlink() {
-                bail!("symlinks not permitted");
-            }
-        }
-        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
-            // Path doesn't exist yet — this is OK (e.g., during file creation).
-            // The actual operation (read/write) will check existence.
-        }
+        Ok(metadata) if metadata.file_type().is_symlink() => bail!("symlinks not permitted"),
+        Ok(_) => {}
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
         Err(e) => bail!("cannot validate path: {e}"),
     }
-
     Ok(())
 }
 
 pub fn validate_scout_read_path(host: &HostConfig, path: &str) -> Result<()> {
-    validate_safe_path(path)?;
+    if host.is_local() {
+        validate_safe_path(path)?;
+    } else {
+        validate_path_syntax(path)?;
+    }
     reject_sensitive_read_path(path)?;
 
     let roots = scout_allowed_read_roots(host);
@@ -146,7 +157,10 @@ pub fn validate_scout_read_path(host: &HostConfig, path: &str) -> Result<()> {
         bail!("scout file reads are disabled for host {}", host.name);
     }
 
-    if roots.iter().any(|root| path_is_under_root(path, root)) {
+    if roots
+        .iter()
+        .any(|root| path_is_under_root(host, path, root))
+    {
         return Ok(());
     }
 
@@ -168,10 +182,7 @@ pub fn scout_allowed_read_roots(host: &HostConfig) -> Vec<String> {
         } else {
             root.trim_end_matches('/')
         };
-        if root.is_empty() {
-            continue;
-        }
-        if validate_safe_path(root).is_err() {
+        if root.is_empty() || validate_path_syntax(root).is_err() {
             continue;
         }
         if !roots.iter().any(|existing| existing == root) {
@@ -206,21 +217,23 @@ fn reject_sensitive_read_path(path: &str) -> Result<()> {
     Ok(())
 }
 
-fn path_is_under_root(path: &str, root: &str) -> bool {
+fn path_is_under_root(host: &HostConfig, path: &str, root: &str) -> bool {
     if root == "/" {
         return true;
     }
 
-    let path_obj = Path::new(path);
-    let root_obj = Path::new(root);
-    if path_obj.exists()
-        && root_obj.exists()
-        && let (Ok(canonical_path), Ok(canonical_root)) = (
-            std::fs::canonicalize(path_obj),
-            std::fs::canonicalize(root_obj),
-        )
-    {
-        return canonical_path.starts_with(canonical_root);
+    if host.is_local() {
+        let path_obj = Path::new(path);
+        let root_obj = Path::new(root);
+        if path_obj.exists()
+            && root_obj.exists()
+            && let (Ok(canonical_path), Ok(canonical_root)) = (
+                std::fs::canonicalize(path_obj),
+                std::fs::canonicalize(root_obj),
+            )
+        {
+            return canonical_path.starts_with(canonical_root);
+        }
     }
 
     path == root

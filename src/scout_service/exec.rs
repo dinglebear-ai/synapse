@@ -19,10 +19,10 @@
 //!   without a shell, so remote emit targets reject `path` instead of silently
 //!   ignoring it.
 //!
-//! - **beam** validates BOTH source and destination paths via `validate_safe_path`.
-//!   The transfer is implemented via `scp` launched as a subprocess (no shell
-//!   wrapping — args are passed as typed arguments). `scp` is not in the user
-//!   exec allowlist; it is an internal-only transfer primitive.
+//! - **beam** validates BOTH endpoints against each host's configured read roots
+//!   and sensitive-path policy. Transfer is delegated to `SshExecutor`, whose
+//!   production implementation uses descriptor-confined local/remote file IO
+//!   with a bounded payload and no ambient `scp` process.
 //!
 //! - `git` is deliberately NOT in `ALLOWED_READ_COMMANDS` (removed by B0 security
 //!   review: arbitrary config injection via `git -c core.editor=...`). Requests
@@ -43,7 +43,7 @@ use crate::elicitation_gate::Confirmer;
 use crate::fanout::{FanoutOutcome, fanout};
 use crate::flux_service::host::is_local_host;
 use crate::ssh::SshExecutor;
-use crate::synapse::{HostConfig, validate_command, validate_command_args, validate_safe_path};
+use crate::synapse::{HostConfig, validate_command, validate_command_args};
 use crate::synapse::{command_filesystem_operand_indices, validate_scout_read_path};
 
 const BOUND_EXEC_SCRIPT: &str = r#"import json, os, sys
@@ -232,8 +232,12 @@ pub async fn emit(
 
     let target_paths = target_paths_by_host(targets)?;
 
-    // Pre-validate command name against the global allowlist before confirmation.
-    validate_command(command, &[])?;
+    // Validate every target's command policy before asking for confirmation.
+    // A host-specific custom command is valid only when every selected target
+    // explicitly allowlists it.
+    for target in targets {
+        validate_command(command, &target.host.exec_allowlist)?;
+    }
 
     let target_labels: Vec<String> = targets
         .iter()
@@ -322,7 +326,7 @@ fn target_paths_by_host(targets: &[EmitTarget]) -> Result<HashMap<String, Option
     let mut paths = HashMap::new();
     for target in targets {
         if let Some(path) = &target.path {
-            validate_safe_path(path)?;
+            validate_scout_read_path(&target.host, path)?;
         }
         match paths.get(&target.host.name) {
             Some(existing) if existing != &target.path => {
@@ -359,127 +363,33 @@ async fn exec_remote_fanout(
 
 // ─── beam ────────────────────────────────────────────────────────────────────
 
-/// Transfer a file from `source_host:source_path` to `dest_host:dest_path`.
-///
-/// Implemented via `scp` (a subprocess — no shell wrapping). Both endpoints
-/// must be on the same SSH host, or one must be local; cross-host transfers
-/// route through local as a relay are not yet supported (surfaced as an error).
-///
-/// Destructive gate fires before any IO.
+/// Transfer one bounded file between managed hosts. Both endpoints obey the
+/// same read-root and sensitive-path policy as `peek`/`delta`; the production
+/// executor performs descriptor-confined local or SSH file IO.
 pub async fn beam(
     source_host: &HostConfig,
     source_path: &str,
     dest_host: &HostConfig,
     dest_path: &str,
+    executor: &dyn SshExecutor,
     confirmer: &dyn Confirmer,
 ) -> Result<Value> {
-    validate_safe_path(source_path)?;
-    validate_safe_path(dest_path)?;
+    validate_scout_read_path(source_host, source_path)?;
+    validate_scout_read_path(dest_host, dest_path)?;
 
     let source_label = format!("{}:{}", source_host.name, source_path);
     let dest_label = format!("{}:{}", dest_host.name, dest_path);
-
-    let details = format!("{source_label} → {dest_label}");
+    let details = format!("{source_label} -> {dest_label}");
     confirmer.require("scout:beam", &details).await?;
 
-    // Build scp args (no shell — args are typed, not interpolated).
-    // scp format: scp [user@]host:path [user@]host:path
-    // For local hosts we use the bare path (no host prefix).
-    // Port is passed as a separate -P flag, never embedded in the address
-    // string, to avoid ambiguity and injection risks (S-M4).
-    let src_arg = scp_arg(source_host, source_path)?;
-    let dst_arg = scp_arg(dest_host, dest_path)?;
-
-    // Determine the SSH port from the source or dest host (both must agree if
-    // both are remote; source host takes precedence).
-    let port_str: Option<String> = source_host
-        .ssh_port
-        .or(dest_host.ssh_port)
-        .map(|p| p.to_string());
-
-    let mut scp_args: Vec<&str> = vec!["-q", "-o", "StrictHostKeyChecking=yes"];
-    if let Some(ref p) = port_str {
-        scp_args.push("-P");
-        scp_args.push(p.as_str());
-    }
-    scp_args.push(src_arg.as_str());
-    scp_args.push(dst_arg.as_str());
-
-    let output = crate::runtime_budget::run_local_command("scp", &scp_args, None).await?;
-
-    if !output.success() {
-        bail!("beam: scp failed: {}", output.stderr);
-    }
+    let transferred_bytes = executor
+        .transfer_file(source_host, source_path, dest_host, dest_path)
+        .await?;
 
     Ok(json!({
         "source": source_label,
         "destination": dest_label,
         "status": "transferred",
+        "bytes": transferred_bytes,
     }))
-}
-
-// ─── SSH identity validators (S-M4) ─────────────────────────────────────────
-
-/// Validate an SSH username before embedding it in an scp argument.
-///
-/// Accepts: ASCII alphanumeric characters, `-`, `_`, and `.`.
-/// Rejects: anything else, including leading `-` that could be treated as an
-/// scp option, whitespace, shell metacharacters, and ProxyCommand injection
-/// attempts (e.g. `-oProxyCommand=...`).
-fn validate_ssh_user(user: &str) -> Result<()> {
-    if user.is_empty() {
-        bail!("ssh_user must not be empty");
-    }
-    if !user
-        .chars()
-        .all(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '_' | '.'))
-    {
-        bail!(
-            "ssh_user contains invalid characters (only ASCII alphanumeric, `-`, `_`, `.` allowed): {user:?}"
-        );
-    }
-    if user.starts_with('-') {
-        bail!("ssh_user must not start with `-` (got: {user:?})");
-    }
-    Ok(())
-}
-
-/// Validate an SSH hostname before embedding it in an scp argument.
-///
-/// Accepts: ASCII alphanumeric characters, `-`, `.`.
-/// Rejects: anything else, including whitespace, `@`, colons, and options.
-fn validate_ssh_host(host_str: &str) -> Result<()> {
-    if host_str.is_empty() {
-        bail!("host must not be empty");
-    }
-    if !host_str
-        .chars()
-        .all(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '.'))
-    {
-        bail!(
-            "host contains invalid characters (only ASCII alphanumeric, `-`, `.` allowed): {host_str:?}"
-        );
-    }
-    if host_str.starts_with('-') {
-        bail!("host must not start with `-` (got: {host_str:?})");
-    }
-    Ok(())
-}
-
-/// Format the scp argument for a host + path.
-///
-/// The port is passed as a SEPARATE `-P` argument (not embedded in the address)
-/// to avoid any ambiguity. `ssh_user` and `host.host` are validated before use.
-fn scp_arg(host: &HostConfig, path: &str) -> Result<String> {
-    if is_local_host(host) {
-        return Ok(path.to_owned());
-    }
-    validate_ssh_host(&host.host)?;
-    match &host.ssh_user {
-        Some(user) => {
-            validate_ssh_user(user)?;
-            Ok(format!("{user}@{}:{path}", host.host))
-        }
-        None => Ok(format!("{}:{path}", host.host)),
-    }
 }
