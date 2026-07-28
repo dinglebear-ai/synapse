@@ -13,7 +13,7 @@ This is the entrypoint for repository-local generated documentation under `/open
 
 - It documents **how OpenWiki is refreshed and tracked** for this repository.
 - It links to authoritative source files that define the current generation workflow and source-of-truth usage guidance.
-- It points to the project’s primary hand-authored docs in `docs/` for deep technical details (architecture, runtime, API, and deployment) while the generated OpenWiki is kept intentionally focused and minimal.
+- It points to the project's primary hand-authored docs in `docs/` for deep technical details (architecture, runtime, API, and deployment) while the generated OpenWiki is kept intentionally focused and minimal.
 
 ## OpenWiki refresh flow
 
@@ -27,7 +27,7 @@ The source of this process is [`.github/workflows/openwiki-update.yml`](/.github
 
 Why it matters:
 - The workflow file is the source of automation truth, while [`.last-update metadata`](./.last-update.json) records when and from which commit this wiki was generated.
-- The repository’s contributor guidance in [`CLAUDE.md`](/CLAUDE.md) now points back to this page, so drift here blocks onboarding and recovery.
+- The repository's contributor guidance in [`CLAUDE.md`](/CLAUDE.md) now points back to this page, so drift here blocks onboarding and recovery.
 
 ## Last-update provenance
 
@@ -46,6 +46,6 @@ The authoritative run stamp is kept in [`.last-update.json`](./.last-update.json
 
 ## Backlog
 
-- `openwiki/architecture.md` — no generated architecture page exists yet; the repository already has canonical architecture text in `docs/ARCHITECTURE.md`.
-- `openwiki/operations.md` — no generated operations/process page exists yet; canonical procedures are in `docs/CI.md`, `docs/DEPLOYMENT.md`, and `docs/SECURITY.md`.
-- `openwiki/domain.md` — no generated service-domain page exists yet; canonical runtime/domain detail is spread across `docs/QUICKSTART.md` and `README.md`.
+- `openwiki/architecture.md` - no generated architecture page exists yet; the repository already has canonical architecture text in `docs/ARCHITECTURE.md`.
+- `openwiki/operations.md` - no generated operations/process page exists yet; canonical procedures are in `docs/CI.md`, `docs/DEPLOYMENT.md`, and `docs/SECURITY.md`.
+- `openwiki/domain.md` - no generated service-domain page exists yet; canonical runtime/domain detail is spread across `docs/QUICKSTART.md` and `README.md`.
