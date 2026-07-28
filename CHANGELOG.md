@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
                Format: ## [X.Y.Z] — YYYY-MM-DD
                Use Added / Changed / Deprecated / Removed / Fixed / Security headers. -->
 
+## [0.6.2](https://github.com/dinglebear-ai/synapse/compare/v0.6.1...v0.6.2) (2026-07-28)
+
+
+### Fixed
+
+* complete comprehensive Synapse review remediation ([#75](https://github.com/dinglebear-ai/synapse/issues/75)) ([43e4498](https://github.com/dinglebear-ai/synapse/commit/43e44984884b9b56170c20f9cb3251e889b3c686))
+
 ## [0.6.1](https://github.com/jmagar/synapse/compare/v0.6.0...v0.6.1) (2026-07-18)
 
 

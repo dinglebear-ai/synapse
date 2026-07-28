@@ -3,7 +3,7 @@
   "name": "ai.dinglebear/synapse-rmcp",
   "title": "Synapse RMCP",
   "description": "Rust MCP and CLI server for Docker, host inspection, SSH, logs, ZFS, and safe file operations.",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "websiteUrl": "https://github.com/jmagar/synapse",
   "repository": {
     "url": "https://github.com/jmagar/synapse",
@@ -25,7 +25,7 @@
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
       "identifier": "synapse-rmcp",
-      "version": "0.6.1",
+      "version": "0.6.2",
       "runtimeHint": "npx",
       "packageArguments": [
         {
@@ -105,11 +105,11 @@
       "namespace": "ai.dinglebear",
       "dnsDomain": "dinglebear.ai",
       "distribution": {
-        "npm": "synapse-rmcp@0.6.1",
+        "npm": "synapse-rmcp@0.6.2",
         "nodePackage": "synapse-rmcp"
       },
       "buildInfo": {
-        "version": "0.6.1",
+        "version": "0.6.2",
         "repository": "https://github.com/jmagar/synapse"
       }
     }
