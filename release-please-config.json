@@ -67,7 +67,32 @@
       "component": "synapse-rmcp",
       "changelog-path": "CHANGELOG.md",
       "extra-files": [
-        "packages/synapse-rmcp/package.json"
+        "packages/synapse-rmcp/package.json",
+        {
+          "type": "json",
+          "path": "docs/generated/openapi.json",
+          "jsonpath": "$.info.version"
+        },
+        {
+          "type": "json",
+          "path": "server.json",
+          "jsonpath": "$.version"
+        },
+        {
+          "type": "json",
+          "path": "server.json",
+          "jsonpath": "$.packages[?(@.identifier == 'synapse-rmcp')].version"
+        },
+        {
+          "type": "json",
+          "path": "server.json",
+          "jsonpath": "$['_meta']['io.modelcontextprotocol.registry/publisher-provided'].distribution.npm"
+        },
+        {
+          "type": "json",
+          "path": "server.json",
+          "jsonpath": "$['_meta']['io.modelcontextprotocol.registry/publisher-provided'].buildInfo.version"
+        }
       ]
     }
   }
