@@ -331,7 +331,6 @@ jobs:
       - name: Enforce time-bounded yanked exceptions
         run: python3 scripts/check-yanked-exceptions.py
 
-  # ── gitleaks: secret scanning ─────────────────────────────────────────────────
   npm:
     name: npm launcher
     runs-on: [self-hosted, unraid]
