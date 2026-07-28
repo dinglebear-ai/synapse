@@ -2,11 +2,11 @@
 title: "Web UI"
 doc_type: "guide"
 status: "active"
-owner: "synapse2"
+owner: "synapse"
 audience:
   - "contributors"
   - "agents"
-scope: "synapse2"
+scope: "synapse"
 source_of_truth: true
 upstream_refs:
   - "docs/PATTERNS.md"
@@ -133,7 +133,7 @@ The UI calls:
 - `/status`
 - `/activity` for the shared, server-sequenced REST/MCP event stream
 - `/capabilities` for the current credential's scopes and destructive-action policy
-- `/v1/synapse2`
+- `/v1/synapse`
 - `/mcp` for MCP clients rather than browser UI calls
 
 ## Browser authentication

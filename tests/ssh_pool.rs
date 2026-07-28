@@ -9,8 +9,8 @@
 //!   - connect, exec `hostname`, reconnect, reuse (1 connect, N commands)
 //!   - shutdown drops all sessions (no orphaned `ssh` processes)
 
-use synapse2::ssh::{SshExecutor, SshPool};
-use synapse2::synapse::{HostConfig, HostProtocol};
+use synapse::ssh::{SshExecutor, SshPool};
+use synapse::synapse::{HostConfig, HostProtocol};
 
 fn localhost() -> HostConfig {
     let port = std::env::var("SYNAPSE_TEST_SSH_PORT")
@@ -70,10 +70,10 @@ async fn pool_connects_execs_and_reuses_against_localhost() {
 
     // Exec with args (execvp-style, no shell).
     let echoed = pool
-        .exec(&host, "echo", &["synapse2-ssh-ok"])
+        .exec(&host, "echo", &["synapse-ssh-ok"])
         .await
         .expect("echo exec");
-    assert_eq!(echoed.stdout.trim(), "synapse2-ssh-ok");
+    assert_eq!(echoed.stdout.trim(), "synapse-ssh-ok");
 
     // Shutdown drops the session.
     pool.shutdown().await;

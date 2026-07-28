@@ -42,7 +42,7 @@ just dist
 
 Respects `CARGO_TARGET_DIR` if set. After running, commit the updated `bin/` pointer and push to update LFS.
 
-For Synapse2 this copies the `synapse` binary, matching the `[[bin]]` entry in
+For Synapse this copies the `synapse` binary, matching the `[[bin]]` entry in
 `Cargo.toml`.
 
 ---
@@ -107,7 +107,7 @@ Example output:
 Environment check complete.
 ```
 
-Synapse2 has no required upstream API credential. `SYNAPSE_MCP_TOKEN` is required
+Synapse has no required upstream API credential. `SYNAPSE_MCP_TOKEN` is required
 only for non-loopback bearer-mode HTTP deployments.
 
 ---

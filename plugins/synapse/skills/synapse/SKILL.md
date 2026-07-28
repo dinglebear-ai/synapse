@@ -1,9 +1,9 @@
 ---
-name: synapse2
-description: "Use when the user needs to inspect or manage Synapse2-managed Docker/Compose infrastructure via flux, or SSH/local host files, processes, logs, ZFS, and allowlisted commands via scout. Prefer MCP tools first, CLI second, REST last; use write or confirmation-gated actions only when explicitly requested or necessary."
+name: synapse
+description: "Use when the user needs to inspect or manage Synapse-managed Docker/Compose infrastructure via flux, or SSH/local host files, processes, logs, ZFS, and allowlisted commands via scout. Prefer MCP tools first, CLI second, REST last; use write or confirmation-gated actions only when explicitly requested or necessary."
 ---
 
-# synapse2
+# synapse
 
 <!-- TIER 1: Quick-reference table and critical gotchas -->
 
@@ -141,7 +141,7 @@ Representative response keys:
 
 Use neutral tool-call examples in shared skill docs:
 `flux(action="...", subaction="...")` and `scout(action="...")`.
-Codex may expose these as `mcp__synapse2__flux` and `mcp__synapse2__scout`.
+Codex may expose these as `mcp__synapse__flux` and `mcp__synapse__scout`.
 
 ### Investigate a host's Docker stack
 
@@ -230,10 +230,10 @@ synapse setup check
 
 ### Tier 3: REST API
 
-When the MCP transport is unavailable, use `POST /v1/synapse2` with a bearer token:
+When the MCP transport is unavailable, use `POST /v1/synapse` with a bearer token:
 
 ```bash
-curl -sX POST "http://${SYNAPSE_MCP_HOST:-127.0.0.1}:${SYNAPSE_MCP_PORT:-40080}/v1/synapse2" \
+curl -sX POST "http://${SYNAPSE_MCP_HOST:-127.0.0.1}:${SYNAPSE_MCP_PORT:-40080}/v1/synapse" \
   -H "Authorization: Bearer $SYNAPSE_MCP_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"action":"flux.docker.info","params":{}}'

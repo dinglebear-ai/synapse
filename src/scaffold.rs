@@ -62,7 +62,7 @@ pub fn scaffold_intent(input: ScaffoldIntent) -> Result<Value> {
     let env_prefix = input.env_prefix.trim().to_ascii_uppercase();
 
     Ok(json!({
-        "kind": "synapse2_scaffold_intent",
+        "kind": "synapse_scaffold_intent",
         "schema_version": 1,
         "server_category": category,
         "required_surfaces": required_surfaces,

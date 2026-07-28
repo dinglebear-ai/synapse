@@ -2,7 +2,7 @@
 title: "Agents-First Design"
 doc_type: "guide"
 status: "active"
-owner: "synapse2"
+owner: "synapse"
 audience:
   - "contributors"
   - "agents"
@@ -13,7 +13,7 @@ last_reviewed: "2026-06-13"
 
 # Agents-first design
 
-Synapse2 is optimized for AI agents as primary operators and consumers. Design
+Synapse is optimized for AI agents as primary operators and consumers. Design
 rule: if an agent can't use it cleanly, fix the output, not the agent.
 
 ## Design rules
@@ -81,7 +81,7 @@ Agents may use:
 
 1. **MCP tool calls** through `/mcp` or stdio (preferred — full tool schema, scope enforcement)
 2. **CLI commands** for local shell workflows (`synapse scout nodes --json`)
-3. **REST `/v1/synapse2`** when MCP tooling is unavailable (`POST {"action":"scout.nodes","params":{}}`)
+3. **REST `/v1/synapse`** when MCP tooling is unavailable (`POST {"action":"scout.nodes","params":{}}`)
 4. **Plugin skills** as human/agent guidance
 
 The action metadata in `src/actions.rs` keeps these surfaces aligned. Every action that the MCP tool exposes must also be reachable from the CLI (with the exception of MCP-only features like elicitation).

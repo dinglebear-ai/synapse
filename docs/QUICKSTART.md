@@ -1,4 +1,4 @@
-# synapse2 Quickstart
+# synapse Quickstart
 
 This guide gets a local checkout running with loopback-only no-auth MCP HTTP,
 then exercises the current CLI and REST action surfaces.
@@ -33,13 +33,13 @@ cargo run --locked -- scout nodes
 cargo run --locked -- scout exec --host local --command hostname
 ```
 
-Synapse2 discovers SSH hosts from `~/.ssh/config` and always appends the built-in
+Synapse discovers SSH hosts from `~/.ssh/config` and always appends the built-in
 `local` host. Docker actions against `local` use `/var/run/docker.sock`.
 
 ## 3. Try the REST action endpoint
 
 ```bash
-curl -s http://127.0.0.1:40080/v1/synapse2 \
+curl -s http://127.0.0.1:40080/v1/synapse \
   -H "Content-Type: application/json" \
   -d '{"action":"flux.docker.info","params":{"host":"local"}}' | jq .
 ```

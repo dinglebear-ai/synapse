@@ -70,10 +70,10 @@ RUN sed -i 's/, \"xtask\"//g; s/\"xtask\", //g; s/\"xtask\"//g' Cargo.toml
 
 # TEMPLATE: Replace "example" cache IDs with your service name to avoid
 #           sharing cache with other projects on the same build host.
-RUN --mount=type=cache,id=synapse2-cargo-registry,target=/usr/local/cargo/registry,sharing=locked \
-    --mount=type=cache,id=synapse2-cargo-git,target=/usr/local/cargo/git,sharing=locked \
-    --mount=type=cache,id=synapse2-cargo-target,target=/app/target,sharing=locked \
-    mkdir src && echo "fn main() {}" > src/main.rs && cargo build --release --locked -p synapse2 && rm -rf src
+RUN --mount=type=cache,id=synapse-cargo-registry,target=/usr/local/cargo/registry,sharing=locked \
+    --mount=type=cache,id=synapse-cargo-git,target=/usr/local/cargo/git,sharing=locked \
+    --mount=type=cache,id=synapse-cargo-target,target=/app/target,sharing=locked \
+    mkdir src && echo "fn main() {}" > src/main.rs && cargo build --release --locked -p synapse && rm -rf src
 
 # ── Application build ─────────────────────────────────────────────────────────
 # Now copy the real source and build the actual binary.
@@ -83,10 +83,10 @@ COPY src/ src/
 COPY docs/generated/openapi.json docs/generated/openapi.json
 # Embed the Next.js static export built in the web stage.
 COPY --from=web /app/apps/web/out/ apps/web/out/
-RUN --mount=type=cache,id=synapse2-cargo-registry,target=/usr/local/cargo/registry,sharing=locked \
-    --mount=type=cache,id=synapse2-cargo-git,target=/usr/local/cargo/git,sharing=locked \
-    --mount=type=cache,id=synapse2-cargo-target,target=/app/target,sharing=locked \
-    touch src/main.rs && cargo build --release --locked -p synapse2 && \
+RUN --mount=type=cache,id=synapse-cargo-registry,target=/usr/local/cargo/registry,sharing=locked \
+    --mount=type=cache,id=synapse-cargo-git,target=/usr/local/cargo/git,sharing=locked \
+    --mount=type=cache,id=synapse-cargo-target,target=/app/target,sharing=locked \
+    touch src/main.rs && cargo build --release --locked -p synapse && \
     cp target/release/synapse /usr/local/bin/synapse
 
 # ── Stage 4: Runtime ──────────────────────────────────────────────────────────
@@ -176,7 +176,7 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
 
 # MCP registry label — used by Claude Code plugin discovery.
 # TEMPLATE: Replace with your registry path: "tv.tootie/yourservice-mcp"
-LABEL io.modelcontextprotocol.server.name="tv.tootie/synapse2"
+LABEL io.modelcontextprotocol.server.name="tv.tootie/synapse"
 
 # Entrypoint handles permission setup and privilege drop.
 # CMD is the default argument passed to entrypoint.sh.

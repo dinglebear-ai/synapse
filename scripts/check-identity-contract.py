@@ -38,8 +38,8 @@ def main() -> int:
 
     mcporter = json.loads(read("config/mcporter.json"))
     expected = {"url": "http://localhost:40080/mcp", "transport": "http"}
-    if mcporter.get("mcpServers") != {"synapse2": expected}:
-        failures.append("config/mcporter.json must define only synapse2 at localhost:40080/mcp")
+    if mcporter.get("mcpServers") != {"synapse": expected}:
+        failures.append("config/mcporter.json must define only synapse at localhost:40080/mcp")
 
     operations = read("src/actions/operations.rs")
     if len(re.findall(r"^\s*operation!\(", operations, re.MULTILINE)) != 59:

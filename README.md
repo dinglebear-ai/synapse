@@ -36,8 +36,8 @@ commands, covering all 59 production actions from the original TypeScript server
 
 ## Naming
 
-The repository is `synapse-rmcp`, the Rust crate is `synapse2`, the MCP server
-identity is `synapse2`, and the installed binary is `synapse`. The npm launcher
+The repository is `synapse-rmcp`, the Rust crate is `synapse`, the MCP server
+identity is `synapse`, and the installed binary is `synapse`. The npm launcher
 package is `synapse-rmcp`.
 
 Across most of the RMCP family, naming follows
@@ -97,7 +97,7 @@ The production image includes Python 3 plus the official Docker CLI/Compose
 plugin because Scout's remote descriptor wrappers and Flux Compose operations
 invoke those runtime tools. The image does not contain a Docker daemon; Flux
 uses the mounted socket or SSH-forwarded remote socket. Persistent appdata lives
-at `~/.synapse2` on the host and `/data` in the container.
+at `~/.synapse` on the host and `/data` in the container.
 
 ## Quickstart
 
@@ -168,7 +168,7 @@ Streamable HTTP uses `/mcp` on the configured host and port:
 
 ## Plugin Packages
 
-`plugins/synapse2/` ships Claude Code, Codex, and Gemini CLI manifests that all
+`plugins/synapse/` ships Claude Code, Codex, and Gemini CLI manifests that all
 point at the same HTTP MCP endpoint and the same shared skill.
 
 These packages contain **no lifecycle hooks**. Connecting to a server that is
@@ -182,7 +182,7 @@ synapse setup plugin-hook              # check, then repair on blocking failures
 synapse setup plugin-hook --no-repair  # audit only; never mutates appdata
 ```
 
-Export the relevant `SYNAPSE_*` variables (or write them to `~/.synapse2/.env`)
+Export the relevant `SYNAPSE_*` variables (or write them to `~/.synapse/.env`)
 first; `plugins/README.md` maps each plugin option to its variable. Re-run
 `synapse setup install` after a plugin update.
 
@@ -433,7 +433,7 @@ present; local operator usage can stay on stdio.
 
 ## Known Parity Gaps
 
-`synapse2` achieves **action-level parity** with `synapse-mcp` — all 59
+`synapse` achieves **action-level parity** with `synapse-mcp` — all 59
 production actions from `synapse-mcp/docs/INVENTORY.md` are implemented. However,
 the following features from the original TypeScript server are **not yet ported**:
 
@@ -515,7 +515,7 @@ ScoutService  (src/scout_service/) SSH/exec/fs/zfs/logs ops
       ↓ via SynapseService facade (src/app.rs)
 MCP shims     (src/mcp/tools.rs)  tool args → service → Value
 CLI shim      (src/cli.rs)        argv → service → stdout
-REST layer    (src/api.rs)        POST /v1/synapse2 → service → JSON
+REST layer    (src/api.rs)        POST /v1/synapse → service → JSON
 ```
 
 ## Development
@@ -537,7 +537,7 @@ Useful docs:
 - `docs/API.md` for full tool contracts
 - `docs/CONFIG.md` for environment and auth
 - `docs/QUICKSTART.md` for local smoke tests
-- `plugins/synapse2/skills/synapse2/SKILL.md` for agent usage guidance
+- `plugins/synapse/skills/synapse/SKILL.md` for agent usage guidance
 - `tests/parity.rs` for automated parity verification against synapse-mcp INVENTORY
 
 ## Documentation
@@ -549,7 +549,7 @@ Source-of-truth docs and code are split as follows:
 - `docs/MCP_SCHEMA.md` for MCP schema shape and drift expectations.
 - `docs/CONFIG.md` for environment and auth policy.
 - `docs/QUICKSTART.md` for local smoke tests.
-- `docs/PLUGINS.md` and `plugins/synapse2/skills/synapse2/SKILL.md` for agent
+- `docs/PLUGINS.md` and `plugins/synapse/skills/synapse/SKILL.md` for agent
   and marketplace usage.
 - `docs/generated/openapi.json` for generated OpenAPI output.
 - `src/flux_service/`, `src/scout_service/`, and `src/mcp/` for runtime source

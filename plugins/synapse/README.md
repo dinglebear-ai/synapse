@@ -1,11 +1,11 @@
-# synapse2 plugin
+# synapse plugin
 
-Multi-platform plugin package that connects Claude Code, Codex, and Gemini CLI to the Synapse2 MCP server.
+Multi-platform plugin package that connects Claude Code, Codex, and Gemini CLI to the Synapse MCP server.
 
 ## Structure
 
 ```
-plugins/synapse2/
+plugins/synapse/
 ├── .claude-plugin/
 │   └── plugin.json         # Claude Code manifest
 ├── .codex-plugin/
@@ -18,7 +18,7 @@ plugins/synapse2/
 ├── monitors/
 │   └── monitors.json       # Background health monitor (requires Claude Code v2.1.105+)
 └── skills/
-    └── synapse2/
+    └── synapse/
         └── SKILL.md        # Tool documentation (shared by Claude, Codex, Gemini)
 ```
 
@@ -69,7 +69,7 @@ synapse setup plugin-hook              # check, then repair on blocking failures
 synapse setup plugin-hook --no-repair  # audit only; never mutates appdata
 ```
 
-Export the matching `SYNAPSE_*` variables (or write them into `~/.synapse2/.env`)
+Export the matching `SYNAPSE_*` variables (or write them into `~/.synapse/.env`)
 first — the removed hook used to translate the plugin options for you. See
 `plugins/README.md` for the option→variable mapping. Re-run
 `synapse setup install` after a plugin update.
@@ -93,7 +93,7 @@ Disabling the plugin mid-session does not stop an already-running monitor; it st
 
 ## Skills
 
-`skills/synapse2/SKILL.md` is the three-tier structured documentation for the `synapse2` MCP tool. The AI reads Tier 1 for quick lookups, Tier 2 for parameter details, Tier 3 for multi-step workflows.
+`skills/synapse/SKILL.md` is the three-tier structured documentation for the `synapse` MCP tool. The AI reads Tier 1 for quick lookups, Tier 2 for parameter details, Tier 3 for multi-step workflows.
 
 ## Packaging checklist
 

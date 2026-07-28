@@ -2,7 +2,7 @@
 title: "Documentation"
 doc_type: "guide"
 status: "active"
-owner: "synapse2"
+owner: "synapse"
 audience:
   - "contributors"
   - "agents"
@@ -104,7 +104,7 @@ Every `docs/*.md` file opens with YAML frontmatter:
 title: "Human-readable title"
 doc_type: "guide"          # guide | contract | spec | session | report
 status: "active"           # active | draft | deprecated
-owner: "synapse2"          # repo name or team
+owner: "synapse"          # repo name or team
 audience:
   - "contributors"
   - "agents"
@@ -124,7 +124,7 @@ last_reviewed: "2026-05-15"
 | `status` | `active`, `draft`, `deprecated` | `active` = current and maintained; `draft` = in progress; `deprecated` = superseded by another file. |
 | `source_of_truth` | `true` / `false` | `true` only when this file IS the authoritative record. Most guides are `false` — they summarize the code or reference `PATTERNS.md`. When a doc disagrees with `source_of_truth: true` code, update the doc. |
 | `upstream_refs` | file paths | Where to go when this doc and reality diverge. Code files beat docs. |
-| `scope` | `family`, `service` | `family` = normative across all rmcp servers; `service` = Synapse2-specific. |
+| `scope` | `family`, `service` | `family` = normative across all rmcp servers; `service` = Synapse-specific. |
 
 ### CLAUDE.md / AGENTS.md / GEMINI.md
 
@@ -140,7 +140,7 @@ behavior.
 title: "Documentation Instructions"
 doc_type: "guide"
 status: "active"
-owner: "synapse2"
+owner: "synapse"
 audience:
   - "contributors"
   - "agents"

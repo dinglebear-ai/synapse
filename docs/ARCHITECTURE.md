@@ -2,11 +2,11 @@
 title: "Architecture"
 doc_type: "guide"
 status: "active"
-owner: "synapse2"
+owner: "synapse"
 audience:
   - "contributors"
   - "agents"
-scope: "synapse2"
+scope: "synapse"
 source_of_truth: false
 upstream_refs:
   - "src/actions.rs"
@@ -16,7 +16,7 @@ last_reviewed: "2026-07-27"
 
 # Architecture
 
-Synapse2 is a Rust MCP + CLI server for local infrastructure workflows. It
+Synapse is a Rust MCP + CLI server for local infrastructure workflows. It
 exposes two MCP tools:
 
 - `flux` for Docker, container, compose, and host status actions.
@@ -178,7 +178,7 @@ Port 40080
   ├── /health               → Unauthenticated liveness probe
   ├── /ready                → Unauthenticated bounded topology readiness
   ├── /status               → Public redacted runtime state
-  ├── /v1/synapse2          → REST API action dispatch
+  ├── /v1/synapse          → REST API action dispatch
   ├── /.well-known/*        → OAuth metadata (when auth_mode=oauth)
   └── /*                    → SPA fallback (serves embedded web UI)
 ```
@@ -192,7 +192,7 @@ pub fn router(state: AppState) -> Router {
         .route("/status", get(status));
 
     let api = Router::new()
-        .route("/v1/synapse2", post(api_dispatch))
+        .route("/v1/synapse", post(api_dispatch))
         .route_layer(auth_layer.clone());
 
     let mcp = Router::new()

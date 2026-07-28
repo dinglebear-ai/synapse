@@ -2,7 +2,7 @@
 title: "Pre-commit Hooks"
 doc_type: "guide"
 status: "active"
-owner: "synapse2"
+owner: "synapse"
 audience:
   - "contributors"
   - "agents"

@@ -1,5 +1,5 @@
 # =============================================================================
-# Justfile — Development and deployment commands for the Synapse2 MCP server
+# Justfile — Development and deployment commands for the Synapse MCP server
 #
 # Usage: just <recipe>   (install just: cargo install just)
 # =============================================================================
@@ -268,7 +268,7 @@ setup:
 
 # Build the Docker image from source (does not start the container)
 docker-build:
-    docker build -f config/Dockerfile -t synapse2 .
+    docker build -f config/Dockerfile -t synapse .
 
 # Start the Docker Compose stack in detached mode
 # TEMPLATE: The compose file references the "jakenet" external network.
@@ -354,10 +354,10 @@ build-plugin: build-release
     if [ ! -x "${target_dir}/release/synapse" ] && [ -x ".cache/cargo/release/synapse" ]; then
         target_dir=".cache/cargo"
     fi
-    mkdir -p bin plugins/synapse2/bin
+    mkdir -p bin plugins/synapse/bin
     install -m 755 "${target_dir}/release/synapse" bin/synapse
-    install -m 755 "${target_dir}/release/synapse" plugins/synapse2/bin/synapse
-    echo "Installed bin/synapse and plugins/synapse2/bin/synapse"
+    install -m 755 "${target_dir}/release/synapse" plugins/synapse/bin/synapse
+    echo "Installed bin/synapse and plugins/synapse/bin/synapse"
 
 # Explicit binary artifact sync. This replaces hidden Cargo rustc-wrapper side effects.
 sync-bin: build-plugin

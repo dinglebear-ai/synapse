@@ -2,7 +2,7 @@
 title: "xtasks"
 doc_type: "guide"
 status: "active"
-owner: "synapse2"
+owner: "synapse"
 audience:
   - "contributors"
   - "agents"
@@ -28,7 +28,7 @@ xtask/
 
 | Command | Purpose |
 |---|---|
-| `cargo xtask dist` | Build release binary and copy it to `plugins/synapse2/bin/synapse`. |
+| `cargo xtask dist` | Build release binary and copy it to `plugins/synapse/bin/synapse`. |
 | `cargo xtask ci` | Run local CI sequence: fmt, clippy, tests, taplo, patterns, audit when tools exist. |
 | `cargo xtask symlink-docs` | Create `AGENTS.md` and `GEMINI.md` symlinks next to each `CLAUDE.md`. |
 | `cargo xtask check-env` | Validate required environment before server start. |
@@ -87,7 +87,7 @@ Run `just symlink-docs` after adding any new `CLAUDE.md` file.
 ```
 ✓ SYNAPSE_MCP_HOST:  127.0.0.1 (set)
 ✗ SYNAPSE_MCP_TOKEN: not set
-  → Set SYNAPSE_MCP_TOKEN in ~/.synapse2/.env or your environment
+  → Set SYNAPSE_MCP_TOKEN in ~/.synapse/.env or your environment
 ```
 
 See `docs/PATTERNS.md` §24 and §48 for the xtask and doctor patterns.

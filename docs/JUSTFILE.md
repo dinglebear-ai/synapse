@@ -2,11 +2,11 @@
 title: "Justfile"
 doc_type: "guide"
 status: "active"
-owner: "synapse2"
+owner: "synapse"
 audience:
   - "contributors"
   - "agents"
-scope: "synapse2"
+scope: "synapse"
 source_of_truth: false
 last_reviewed: "2026-06-12"
 ---
@@ -42,14 +42,14 @@ current recipe list.
 | `just check` | `cargo check`. |
 | `just test` / `just test-ci` | Run cargo-nextest locally or with CI profile. |
 | `just schema-docs-check` | Verify MCP schema contract docs. |
-| `just openapi-check` | Verify generated OpenAPI docs for `/v1/synapse2`. |
+| `just openapi-check` | Verify generated OpenAPI docs for `/v1/synapse`. |
 | `just module-size-check` | Enforce Rust module size budgets. |
 
 ## Deployment recipes
 
 | Recipe | Purpose |
 |---|---|
-| `just docker-build` | Build Docker image `synapse2`. |
+| `just docker-build` | Build Docker image `synapse`. |
 | `just docker-up` / `just docker-down` | Start/stop compose stack. |
 | `just docker-rebuild` | Rebuild image and recreate Docker service. |
 | `just docker-logs` | Follow container logs. |
@@ -63,7 +63,7 @@ current recipe list.
 
 | Recipe | Purpose |
 |---|---|
-| `just build-plugin` | Copy release binary to `bin/synapse` and `plugins/synapse2/bin/synapse`. |
+| `just build-plugin` | Copy release binary to `bin/synapse` and `plugins/synapse/bin/synapse`. |
 | `just sync-bin` | Explicit alias for refreshing repo and plugin binary artifacts. |
 | `just validate-plugin` | Validate Claude/Codex/Gemini plugin manifests and skills. |
 | `just dist` | `cargo xtask dist` build and copy release artifacts. |

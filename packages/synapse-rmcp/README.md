@@ -32,8 +32,8 @@ commands, covering all 59 production actions from the original TypeScript server
 
 ## Naming
 
-The repository is `synapse-rmcp`, the Rust crate is `synapse2`, the MCP server
-identity is `synapse2`, and the installed binary is `synapse`. The npm launcher
+The repository is `synapse-rmcp`, the Rust crate is `synapse`, the MCP server
+identity is `synapse`, and the installed binary is `synapse`. The npm launcher
 package is `synapse-rmcp`.
 
 Across most of the RMCP family, naming follows
@@ -417,7 +417,7 @@ Across the rmcp family, naming follows `repo=<service>-rmcp`, `npm=<service>-rmc
 
 ## Known Parity Gaps
 
-`synapse2` achieves **action-level parity** with `synapse-mcp` — all 59
+`synapse` achieves **action-level parity** with `synapse-mcp` — all 59
 production actions from `synapse-mcp/docs/INVENTORY.md` are implemented. However,
 the following features from the original TypeScript server are **not yet ported**:
 
@@ -452,7 +452,7 @@ Key environment variables:
 | `SYNAPSE_MCP_NO_AUTH` | `false` | Disable auth for loopback development only. |
 | `SYNAPSE_NOAUTH` | `false` | Delegate auth/authz to an isolated trusted upstream gateway. |
 | `SYNAPSE_MCP_ALLOW_DESTRUCTIVE` | `false` | Skip destructive-operation confirmation prompts (loopback only). |
-| `SYNAPSE_MCP_MAX_CONCURRENCY` | `50` | Maximum simultaneous in-flight requests on `/mcp` and `/v1/synapse2`. Excess requests receive HTTP 429 with `Retry-After`. Set to `0` to disable. `/health`, `/ready`, and `/status` are exempt. |
+| `SYNAPSE_MCP_MAX_CONCURRENCY` | `50` | Maximum simultaneous in-flight requests on `/mcp` and `/v1/synapse`. Excess requests receive HTTP 429 with `Retry-After`. Set to `0` to disable. `/health`, `/ready`, and `/status` are exempt. |
 
 See `.env.example` for the full list of variables and `docs/CONFIG.md` for auth
 configuration details.
@@ -496,7 +496,7 @@ ScoutService  (src/scout_service/) SSH/exec/fs/zfs/logs ops
       ↓ via SynapseService facade (src/app.rs)
 MCP shims     (src/mcp/tools.rs)  tool args → service → Value
 CLI shim      (src/cli.rs)        argv → service → stdout
-REST layer    (src/api.rs)        POST /v1/synapse2 → service → JSON
+REST layer    (src/api.rs)        POST /v1/synapse → service → JSON
 ```
 
 ## Development
@@ -518,7 +518,7 @@ Useful docs:
 - `docs/API.md` for full tool contracts
 - `docs/CONFIG.md` for environment and auth
 - `docs/QUICKSTART.md` for local smoke tests
-- `plugins/synapse2/skills/synapse2/SKILL.md` for agent usage guidance
+- `plugins/synapse/skills/synapse/SKILL.md` for agent usage guidance
 - `tests/parity.rs` for automated parity verification against synapse-mcp INVENTORY
 
 ## Documentation
@@ -530,7 +530,7 @@ Source-of-truth docs and code are split as follows:
 - `docs/MCP_SCHEMA.md` for MCP schema shape and drift expectations.
 - `docs/CONFIG.md` for environment and auth policy.
 - `docs/QUICKSTART.md` for local smoke tests.
-- `docs/PLUGINS.md` and `plugins/synapse2/skills/synapse2/SKILL.md` for agent
+- `docs/PLUGINS.md` and `plugins/synapse/skills/synapse/SKILL.md` for agent
   and marketplace usage.
 - `docs/generated/openapi.json` for generated OpenAPI output.
 - `src/flux_service/`, `src/scout_service/`, and `src/mcp/` for runtime source

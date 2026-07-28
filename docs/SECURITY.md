@@ -2,7 +2,7 @@
 title: "Security Model"
 doc_type: "guide"
 status: "active"
-owner: "synapse2"
+owner: "synapse"
 audience:
   - "operators"
   - "contributors"
@@ -78,7 +78,7 @@ and file-transfer paths have independent deadlines or byte/item ceilings.
 The production image contains Python 3 and the official Docker CLI plus Compose
 plugin because those are runtime dependencies of descriptor wrappers and Flux
 Compose. It contains no Docker daemon. Base images are pinned by manifest
-digest. Appdata is mounted from `~/.synapse2` to `/data`; the root entrypoint
+digest. Appdata is mounted from `~/.synapse` to `/data`; the root entrypoint
 hardens permissions and then drops privileges.
 
 ## GitHub Actions and self-hosted runners

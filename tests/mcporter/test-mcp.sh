@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # =============================================================================
-# test-mcp.sh — Integration smoke-test for the synapse2 MCP server
+# test-mcp.sh — Integration smoke-test for the synapse MCP server
 #
-# synapse2 exposes two real MCP tools:
+# synapse exposes two real MCP tools:
 #   flux   — Docker infrastructure (docker / container / host / compose) across
 #            configured hosts.
 #   scout  — SSH/local host inspection (nodes / peek / find / ps / df / delta /
@@ -36,7 +36,7 @@
 #     synapse://schema/scout resource → scout tool definition w/ inputSchema.action
 #
 # Server is assumed to be running as HTTP on localhost:40080 (the `just dev` port).
-# Credentials are sourced from ~/.synapse2/.env OR environment variables:
+# Credentials are sourced from ~/.synapse/.env OR environment variables:
 #   SYNAPSE_MCP_HOST  (default: localhost)
 #   SYNAPSE_MCP_PORT  (default: 40080)
 #   SYNAPSE_MCP_TOKEN (optional; omit for no-auth dev mode)
@@ -71,8 +71,8 @@ readonly LOG_DIR
 readonly LOG_FILE="${LOG_DIR}/${SCRIPT_NAME%.sh}.log"
 (umask 077; : > "${LOG_FILE}") || exit 2
 
-# synapse2 stores credentials in its appdata dir (SERVICE_HOME_DIRNAME = .synapse2).
-readonly ENV_FILE="${HOME}/.synapse2/.env"
+# synapse stores credentials in its appdata dir (SERVICE_HOME_DIRNAME = .synapse).
+readonly ENV_FILE="${HOME}/.synapse/.env"
 
 # ── Colour support ────────────────────────────────────────────────────────────
 if [[ -t 1 ]]; then
@@ -187,7 +187,7 @@ smoke_test_server() {
 
   if [[ "${health_status}" != "ok" ]]; then
     log_error "Health endpoint at ${base_url}/health did not return status=ok"
-    log_error "Is the synapse2 server running?  just dev   or   just docker-up"
+    log_error "Is the synapse server running?  just dev   or   just docker-up"
     log_error "Then retry:  ./tests/mcporter/test-mcp.sh"
     return 2
   fi
@@ -219,7 +219,7 @@ print(len(d.get('result', {}).get('tools', [])))
 
 # ── mcporter wrappers ────────────────────────────────────────────────────────
 # Makes a single MCP tool call via mcporter (or JSON-RPC fallback) and returns
-# the JSON output. The synapse2 tools are `flux` and `scout`.
+# the JSON output. The synapse tools are `flux` and `scout`.
 mcporter_supports_headers() {
   [[ "${MCPORTER_SUPPORTS_HEADERS}" == true ]]
 }
@@ -632,7 +632,7 @@ suite_core() {
 }
 
 # ── suite_schema_resource ──────────────────────────────────────────────────────
-# synapse2 exposes two schema resource URIs:
+# synapse exposes two schema resource URIs:
 #     synapse://schema/flux
 #     synapse://schema/scout
 # Each returns the matching tool definition as pretty-printed JSON in
@@ -797,7 +797,7 @@ main() {
   load_env
 
   printf '%b%s%b\n' "${C_BOLD}" "$(printf '=%.0s' {1..65})" "${C_RESET}"
-  printf '%b  synapse2 integration smoke-test (flux + scout)%b\n' "${C_BOLD}" "${C_RESET}"
+  printf '%b  synapse integration smoke-test (flux + scout)%b\n' "${C_BOLD}" "${C_RESET}"
   printf '%b  Project:  %s%b\n' "${C_BOLD}" "${PROJECT_DIR}" "${C_RESET}"
   printf '%b  MCP URL:  %s%b\n' "${C_BOLD}" "${MCP_URL}" "${C_RESET}"
   printf '%b  Timeout:  %dms/call | Parallel: %s%b\n' \
@@ -819,7 +819,7 @@ main() {
     log_error "To diagnose:"
     log_error "  just dev                             # start in no-auth dev mode"
     log_error "  curl http://localhost:40080/health   # check health endpoint"
-    log_error "  docker ps | grep synapse2            # check Docker container"
+    log_error "  docker ps | grep synapse            # check Docker container"
     exit 2
   }
 

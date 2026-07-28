@@ -2,11 +2,11 @@
 title: "Environment Variables"
 doc_type: "guide"
 status: "active"
-owner: "synapse2"
+owner: "synapse"
 audience:
   - "contributors"
   - "agents"
-scope: "synapse2"
+scope: "synapse"
 source_of_truth: false
 upstream_refs:
   - "src/config.rs"
@@ -15,7 +15,7 @@ last_reviewed: "2026-06-12"
 
 # Environment variables
 
-Synapse2 uses `SYNAPSE_*` variables for service configuration and
+Synapse uses `SYNAPSE_*` variables for service configuration and
 `SYNAPSE_MCP_*` variables for MCP server configuration.
 
 ## MCP HTTP server
@@ -24,7 +24,7 @@ Synapse2 uses `SYNAPSE_*` variables for service configuration and
 |---|---:|---|
 | `SYNAPSE_MCP_HOST` | `127.0.0.1` | Bind host for HTTP transport. Set `0.0.0.0` only with bearer or OAuth configured. |
 | `SYNAPSE_MCP_PORT` | `40080` | Bind port for HTTP transport. |
-| `SYNAPSE_MCP_SERVER_NAME` | `synapse2` | MCP server name advertised to clients. |
+| `SYNAPSE_MCP_SERVER_NAME` | `synapse` | MCP server name advertised to clients. |
 | `SYNAPSE_MCP_NO_AUTH` | `false` | Disable local auth for loopback development only. |
 | `SYNAPSE_NOAUTH` | `false` | Delegate auth/authz to a trusted upstream gateway on non-loopback binds. Requires network isolation so only the gateway can reach Synapse. |
 | `SYNAPSE_MCP_ALLOW_DESTRUCTIVE` | `false` | Skip destructive-operation confirmation prompts. Startup refuses this on non-loopback binds. |
@@ -42,7 +42,7 @@ Synapse2 uses `SYNAPSE_*` variables for service configuration and
 | `SYNAPSE_MCP_AUTH_AUTHORIZE_REQUESTS_PER_MINUTE` | `60` | OAuth authorization rate limit. |
 | `SYNAPSE_MCP_AUTH_DISABLE_STATIC_TOKEN_WITH_OAUTH` | `true` | Disable static bearer tokens when OAuth is active. |
 | `SYNAPSE_MCP_AUTH_ALLOWED_REDIRECT_URIS` | unset | Extra OAuth redirect URI patterns (comma-separated). |
-| `SYNAPSE_MCP_MAX_CONCURRENCY` | `50` | Maximum simultaneous in-flight requests on `/mcp` and `/v1/synapse2`. Excess requests receive HTTP 429 with `Retry-After`. Set to `0` to disable. `/health`, `/ready`, and `/status` are exempt. This is a global cap across all clients, not a per-client rate limit. |
+| `SYNAPSE_MCP_MAX_CONCURRENCY` | `50` | Maximum simultaneous in-flight requests on `/mcp` and `/v1/synapse`. Excess requests receive HTTP 429 with `Retry-After`. Set to `0` to disable. `/health`, `/ready`, and `/status` are exempt. This is a global cap across all clients, not a per-client rate limit. |
 
 ## Host topology
 
@@ -50,9 +50,9 @@ Synapse2 uses `SYNAPSE_*` variables for service configuration and
 |---|---|
 | `SYNAPSE_HOSTS_CONFIG` | Inline host topology as a JSON array; highest priority. |
 | `SYNAPSE_CONFIG_FILE` | Path to a host config file; used when inline hosts are unset. |
-| `SYNAPSE_HOME` | Override appdata directory. Defaults to `~/.synapse2` outside containers and `/data` in containers. |
+| `SYNAPSE_HOME` | Override appdata directory. Defaults to `~/.synapse` outside containers and `/data` in containers. |
 
-When no host topology variable is set, Synapse2 falls back to `~/.ssh/config` discovery. Host `protocol` is authoritative and defaults to `ssh` when omitted; local execution requires `protocol: "local"`. Recursive SSH `Include` dependencies are monitored for topology refresh.
+When no host topology variable is set, Synapse falls back to `~/.ssh/config` discovery. Host `protocol` is authoritative and defaults to `ssh` when omitted; local execution requires `protocol: "local"`. Recursive SSH `Include` dependencies are monitored for topology refresh.
 
 ## OAuth mode
 
@@ -70,7 +70,7 @@ Only required when `SYNAPSE_MCP_AUTH_MODE=oauth`:
 |---|---|
 | `DOCKER_GID` | Host docker group id; required when the Docker socket is mounted. |
 | `DOCKER_NETWORK` | Docker network name (default: `mcp`). |
-| `SYNAPSE2_VERSION` | Image tag to pull (default: `latest`); pin a release or `sha-<full-commit>` tag for production rollout and rollback. |
+| `SYNAPSE_VERSION` | Image tag to pull (default: `latest`); pin a release or `sha-<full-commit>` tag for production rollout and rollback. |
 | `SYNAPSE_MCP_HOST_PORT` | Host port published to the container MCP port. |
 
 ## Logging
@@ -80,7 +80,7 @@ Only required when `SYNAPSE_MCP_AUTH_MODE=oauth`:
 | `RUST_LOG` | `info,rmcp=warn` | Tracing filter. |
 | `NO_COLOR` | `1` | Disable ANSI color in console logs. |
 | `FORCE_COLOR` | `1` | Force ANSI color even when stderr is not a TTY. |
-| `LOG_FORMAT` / `RUST_LOG_FORMAT` | `json` | Emit JSON to stderr. HTTP server mode also writes rotating JSON logs under `${SYNAPSE_HOME:-~/.synapse2}/logs/`. |
+| `LOG_FORMAT` / `RUST_LOG_FORMAT` | `json` | Emit JSON to stderr. HTTP server mode also writes rotating JSON logs under `${SYNAPSE_HOME:-~/.synapse}/logs/`. |
 
 ## `.env` file structure
 
@@ -92,13 +92,13 @@ SYNAPSE_MCP_TOKEN=your_bearer_token_here
 
 # OAuth (only when auth_mode=oauth in config.toml)
 # SYNAPSE_MCP_AUTH_MODE=oauth
-# SYNAPSE_MCP_PUBLIC_URL=https://synapse2.example.com
+# SYNAPSE_MCP_PUBLIC_URL=https://synapse.example.com
 # SYNAPSE_MCP_GOOGLE_CLIENT_ID=...
 # SYNAPSE_MCP_GOOGLE_CLIENT_SECRET=...
 # SYNAPSE_MCP_AUTH_ADMIN_EMAIL=admin@example.com
 
 # Host topology
-# SYNAPSE_CONFIG_FILE=/home/synapse/.synapse2/hosts.json
+# SYNAPSE_CONFIG_FILE=/home/synapse/.synapse/hosts.json
 
 # Docker runtime
 DOCKER_GID=999

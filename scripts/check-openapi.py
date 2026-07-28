@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate and verify OpenAPI docs for the Synapse2 REST API."""
+"""Generate and verify OpenAPI docs for the Synapse REST API."""
 
 from __future__ import annotations
 
@@ -16,7 +16,7 @@ OPERATIONS = ROOT / "src/actions/operations.rs"
 OUT = ROOT / "docs/generated/openapi.json"
 WEB_METADATA = ROOT / "apps/web/lib/generated-operation-metadata.json"
 
-REST_ENDPOINT = "/v1/synapse2"
+REST_ENDPOINT = "/v1/synapse"
 
 # Action-specific param examples. Actions not listed here get an empty params object.
 _PARAM_EXAMPLES: dict[str, dict] = {
@@ -110,10 +110,10 @@ def render() -> dict[str, Any]:
     return {
         "openapi": "3.1.0",
         "info": {
-            "title": "Synapse2 REST API",
+            "title": "Synapse REST API",
             "version": version,
             "description": (
-                "Generated OpenAPI schema for Synapse2's REST surface. "
+                "Generated OpenAPI schema for Synapse's REST surface. "
                 "Loopback deployments have no HTTP auth; non-loopback deployments require "
                 "SYNAPSE_MCP_TOKEN or OAuth bearer JWTs. "
                 "REST actions require their action-specific scopes when auth is mounted."
@@ -210,7 +210,7 @@ def render() -> dict[str, Any]:
                         "When auth is mounted, each action requires its declared scope; "
                         "synapse:write satisfies synapse:read."
                     ),
-                    "operationId": "dispatchSynapse2Action",
+                    "operationId": "dispatchSynapseAction",
                     "security": [{"BearerAuth": []}, {}],
                     "requestBody": {
                         "required": True,
@@ -256,7 +256,7 @@ def render() -> dict[str, Any]:
                 "ActionName": {
                     "type": "string",
                     "enum": action_names,
-                    "description": "REST-capable action names served by POST /v1/synapse2.",
+                    "description": "REST-capable action names served by POST /v1/synapse.",
                 },
                 "ActionRequest": {
                     "type": "object",
@@ -266,7 +266,7 @@ def render() -> dict[str, Any]:
                         "action": schema_ref("ActionName"),
                         "params": {
                             "type": "object",
-                            "description": "Action-specific parameters for the selected Synapse2 REST action.",
+                            "description": "Action-specific parameters for the selected Synapse REST action.",
                             "additionalProperties": True,
                             "default": {},
                         },

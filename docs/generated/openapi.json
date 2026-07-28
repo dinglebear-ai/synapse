@@ -1,9 +1,9 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "Synapse2 REST API",
+    "title": "Synapse REST API",
     "version": "0.6.2",
-    "description": "Generated OpenAPI schema for Synapse2's REST surface. Loopback deployments have no HTTP auth; non-loopback deployments require SYNAPSE_MCP_TOKEN or OAuth bearer JWTs. REST actions require their action-specific scopes when auth is mounted."
+    "description": "Generated OpenAPI schema for Synapse's REST surface. Loopback deployments have no HTTP auth; non-loopback deployments require SYNAPSE_MCP_TOKEN or OAuth bearer JWTs. REST actions require their action-specific scopes when auth is mounted."
   },
   "servers": [
     {
@@ -136,14 +136,14 @@
         }
       }
     },
-    "/v1/synapse2": {
+    "/v1/synapse": {
       "post": {
         "tags": [
           "actions"
         ],
         "summary": "Dispatch a REST action",
         "description": "Thin REST shim over the shared service layer. MCP-only actions are not exposed here. Current REST actions: help, flux.docker.info, flux.docker.df, flux.docker.images, flux.docker.networks, flux.docker.volumes, flux.docker.pull, flux.docker.build, flux.docker.rmi, flux.docker.prune, flux.container.list, scout.nodes, scout.peek, scout.exec. When auth is mounted, each action requires its declared scope; synapse:write satisfies synapse:read.",
-        "operationId": "dispatchSynapse2Action",
+        "operationId": "dispatchSynapseAction",
         "security": [
           {
             "BearerAuth": []
@@ -318,7 +318,7 @@
           "scout.peek",
           "scout.exec"
         ],
-        "description": "REST-capable action names served by POST /v1/synapse2."
+        "description": "REST-capable action names served by POST /v1/synapse."
       },
       "ActionRequest": {
         "type": "object",
@@ -332,7 +332,7 @@
           },
           "params": {
             "type": "object",
-            "description": "Action-specific parameters for the selected Synapse2 REST action.",
+            "description": "Action-specific parameters for the selected Synapse REST action.",
             "additionalProperties": true,
             "default": {}
           }

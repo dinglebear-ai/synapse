@@ -2,7 +2,7 @@
 title: "mcporter Integration Testing"
 doc_type: "guide"
 status: "active"
-owner: "synapse2"
+owner: "synapse"
 audience:
   - "contributors"
   - "agents"
@@ -45,9 +45,9 @@ just test-mcporter
 }
 ```
 
-The script targets `http://<SYNAPSE_MCP_HOST>:<SYNAPSE_MCP_PORT>/mcp`, defaulting to `http://localhost:40080/mcp` to match `just dev`. It remaps `0.0.0.0` to `localhost`. If `SYNAPSE_MCP_TOKEN` is set, it sends `Authorization: Bearer <token>`. Credentials are also sourced from `~/.synapse2/.env` when present.
+The script targets `http://<SYNAPSE_MCP_HOST>:<SYNAPSE_MCP_PORT>/mcp`, defaulting to `http://localhost:40080/mcp` to match `just dev`. It remaps `0.0.0.0` to `localhost`. If `SYNAPSE_MCP_TOKEN` is set, it sends `Authorization: Bearer <token>`. Credentials are also sourced from `~/.synapse/.env` when present.
 
-synapse2 exposes two real MCP tools: `flux` (Docker: docker / container / host / compose) and `scout` (SSH/local host inspection: nodes / peek / find / ps / df / delta / exec / emit / beam / zfs / logs). The smoke-test only exercises **read-only / non-destructive** actions — destructive actions (docker build/rmi/prune, container stop/recreate/exec, compose down/restart/recreate, scout exec/emit/beam) require elicitation confirmation and are never called.
+synapse exposes two real MCP tools: `flux` (Docker: docker / container / host / compose) and `scout` (SSH/local host inspection: nodes / peek / find / ps / df / delta / exec / emit / beam / zfs / logs). The smoke-test only exercises **read-only / non-destructive** actions — destructive actions (docker build/rmi/prune, container stop/recreate/exec, compose down/restart/recreate, scout exec/emit/beam) require elicitation confirmation and are never called.
 
 ## What the test suite validates
 

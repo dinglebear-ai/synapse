@@ -1,7 +1,7 @@
 # =============================================================================
-# config.example.toml — Annotated Synapse2 config.toml reference
+# config.example.toml — Annotated Synapse config.toml reference
 #
-# This file documents the non-secret configuration options Synapse2 reads from
+# This file documents the non-secret configuration options Synapse reads from
 # config.toml. Copy it to config.toml and adjust for your deployment.
 #
 #           config.toml holds non-secret defaults. Secrets and URLs go in .env.
@@ -38,12 +38,12 @@ host = "0.0.0.0"
 
 # Bind port for the MCP HTTP server.
 # SYNAPSE_MCP_PORT env var overrides this.
-# Synapse2's assigned port is 40080.
+# Synapse's assigned port is 40080.
 port = 40080
 
 # Server name advertised to MCP clients in the tools/list response.
 # SYNAPSE_MCP_SERVER_NAME env var overrides this.
-server_name = "synapse2"
+server_name = "synapse"
 
 # Disable authentication entirely.
 # ONLY safe when host = "127.0.0.1" (loopback — your machine only).
@@ -60,7 +60,7 @@ server_name = "synapse2"
 # Extra Host header values allowed by the RMCP host-validation middleware.
 # SYNAPSE_MCP_ALLOWED_HOSTS env var (comma-separated) overrides this.
 # Add your reverse proxy hostname or local DNS name.
-# allowed_hosts = ["synapse2.example.com", "synapse2.lan"]
+# allowed_hosts = ["synapse.example.com", "synapse.lan"]
 
 # Extra CORS origins for browser-based MCP clients.
 # SYNAPSE_MCP_ALLOWED_ORIGINS env var (comma-separated) overrides this.
@@ -93,7 +93,7 @@ mode = "bearer"
 # Public URL of this MCP server (required in OAuth mode).
 # SYNAPSE_MCP_PUBLIC_URL env var overrides this.
 # Must be reachable from MCP clients. Set in .env, not here.
-# public_url = "https://synapse2.example.com"
+# public_url = "https://synapse.example.com"
 
 # Google OAuth 2.0 credentials — ALWAYS set via .env, never here.
 # SYNAPSE_MCP_GOOGLE_CLIENT_ID env var overrides this.
@@ -109,15 +109,15 @@ admin_email = ""
 
 # Path to the SQLite database for OAuth sessions and client registrations.
 # SYNAPSE_MCP_AUTH_SQLITE_PATH env var overrides this.
-# In Docker, /data is bind-mounted from ~/.synapse2 on the host. For bare-metal,
-# change to ~/.synapse2/auth.db.
+# In Docker, /data is bind-mounted from ~/.synapse on the host. For bare-metal,
+# change to ~/.synapse/auth.db.
 sqlite_path = "/data/auth.db"
 
 # Path to the RS256 private key for JWT signing.
 # SYNAPSE_MCP_AUTH_KEY_PATH env var overrides this.
 # Auto-generated on first run if it doesn't exist.
-# In Docker, /data is bind-mounted from ~/.synapse2 on the host. For bare-metal,
-# change to ~/.synapse2/auth-jwt.pem.
+# In Docker, /data is bind-mounted from ~/.synapse on the host. For bare-metal,
+# change to ~/.synapse/auth-jwt.pem.
 key_path = "/data/auth-jwt.pem"
 
 # How long issued access tokens are valid (seconds).
@@ -164,7 +164,7 @@ allowed_client_redirect_uris = []
 #
 #   1. SYNAPSE_HOSTS_CONFIG env — inline JSON array of host objects.
 #   2. SYNAPSE_CONFIG_FILE env  — path to a JSON file ({ "hosts": [ ... ] }).
-#   3. ./synapse.config.json, then ~/.config/synapse2/hosts.json, etc.
+#   3. ./synapse.config.json, then ~/.config/synapse/hosts.json, etc.
 #   4. ~/.ssh/config            — AUTO-DISCOVERED. Every concrete (non-wildcard)
 #                                 Host block with a HostName becomes an SSH host,
 #                                 inheriting User / Port / IdentityFile. This is

@@ -5,7 +5,7 @@ use axum::{
     http::{Method, Request, StatusCode, header},
 };
 use serde_json::{Value, json};
-use synapse2::{server, testing::loopback_state};
+use synapse::{server, testing::loopback_state};
 use tower::ServiceExt;
 
 async fn request_json(
@@ -47,7 +47,7 @@ async fn rest_help_returns_synapse_actions() {
     let (status, body) = request_json(
         app,
         Method::POST,
-        "/v1/synapse2",
+        "/v1/synapse",
         Some(json!({"action": "help", "params": {}})),
     )
     .await;
@@ -63,7 +63,7 @@ async fn rest_scout_nodes_works_without_auth_on_loopback_state() {
     let (status, body) = request_json(
         app,
         Method::POST,
-        "/v1/synapse2",
+        "/v1/synapse",
         Some(json!({"action": "scout.nodes", "params": {}})),
     )
     .await;
@@ -74,12 +74,12 @@ async fn rest_scout_nodes_works_without_auth_on_loopback_state() {
 
 #[tokio::test]
 async fn mounted_rest_read_scoped_dotted_actions_pass_scope_checks() {
-    let app = server::router(synapse2::testing::bearer_state("read-token"));
+    let app = server::router(synapse::testing::bearer_state("read-token"));
 
     let (status, body) = request_json_with_auth(
         app.clone(),
         Method::POST,
-        "/v1/synapse2",
+        "/v1/synapse",
         Some(json!({"action": "scout.nodes", "params": {}})),
         Some("read-token"),
     )
@@ -90,7 +90,7 @@ async fn mounted_rest_read_scoped_dotted_actions_pass_scope_checks() {
     let (status, body) = request_json_with_auth(
         app,
         Method::POST,
-        "/v1/synapse2",
+        "/v1/synapse",
         Some(json!({"action": "flux.docker.info", "params": {}})),
         Some("read-token"),
     )
@@ -104,11 +104,11 @@ async fn mounted_rest_read_scoped_dotted_actions_pass_scope_checks() {
 
 #[tokio::test]
 async fn mounted_rest_dotted_write_actions_require_write_scope() {
-    let app = server::router(synapse2::testing::bearer_state("read-token"));
+    let app = server::router(synapse::testing::bearer_state("read-token"));
     let (status, body) = request_json_with_auth(
         app,
         Method::POST,
-        "/v1/synapse2",
+        "/v1/synapse",
         Some(json!({
             "action": "flux.docker.prune",
             "params": {
@@ -131,7 +131,7 @@ async fn rest_unknown_action_is_bad_request() {
     let (status, body) = request_json(
         app,
         Method::POST,
-        "/v1/synapse2",
+        "/v1/synapse",
         Some(json!({"action": "missing", "params": {}})),
     )
     .await;
@@ -141,7 +141,7 @@ async fn rest_unknown_action_is_bad_request() {
         body["error"]
             .as_str()
             .unwrap()
-            .contains("unknown synapse2 action")
+            .contains("unknown synapse action")
     );
 }
 
@@ -152,7 +152,7 @@ async fn status_returns_only_local_redacted_metadata() {
 
     assert_eq!(status, StatusCode::OK);
     assert_eq!(body["status"], "ok");
-    assert_eq!(body["server"], "synapse2");
+    assert_eq!(body["server"], "synapse");
     assert_eq!(body["transport"], "http");
     assert!(body.get("version").is_some());
     assert!(body.get("api_key").is_none(), "{body}");
@@ -164,7 +164,7 @@ async fn activity_endpoint_reports_rest_calls_from_shared_state() {
     let (status, _) = request_json(
         app.clone(),
         Method::POST,
-        "/v1/synapse2",
+        "/v1/synapse",
         Some(json!({"action": "scout.nodes", "params": {}})),
     )
     .await;
@@ -195,7 +195,7 @@ async fn capabilities_report_authoritative_scopes() {
             .contains(&json!("synapse:write"))
     );
 
-    let mounted = server::router(synapse2::testing::bearer_state("read-token"));
+    let mounted = server::router(synapse::testing::bearer_state("read-token"));
     let (status, _) = request_json(mounted.clone(), Method::GET, "/capabilities", None).await;
     assert_eq!(status, StatusCode::UNAUTHORIZED);
     let (status, body) = request_json_with_auth(
@@ -244,7 +244,7 @@ async fn rest_destructive_action_confirmation_denied_returns_403_not_500() {
     let (status, body) = request_json(
         app,
         Method::POST,
-        "/v1/synapse2",
+        "/v1/synapse",
         Some(json!({
             "action": "flux.docker.prune",
             "params": {
@@ -278,7 +278,7 @@ async fn rest_scout_exec_confirmation_denied_returns_403() {
     let (status, body) = request_json(
         app,
         Method::POST,
-        "/v1/synapse2",
+        "/v1/synapse",
         // `ls` is allowlisted, so it passes command validation and reaches the
         // DenyConfirm gate (scout exec is confirmation-gated).
         Some(json!({
@@ -303,7 +303,7 @@ async fn rest_non_confirmation_error_is_not_403() {
     let (status, body) = request_json(
         app,
         Method::POST,
-        "/v1/synapse2",
+        "/v1/synapse",
         // `rm` is not allowlisted: command validation fails BEFORE the confirmer
         // gate, so this is not a ConfirmationDenied and must not return 403.
         Some(json!({
@@ -326,7 +326,7 @@ async fn oversized_body_returns_413() {
     let oversized_body = vec![b'x'; 65_537];
     let request = Request::builder()
         .method(Method::POST)
-        .uri("/v1/synapse2")
+        .uri("/v1/synapse")
         .header(header::CONTENT_TYPE, "application/json")
         .body(Body::from(oversized_body))
         .unwrap();
@@ -339,8 +339,8 @@ async fn oversized_body_returns_413() {
 #[tokio::test]
 async fn readiness_redacts_internal_topology_errors() {
     struct FailingHosts;
-    impl synapse2::host_config::HostRepository for FailingHosts {
-        fn load_hosts(&self) -> anyhow::Result<Vec<synapse2::synapse::HostConfig>> {
+    impl synapse::host_config::HostRepository for FailingHosts {
+        fn load_hosts(&self) -> anyhow::Result<Vec<synapse::synapse::HostConfig>> {
             anyhow::bail!("secret path /private/topology.json failed")
         }
     }

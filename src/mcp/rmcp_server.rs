@@ -3,7 +3,7 @@
 //! This is the adapter between the rmcp crate and your application. It:
 //!   - Advertises tools, resources, and prompts to MCP clients
 //!   - Enforces auth scopes on every call
-//!   - Delegates business logic to `tools.rs` → `app.rs` → `synapse2.rs`
+//!   - Delegates business logic to `tools.rs` → `app.rs` → `synapse.rs`
 //!
 //! **Template**: rename `SynapseRmcpServer`. Update action metadata in
 //! `src/actions.rs` to keep schemas, scope rules, and dispatch in sync.

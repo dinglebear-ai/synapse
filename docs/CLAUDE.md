@@ -2,7 +2,7 @@
 title: "Documentation Instructions"
 doc_type: "guide"
 status: "active"
-owner: "synapse2"
+owner: "synapse"
 audience:
   - "contributors"
   - "agents"
@@ -18,7 +18,7 @@ last_reviewed: "2026-06-13"
 # Documentation Instructions
 
 This directory contains guides, reference material, generated contracts, and
-working records for the Synapse2 Rust MCP server.
+working records for the Synapse Rust MCP server.
 
 Both humans and agents operate this codebase. Write docs, contracts, specs,
 examples, and commands assuming both audiences. Prefer structured, runnable, and
@@ -81,12 +81,12 @@ current upstream source.
 ## Naming
 
 - Current binary: `synapse`
-- Current repo/service: `synapse2`
+- Current repo/service: `synapse`
 - Current env prefix: `SYNAPSE_*` and `SYNAPSE_MCP_*`
-- Current REST action endpoint: `POST /v1/synapse2`
+- Current REST action endpoint: `POST /v1/synapse`
 - Current MCP tools: `flux` and `scout`
 
-Do not add new `SYNAPSE2_*`, `EXAMPLE_*`, `example-mcp`, or `/v1/example`
+Do not add new `SYNAPSE_*`, `EXAMPLE_*`, `example-mcp`, or `/v1/example`
 references to service docs. Those names may appear in `docs/PATTERNS.md` only
 when they are intentionally documenting reusable template-family examples.
 
@@ -100,7 +100,7 @@ when they are intentionally documenting reusable template-family examples.
 - Config and env vars: `src/config.rs`, `src/host_config.rs`, and `.env.example`.
 - Agent memory files: root `CLAUDE.md`; `AGENTS.md` and `GEMINI.md` must be
   symlinks to it. The same rule applies in `docs/`, `apps/web/`, and
-  `plugins/synapse2/`.
+  `plugins/synapse/`.
 
 After adding any new `CLAUDE.md` anywhere in the repo, regenerate the symlinks:
 

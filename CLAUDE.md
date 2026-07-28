@@ -1,8 +1,8 @@
-# synapse2 — Claude Code instructions
+# synapse — Claude Code instructions
 
 ## What this project is
 
-`synapse2` is the Rust MCP and CLI server for local Synapse workflows. It is a
+`synapse` is the Rust MCP and CLI server for local Synapse workflows. It is a
 full-parity Rust port of `synapse-mcp`, exposing two MCP tools:
 
 - `flux` for Docker daemon, container, host, and Compose operations.
@@ -10,14 +10,14 @@ full-parity Rust port of `synapse-mcp`, exposing two MCP tools:
   command operations.
 
 The binary is named `synapse`. HTTP MCP defaults to `127.0.0.1:40080`, and the
-REST compatibility endpoint is `POST /v1/synapse2`.
+REST compatibility endpoint is `POST /v1/synapse`.
 
 ## Repo facts
 
 | Fact | Value |
 |---|---|
 | Remote | `git@github.com:dinglebear-ai/synapse.git` |
-| Cargo workspace | 2 members: `.` (crate `synapse2`) and `xtask` |
+| Cargo workspace | 2 members: `.` (crate `synapse`) and `xtask` |
 | Edition / MSRV | 2024 / `rust-version = 1.90` (`rust-toolchain.toml` pins channel `1.90`) |
 | MCP framework | `rmcp = "2.2.0"` (exact string in `Cargo.toml`; verify against `Cargo.lock`) |
 | Binary | `synapse` (`[[bin]]`, `autobins = false`) |
@@ -67,7 +67,7 @@ Those resolve only through GitHub's org-transfer redirect. Do not "fix" the
 | `src/mcp/response.rs` | MCP response shaping helpers. |
 | `src/mcp/transport.rs` | Streamable HTTP transport wiring and session lifecycle. |
 | `src/server.rs` and `src/server/routes.rs` | HTTP server state, auth policy, Axum routes. |
-| `src/api.rs` | REST compatibility handlers for `/v1/synapse2`, `/health`, `/status`. |
+| `src/api.rs` | REST compatibility handlers for `/v1/synapse`, `/health`, `/status`. |
 | `src/config.rs` | `Config`, `McpConfig`, `AuthConfig`, dotenv/env/config loading. |
 | `src/cli.rs` | CLI entry: mode dispatch, global flags, top-level help. |
 | `src/cli/flux.rs` | CLI flux subcommand parsing and dispatch. |
@@ -148,7 +148,7 @@ or its focused submodules.
 5. Update MCP schema parameters in `src/mcp/schemas.rs`.
 6. Update topic help in `src/mcp/help.rs`.
 7. Update docs that list actions: `README.md`, `docs/API.md`,
-   `docs/MCP_SCHEMA.md`, and `plugins/synapse2/skills/synapse2/`.
+   `docs/MCP_SCHEMA.md`, and `plugins/synapse/skills/synapse/`.
 8. Add tests:
    - parser coverage in `tests/cli_parse.rs`
    - MCP dispatch coverage in `tests/tool_dispatch.rs`
@@ -181,11 +181,11 @@ that override on non-loopback binds.
 |---|---|---|
 | `SYNAPSE_MCP_HOST` | `127.0.0.1` | HTTP bind host. |
 | `SYNAPSE_MCP_PORT` | `40080` | HTTP bind port. |
-| `SYNAPSE_MCP_SERVER_NAME` | `synapse2` | MCP server name. |
+| `SYNAPSE_MCP_SERVER_NAME` | `synapse` | MCP server name. |
 | `SYNAPSE_MCP_NO_AUTH` | `false` | Disable auth for loopback dev only. |
 | `SYNAPSE_NOAUTH` | `false` | Trusted gateway mode; upstream owns auth/authz and must be the only network peer. |
 | `SYNAPSE_MCP_ALLOW_DESTRUCTIVE` | `false` | Skip destructive confirmation prompts; loopback only. |
-| `SYNAPSE_MCP_MAX_CONCURRENCY` | `50` | Global concurrency cap on `/mcp` and `/v1/synapse2`; excess requests receive HTTP 429 with `Retry-After`. `0` = disable. `/health`/`/ready`/`/status` exempt. |
+| `SYNAPSE_MCP_MAX_CONCURRENCY` | `50` | Global concurrency cap on `/mcp` and `/v1/synapse`; excess requests receive HTTP 429 with `Retry-After`. `0` = disable. `/health`/`/ready`/`/status` exempt. |
 | `SYNAPSE_MCP_TOKEN` | unset | Static bearer token. |
 | `SYNAPSE_MCP_ALLOWED_HOSTS` | unset | Extra accepted Host header values. |
 | `SYNAPSE_MCP_ALLOWED_ORIGINS` | unset | Extra CORS origins. |
@@ -205,10 +205,10 @@ that override on non-loopback binds.
 | `SYNAPSE_MCP_AUTH_ALLOWED_REDIRECT_URIS` | unset | Extra OAuth redirect URI patterns (comma-separated). |
 | `SYNAPSE_HOSTS_CONFIG` | unset | Inline host topology JSON. |
 | `SYNAPSE_CONFIG_FILE` | unset | Host config file path. |
-| `SYNAPSE_HOME` | platform appdata | Appdata root; defaults to `~/.synapse2` outside containers and `/data` in containers. |
+| `SYNAPSE_HOME` | platform appdata | Appdata root; defaults to `~/.synapse` outside containers and `/data` in containers. |
 | `DOCKER_GID` | unset | Host docker group id; required when the Docker socket is mounted in Docker. |
 | `DOCKER_NETWORK` | `mcp` | Docker network name for the production compose stack. |
-| `SYNAPSE2_VERSION` | `latest` | Image tag used by `docker-compose.prod.yml`. |
+| `SYNAPSE_VERSION` | `latest` | Image tag used by `docker-compose.prod.yml`. |
 | `SYNAPSE_MCP_HOST_PORT` | `40080` | Host port published to the container's MCP port. |
 | `RUST_LOG` | `info` | Tracing filter. |
 | `NO_COLOR` | unset | Disable ANSI color in console output when set. |
@@ -292,7 +292,7 @@ scripts against plugin manifests.
 
 ## No plugin hooks
 
-`plugins/synapse2/` ships **no lifecycle hooks**: no `hooks/` directory, no
+`plugins/synapse/` ships **no lifecycle hooks**: no `hooks/` directory, no
 `hooks` key in any manifest. `scripts/validate-plugin-layout.sh` and
 `tests/plugin_contract.rs` both assert this. Do not reintroduce either.
 
@@ -308,7 +308,7 @@ synapse setup plugin-hook              # check, then repair on blocking failures
 synapse setup plugin-hook --no-repair  # audit only; never mutates appdata
 ```
 
-Export the `SYNAPSE_*` variables yourself, or put them in `~/.synapse2/.env`,
+Export the `SYNAPSE_*` variables yourself, or put them in `~/.synapse/.env`,
 before running these. `plugins/README.md` holds the plugin-option→env-var
 mapping. Client mode — connecting to a server running elsewhere — needs none of
 this; `mcp.json` substitutes the plugin settings directly.

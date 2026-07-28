@@ -4,18 +4,18 @@
 //! Binary entry point — mode dispatch only.
 //!
 //! Modes:
-//!   `synapse2 [serve]`        Start MCP HTTP server (default if no args)
-//!   `synapse2 mcp`            Start MCP stdio transport
-//!   `synapse2 flux ...`       CLI flux (Docker / container / host / compose) commands
-//!   `synapse2 scout ...`      CLI scout (SSH / filesystem / exec) commands
-//!   `synapse2 --help`         Print usage
-//!   `synapse2 --version`      Print version
+//!   `synapse [serve]`        Start MCP HTTP server (default if no args)
+//!   `synapse mcp`            Start MCP stdio transport
+//!   `synapse flux ...`       CLI flux (Docker / container / host / compose) commands
+//!   `synapse scout ...`      CLI scout (SSH / filesystem / exec) commands
+//!   `synapse --help`         Print usage
+//!   `synapse --version`      Print version
 
 use anyhow::Result;
 use std::sync::Arc;
 
 use rmcp::{ServiceExt, transport::stdio};
-use synapse2::{
+use synapse::{
     app::SynapseService,
     cli,
     config::{Config, load_dotenv_environment},
@@ -48,7 +48,7 @@ async fn run() -> Result<()> {
     }
     match args.as_slice() {
         [f] if matches!(f.as_str(), "--version" | "-V" | "version") => {
-            println!("synapse2 {}", env!("CARGO_PKG_VERSION"));
+            println!("synapse {}", env!("CARGO_PKG_VERSION"));
             return Ok(());
         }
         _ => {}
@@ -70,12 +70,12 @@ async fn run() -> Result<()> {
     if serve_mode {
         // HTTP server mode gets the full dual-output subscriber: operator
         // console output plus bounded rotating JSON logs in appdata.
-        let data_dir = synapse2::config::service_data_dir()?;
-        synapse2::logging::init(&data_dir, "synapse2")?;
+        let data_dir = synapse::config::service_data_dir()?;
+        synapse::logging::init(&data_dir, "synapse")?;
     } else {
         // Stdio and one-shot CLI modes use a lightweight stderr-only subscriber.
         // Stdio stays at warn level so stdout remains a clean JSON-RPC channel.
-        let json_format = synapse2::logging::json_format_requested();
+        let json_format = synapse::logging::json_format_requested();
         let env_filter =
             EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new(log_level));
         if json_format {
@@ -98,14 +98,14 @@ async fn run() -> Result<()> {
         // Startup sweep: remove stale forwarded sockets from prior runs whose
         // owning pid is dead (sockets persist on SIGKILL/panic). Must run before
         // any SSH pool / port-forward initialisation so a leftover
-        // stale private-runtime or legacy `/tmp/synapse2-*-*.sock` entries
+        // stale private-runtime or legacy `/tmp/synapse-*-*.sock` entries
         // cannot shadow a fresh forward. Server modes only; one-shot CLI
         // invocations do not sweep shared runtime state.
-        synapse2::ssh::sweep_stale_sockets();
+        synapse::ssh::sweep_stale_sockets();
         // Warn if known_hosts has wildcard patterns that defeat strict host-key
         // checking (suppressed in stdio mode since logs are warn-level only and
         // must not pollute the JSON-RPC stream — tracing writes to stderr, OK).
-        synapse2::ssh::warn_on_known_hosts_wildcards();
+        synapse::ssh::warn_on_known_hosts_wildcards();
     }
 
     if serve_mode {
@@ -129,7 +129,7 @@ async fn serve_mcp() -> Result<()> {
         bind = %state.config.bind_addr(),
         server_name = %state.config.server_name,
         auth = ?state.auth_policy,
-        "synapse2 starting"
+        "synapse starting"
     );
 
     let bind = state.config.bind_addr();
@@ -255,8 +255,8 @@ async fn build_auth_policy(config: &Config) -> Result<AuthPolicy> {
                 .env_prefix("SYNAPSE_MCP")
                 .session_cookie_name("synapse_mcp_session")
                 .scopes_supported(vec![
-                    synapse2::actions::READ_SCOPE.into(),
-                    synapse2::actions::WRITE_SCOPE.into(),
+                    synapse::actions::READ_SCOPE.into(),
+                    synapse::actions::WRITE_SCOPE.into(),
                 ])
                 .default_scope("synapse:read")
                 .resource_path("/mcp")

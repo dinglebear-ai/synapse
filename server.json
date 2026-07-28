@@ -45,7 +45,7 @@
           "format": "string",
           "isRequired": false,
           "isSecret": false,
-          "placeholder": "~/.synapse2"
+          "placeholder": "~/.synapse"
         },
         {
           "name": "SYNAPSE_HOSTS_CONFIG",

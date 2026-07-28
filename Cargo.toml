@@ -1,11 +1,11 @@
 # =============================================================================
-# Cargo.toml — Workspace root for the synapse2 project
+# Cargo.toml — Workspace root for the synapse project
 #
 # TEMPLATE: This is a cargo workspace containing two crates:
 #   - . (the main library/binary crate)
 #   - xtask/ (repo automation: dist, ci, symlink-docs, check-env)
 #
-# When creating your own server, rename "synapse2" and add your own
+# When creating your own server, rename "synapse" and add your own
 # workspace members if needed.
 # =============================================================================
 
@@ -15,7 +15,7 @@ members = [".", "xtask"]
 resolver = "2"
 
 [package]
-name = "synapse2"
+name = "synapse"
 version = "0.6.2"
 edition = "2024"
 rust-version = "1.90"
@@ -71,7 +71,7 @@ tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 # deduping with lab-auth's 0.13 is deferred to a focused follow-up.)
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
 
-# Platform dirs — for default_data_dir() (~/.synapse2 detection)
+# Platform dirs — for default_data_dir() (~/.synapse detection)
 # TEMPLATE: Used in config.rs default_data_dir(). Keep this dep.
 dirs = "6"
 
@@ -124,7 +124,7 @@ codegen-units = 1
 strip = "symbols"
 
 [dev-dependencies]
-synapse2 = { path = ".", features = ["test-support"] }
+synapse = { path = ".", features = ["test-support"] }
 tokio = { version = "1", features = ["test-util"] }
 # Bytes is bollard's payload type for LogOutput frames; needed to construct
 # canned log frames in B8 container_read unit tests.

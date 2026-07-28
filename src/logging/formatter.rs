@@ -29,12 +29,12 @@
 //!
 //! The default tracing subscriber writes structured fields in a format like:
 //! ```text
-//! 2026-05-13T14:32:01.123456Z  INFO synapse2: starting  bind="0.0.0.0:3000"
+//! 2026-05-13T14:32:01.123456Z  INFO synapse: starting  bind="0.0.0.0:3000"
 //! ```
 //!
 //! Problems with the default:
 //! - Full ISO timestamp is verbose (our HH:MM:SS is sufficient for dev logs)
-//! - Module path (`synapse2:`) adds noise
+//! - Module path (`synapse:`) adds noise
 //! - String values are always quoted (our formatter only quotes whitespace-containing values)
 //! - No semantic coloring for field values
 //!
@@ -147,7 +147,7 @@ impl Visit for EventFieldCollector {
 /// A malicious upstream could inject ANSI escape sequences into field values,
 /// causing the log output to color arbitrary text or hide log entries.
 ///
-/// # TEMPLATE: Injection attack synapse2
+/// # TEMPLATE: Injection attack synapse
 ///
 /// Without sanitization, this log line:
 /// ```text
@@ -337,7 +337,7 @@ fn write_level(writer: &mut Writer<'_>, level: tracing::Level, ansi: bool) -> st
 /// # Output anatomy
 ///
 /// ```text
-/// 14:32:01  INFO  starting  bind=0.0.0.0:3000  auth=bearer  service=synapse2
+/// 14:32:01  INFO  starting  bind=0.0.0.0:3000  auth=bearer  service=synapse
 /// ────────  ────  ─────────  ─────────────────────────────────────────────────
 ///   dim      level  message    structured fields (priority order, then alphabetical)
 /// ```

@@ -2,11 +2,11 @@
 title: "Docker"
 doc_type: "guide"
 status: "active"
-owner: "synapse2"
+owner: "synapse"
 audience:
   - "contributors"
   - "agents"
-scope: "synapse2"
+scope: "synapse"
 source_of_truth: false
 upstream_refs:
   - "config/Dockerfile"
@@ -17,7 +17,7 @@ last_reviewed: "2026-07-27"
 
 # Docker
 
-Synapse2 Docker support lives in `config/Dockerfile`, `docker-compose.yml`, and
+Synapse Docker support lives in `config/Dockerfile`, `docker-compose.yml`, and
 `docker-compose.prod.yml`. The image builds the Next.js static web export, embeds
 it in the Rust binary, and runs the `synapse` binary on port `40080`.
 
@@ -40,7 +40,7 @@ just runtime-current   # compare running service with the local binary
 |---|---|
 | `web` | Build `apps/web/out` with pnpm. |
 | `docker-cli` | Supply only the official Docker client and Compose plugin. |
-| `builder` | Compile package `synapse2` and copy `target/release/synapse` to `/usr/local/bin/synapse`. |
+| `builder` | Compile package `synapse` and copy `target/release/synapse` to `/usr/local/bin/synapse`. |
 | `runtime` | Debian runtime with TLS/health tools, `findutils`, privilege drop, OpenSSH, Python 3, process/network inspection, and the copied Docker CLI plugins. It contains no Docker daemon. |
 
 Bollard handles Docker Engine API operations. Flux Compose intentionally invokes
@@ -66,7 +66,7 @@ The production service uses:
 ```yaml
 services:
   synapse:
-    image: synapse:${SYNAPSE2_VERSION:-latest}
+    image: synapse:${SYNAPSE_VERSION:-latest}
     container_name: synapse
     env_file:
       - path: .env
@@ -78,7 +78,7 @@ services:
     ports:
       - "${SYNAPSE_MCP_BIND_HOST:-127.0.0.1}:${SYNAPSE_MCP_HOST_PORT:-40080}:40080/tcp"
     volumes:
-      - ${HOME}/.synapse2:/data
+      - ${HOME}/.synapse:/data
       - /var/run/docker.sock:/var/run/docker.sock
       - ${HOME}/.ssh:/home/synapse/.ssh:ro
     group_add:
@@ -105,8 +105,8 @@ Local binary and Docker share the same logical data directory:
 
 | Deployment | Data directory |
 |---|---|
-| Local binary | `~/.synapse2/` |
-| Docker | `/data/` inside container, mounted from `~/.synapse2/` on host |
+| Local binary | `~/.synapse/` |
+| Docker | `/data/` inside container, mounted from `~/.synapse/` on host |
 | Plugin | `$CLAUDE_PLUGIN_DATA`, or `SYNAPSE_HOME` when explicitly set |
 
 `config.toml`, `.env`, OAuth state, and JWT signing keys belong in this data
@@ -115,7 +115,7 @@ directory. Do not bake secrets into the image.
 ## Health and auth
 
 - `/health` is unauthenticated and used by Docker healthchecks.
-- `/mcp` and `/v1/synapse2` require auth outside loopback unless
+- `/mcp` and `/v1/synapse` require auth outside loopback unless
   `SYNAPSE_NOAUTH=true` explicitly delegates auth/authz to an isolated trusted gateway.
 - Recreate the container after editing `.env`:
 
@@ -127,13 +127,13 @@ Use `just auth-smoke` for a bearer-auth smoke test against a running server.
 
 ## Versioned rollout and rollback
 
-Production deployments should pin `SYNAPSE2_VERSION` to a release tag such as
+Production deployments should pin `SYNAPSE_VERSION` to a release tag such as
 `0.5.4` or an immutable commit tag such as `sha-<full-commit>`, rather than rely
 on `latest`:
 
 ```bash
-SYNAPSE2_VERSION=0.5.4 docker compose -f docker-compose.prod.yml pull
-SYNAPSE2_VERSION=0.5.4 docker compose -f docker-compose.prod.yml up -d
+SYNAPSE_VERSION=0.5.4 docker compose -f docker-compose.prod.yml pull
+SYNAPSE_VERSION=0.5.4 docker compose -f docker-compose.prod.yml up -d
 curl -fsS http://127.0.0.1:40080/ready
 ```
 
@@ -141,12 +141,12 @@ Record the previous value before rollout. If readiness or the authenticated
 smoke test fails, restore it and recreate the service:
 
 ```bash
-SYNAPSE2_VERSION=<previous-tag> docker compose -f docker-compose.prod.yml pull
-SYNAPSE2_VERSION=<previous-tag> docker compose -f docker-compose.prod.yml up -d --force-recreate
+SYNAPSE_VERSION=<previous-tag> docker compose -f docker-compose.prod.yml pull
+SYNAPSE_VERSION=<previous-tag> docker compose -f docker-compose.prod.yml up -d --force-recreate
 ```
 
 ## Build artifacts
 
 `just build-plugin` copies the release binary to `bin/synapse` and
-`plugins/synapse2/bin/synapse`. The runtime freshness check compares running
+`plugins/synapse/bin/synapse`. The runtime freshness check compares running
 processes against `target/release/synapse`.

@@ -13,7 +13,7 @@ and share the same MCP server connection config (`.mcp.json`).
 ## File structure
 
 ```
-plugins/synapse2/
+plugins/synapse/
   .claude-plugin/
     plugin.json     ← Claude Code plugin manifest
   .codex-plugin/

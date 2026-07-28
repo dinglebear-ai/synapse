@@ -62,7 +62,7 @@ fn push_row(
 
 pub(crate) fn render_top_level(color: bool) -> String {
     let mut out = String::with_capacity(4096);
-    out.push_str(&format!("  {}\n", heading(color, "SYNAPSE2 CLI")));
+    out.push_str(&format!("  {}\n", heading(color, "SYNAPSE CLI")));
     out.push_str(&format!(
         "  {}\n",
         paint(color, CYAN_ANSI, "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")

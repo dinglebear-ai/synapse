@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-# install.sh — One-line installer for Synapse2
+# install.sh — One-line installer for Synapse
 #
 # TEMPLATE: Replace the values in the "CONFIGURATION" section below with your
 #           service's actual binary name, URL, and version.
@@ -30,7 +30,7 @@ REPO="jmagar/synapse"
 BINARY_NAME="synapse"
 
 # Service display name (shown in messages).
-SERVICE_NAME="Synapse2"
+SERVICE_NAME="Synapse"
 
 # TEMPLATE: Set a pinned version, or leave as "latest" to always install the
 #           most recent release. Pinned is safer for production automation.

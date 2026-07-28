@@ -144,10 +144,10 @@ fn is_loopback_uppercase_localhost_is_false() {
 
 #[test]
 fn is_loopback_subdomain_is_false() {
-    // "localhost.synapse2.com" must not be treated as loopback
+    // "localhost.synapse.com" must not be treated as loopback
     assert!(
-        !mcp_with_host("localhost.synapse2.com").is_loopback(),
-        "localhost.synapse2.com should not be loopback"
+        !mcp_with_host("localhost.synapse.com").is_loopback(),
+        "localhost.synapse.com should not be loopback"
     );
 }
 
@@ -321,7 +321,7 @@ fn config_example_toml_matches_typed_schema() {
         std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/config.example.toml"))
             .unwrap();
     assert!(
-        !contents.contains("[synapse2]"),
+        !contents.contains("[synapse]"),
         "upstream service settings belong in .env, not an ignored TOML table"
     );
     assert!(

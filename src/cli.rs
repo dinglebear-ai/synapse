@@ -7,7 +7,7 @@
 //! ```text
 //! synapse flux container list --host local
 //! synapse scout nodes
-//! synapse2 doctor [--json]
+//! synapse doctor [--json]
 //! ```
 
 use crate::{

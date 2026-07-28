@@ -25,7 +25,7 @@ use super::DoctorCheck;
 
 /// Check that the config file exists in the data directory.
 ///
-/// The template looks for `<data_dir>/config.toml` (e.g. `~/.synapse2/config.toml`).
+/// The template looks for `<data_dir>/config.toml` (e.g. `~/.synapse/config.toml`).
 /// A missing config file is non-fatal — the binary works with env vars alone —
 /// but the check warns so operators know where to place one if needed.
 ///
@@ -110,7 +110,7 @@ pub fn check_dir_writable(label: &str, dir: &Path) -> DoctorCheck {
 /// name. If it is not in PATH the stdio transport will silently fail.
 ///
 /// # TEMPLATE
-/// Replace `"synapse2"` with your binary name (matches Cargo.toml `[[bin]] name`).
+/// Replace `"synapse"` with your binary name (matches Cargo.toml `[[bin]] name`).
 pub fn check_binary_in_path(binary: &str) -> DoctorCheck {
     let path_var = std::env::var("PATH").unwrap_or_default();
     for dir in path_var.split(':') {
@@ -140,7 +140,7 @@ pub fn check_binary_in_path(binary: &str) -> DoctorCheck {
 
 /// Check that the configured MCP port is available (not already in use).
 ///
-/// Binding on a port that is already taken causes `synapse2 serve` to fail at
+/// Binding on a port that is already taken causes `synapse serve` to fail at
 /// startup. This check catches that problem before the server starts.
 ///
 /// # TEMPLATE

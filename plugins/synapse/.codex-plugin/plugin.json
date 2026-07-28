@@ -1,11 +1,11 @@
 {
-  "name": "synapse2",
+  "name": "synapse",
   "description": "MCP server for Docker and SSH host management — exposes flux (Docker/container/compose/host) and scout (SSH exec/filesystem/ZFS/logs) tools across configured infrastructure hosts.",
   "homepage": "https://github.com/jmagar/synapse",
   "repository": "https://github.com/jmagar/synapse",
   "license": "MIT",
   "keywords": [
-    "synapse2",
+    "synapse",
     "docker",
     "ssh",
     "infrastructure",
@@ -14,7 +14,7 @@
   ],
   "skills": "./skills/",
   "interface": {
-    "displayName": "Synapse2 MCP",
+    "displayName": "Synapse MCP",
     "shortDescription": "Manage Docker and SSH hosts via flux and scout",
     "longDescription": "MCP + CLI server for homelab infrastructure management. The flux tool covers Docker daemon, container lifecycle, host inspection, and Docker Compose operations across configured hosts. The scout tool covers SSH/local host inspection: filesystem reads, process listing, disk usage, ZFS pools/datasets/snapshots, log retrieval (syslog/journal/dmesg/auth), allowlisted command execution, multi-host fan-out, and file transfer. Read actions are safe; write actions (container stop/recreate/exec, compose down/restart/recreate, image build/rmi/prune, scout exec/emit/beam) are destructive and gated behind confirmation.",
     "developerName": "Jacob Magar",

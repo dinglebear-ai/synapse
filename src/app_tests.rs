@@ -37,12 +37,12 @@ fn test_scaffold_intent_delegates_through_facade() {
             deployment: "containers".into(),
             plugins: "claude".into(),
             publish_mcp: true,
-            crawl_urls: "https://docs.synapse2.test".into(),
+            crawl_urls: "https://docs.synapse.test".into(),
             crawl_repos: "".into(),
             crawl_search_topics: "Lab API".into(),
         })
         .expect("valid scaffold intent should build through the facade");
 
-    assert_eq!(result["kind"], "synapse2_scaffold_intent");
+    assert_eq!(result["kind"], "synapse_scaffold_intent");
     assert_eq!(result["project"]["service_name"], "lab_gateway");
 }

@@ -21,7 +21,7 @@ fn test_scaffold_intent_transformation() {
         deployment: "containers".into(),
         plugins: "claude, gemini, none".into(),
         publish_mcp: true,
-        crawl_urls: "https://docs.synapse2.test, https://api.synapse2.test".into(),
+        crawl_urls: "https://docs.synapse.test, https://api.synapse.test".into(),
         crawl_repos: "".into(),
         crawl_search_topics: "Lab API".into(),
     })
@@ -84,13 +84,13 @@ fn test_scaffold_intent_rejects_zero_port_and_bad_urls() {
 #[test]
 fn test_scaffold_intent_deduplicates_contract_unique_arrays() {
     let mut input = valid_scaffold_intent();
-    input.crawl_urls = "https://docs.synapse2.test, https://docs.synapse2.test".into();
+    input.crawl_urls = "https://docs.synapse.test, https://docs.synapse.test".into();
 
     let result = scaffold_intent(input).expect("duplicate crawl URLs should be deduplicated");
 
     assert_eq!(
         result["crawl_docs"]["urls"],
-        serde_json::json!(["https://docs.synapse2.test"])
+        serde_json::json!(["https://docs.synapse.test"])
     );
     assert_scaffold_contract_shape(&result);
 }
@@ -124,14 +124,14 @@ fn valid_scaffold_intent() -> ScaffoldIntent {
         deployment: "containers".into(),
         plugins: "claude, gemini, none".into(),
         publish_mcp: true,
-        crawl_urls: "https://docs.synapse2.test, https://api.synapse2.test".into(),
+        crawl_urls: "https://docs.synapse.test, https://api.synapse.test".into(),
         crawl_repos: "".into(),
         crawl_search_topics: "Lab API".into(),
     }
 }
 
 fn assert_scaffold_contract_shape(value: &Value) {
-    assert_eq!(value["kind"], "synapse2_scaffold_intent");
+    assert_eq!(value["kind"], "synapse_scaffold_intent");
     assert_eq!(value["schema_version"], 1);
     assert_non_empty_string(&value["project"]["display_name"]);
     assert_matches_kebab(&value["project"]["crate_name"]);

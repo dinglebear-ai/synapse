@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
-# Stop, rebuild, and restart the synapse2 service.
+# Stop, rebuild, and restart the synapse service.
 # Must be run from the repository root.
 # Supports systemd user units and Docker Compose.
 set -euo pipefail
 
-UNIT="${SYNAPSE_MCP_SYSTEMD_UNIT:-synapse2.service}"
-SERVICE="${SYNAPSE_MCP_DOCKER_SERVICE:-synapse2}"
+UNIT="${SYNAPSE_MCP_SYSTEMD_UNIT:-synapse.service}"
+SERVICE="${SYNAPSE_MCP_DOCKER_SERVICE:-synapse}"
 BINARY="${SYNAPSE_MCP_BINARY:-synapse}"
 
 echo "==> Repair target: unit=${UNIT} container=${SERVICE} binary=${BINARY}"
-echo "==> Stopping synapse2..."
+echo "==> Stopping synapse..."
 if systemctl --user is-active --quiet "${UNIT}" 2>/dev/null; then
     systemctl --user stop "${UNIT}"
     echo "    stopped systemd unit"

@@ -2,7 +2,7 @@
 title: "MCP Registry Publishing Guide"
 doc_type: "guide"
 status: "active"
-owner: "synapse2"
+owner: "synapse"
 audience:
   - "contributors"
   - "agents"
@@ -15,7 +15,7 @@ last_reviewed: "2026-06-13"
 
 # MCP Registry Publishing Guide
 
-This guide explains how to publish Synapse2 to the
+This guide explains how to publish Synapse to the
 [official MCP registry](https://modelcontextprotocol.io/registry/quickstart)
 using the `server.json` manifest at the repo root.
 
@@ -25,7 +25,7 @@ using the `server.json` manifest at the repo root.
 
 | Field | Current value |
 |---|---|
-| `name` | `tv.tootie/synapse2` |
+| `name` | `tv.tootie/synapse` |
 | `repository.url` | `https://github.com/jmagar/synapse` |
 | `packages[0].identifier` | `ghcr.io/jmagar/synapse:<version>` |
 | Hosted remote | Not declared; add `remotes` only when a public hosted `/mcp` endpoint exists |
@@ -80,7 +80,7 @@ This reads `server.json` from the current directory and submits it to the
 registry. On success, the server appears at:
 
 ```text
-https://registry.modelcontextprotocol.io/servers/tv.tootie/synapse2
+https://registry.modelcontextprotocol.io/servers/tv.tootie/synapse
 ```
 
 ## Version Management
@@ -121,7 +121,7 @@ tag before calling the publisher:
 ### "Name not in your namespace"
 
 Authenticate for the domain or GitHub user that prefixes the manifest `name`.
-For `tv.tootie/synapse2`, use DNS auth for `tv.tootie`.
+For `tv.tootie/synapse`, use DNS auth for `tv.tootie`.
 
 ### "Invalid schema"
 

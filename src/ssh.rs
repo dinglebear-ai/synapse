@@ -1,4 +1,4 @@
-//! SSH transport layer for synapse2.
+//! SSH transport layer for synapse.
 //!
 //! Provides an [`SshSession`] abstraction over the `openssh` crate covering
 //! connection lifecycle, command execution, and unix-socket forwarding. This is
@@ -85,8 +85,8 @@ pub(crate) fn runtime_subdir(name: &str) -> Result<std::path::PathBuf> {
         .uid();
     let base = std::env::var_os("XDG_RUNTIME_DIR")
         .map(std::path::PathBuf::from)
-        .unwrap_or_else(|| std::env::temp_dir().join(format!("synapse2-{uid}")));
-    let dir = base.join("synapse2").join(name);
+        .unwrap_or_else(|| std::env::temp_dir().join(format!("synapse-{uid}")));
+    let dir = base.join("synapse").join(name);
     std::fs::create_dir_all(&dir)
         .with_context(|| format!("create runtime directory {}", dir.display()))?;
     let metadata = std::fs::metadata(&dir)?;

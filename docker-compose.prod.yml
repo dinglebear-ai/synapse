@@ -1,7 +1,7 @@
 # =============================================================================
 # docker-compose.prod.yml — Production deployment template
 #
-# Synapse2 production compose template.
+# Synapse production compose template.
 #
 # Authentication is validated by the binary. For bearer deployments, set
 # SYNAPSE_MCP_TOKEN in .env. For OAuth-only deployments, set
@@ -31,7 +31,7 @@ x-common-service: &common-service
 services:
   synapse:
     <<: *common-service
-    image: ghcr.io/jmagar/synapse:${SYNAPSE2_VERSION:-latest}
+    image: ghcr.io/jmagar/synapse:${SYNAPSE_VERSION:-latest}
     container_name: synapse
     env_file:
       - path: .env
@@ -58,7 +58,7 @@ services:
     volumes:
       # Persistent appdata — config.toml, .env, auth.db, JWT key. The binary reads
       # config.toml / .env from here (it maps to /data inside the container).
-      - ${HOME}/.synapse2:/data
+      - ${HOME}/.synapse:/data
       # Docker control plane for the `flux` tools.
       # SECURITY: bind-mounting the daemon socket grants this container
       # root-equivalent control of the host's Docker. Only enable on hosts you

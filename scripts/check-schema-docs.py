@@ -16,7 +16,7 @@ HELP_RS = ROOT / "src/mcp/help.rs"
 PROMPTS_RS = ROOT / "src/mcp/prompts.rs"
 RESOURCES_RS = ROOT / "src/mcp/resources.rs"
 README = ROOT / "README.md"
-SKILL = ROOT / "plugins/synapse2/skills/synapse2/SKILL.md"
+SKILL = ROOT / "plugins/synapse/skills/synapse/SKILL.md"
 DOC = ROOT / "docs/MCP_SCHEMA.md"
 
 FLUX_ACTIONS = {"help", "docker", "container", "host", "compose"}
@@ -65,7 +65,7 @@ def extract_scope_for_actions() -> dict[str, str]:
         elif scope_expr == "Some(WRITE_SCOPE)":
             scope = "`synapse:write`"
         else:
-            scope = "`synapse2:__deny__`"
+            scope = "`synapse:__deny__`"
         current = scopes.get(name)
         if current is None or scope in {"public", "`synapse:read`"}:
             scopes[name] = scope
@@ -107,9 +107,9 @@ def render() -> str:
     actions = extract_actions()
     scopes = extract_scope_for_actions()
     lines = [
-        "# synapse2 MCP Schema Contract",
+        "# synapse MCP Schema Contract",
         "",
-        "`synapse2` exposes two MCP tools: `flux` and `scout`.",
+        "`synapse` exposes two MCP tools: `flux` and `scout`.",
         "",
         "Run:",
         "",
@@ -143,7 +143,7 @@ def render() -> str:
             "- `src/mcp/schemas.rs` must expose exactly the `flux` and `scout` tool schemas.",
             "- Both MCP tool schemas must reject unknown top-level parameters.",
             "- `help` is intentionally public and must have no required scope.",
-            "- `README.md`, `docs/API.md`, and `plugins/synapse2/skills/synapse2/SKILL.md` must mention every shipped action.",
+            "- `README.md`, `docs/API.md`, and `plugins/synapse/skills/synapse/SKILL.md` must mention every shipped action.",
             "- `src/mcp/resources.rs` owns stable resources and must keep `synapse://schema/flux` and `synapse://schema/scout` wired to `tool_definitions()`.",
             "- `src/mcp/prompts.rs` owns stable prompts and must keep `quick_start` covered by prompt tests.",
             "",
@@ -175,7 +175,7 @@ def check_mentions(actions: list[str]) -> list[str]:
     failures: list[str] = []
     surfaces = {
         "README.md": read(README),
-        "plugins/synapse2/skills/synapse2/SKILL.md": read(SKILL),
+        "plugins/synapse/skills/synapse/SKILL.md": read(SKILL),
         "src/mcp/help.rs": read(HELP_RS),
     }
     for label, text in surfaces.items():

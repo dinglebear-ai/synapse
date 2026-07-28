@@ -42,14 +42,14 @@ async fn try_localhost_session() -> Option<Session> {
 
 #[test]
 fn parse_socket_pid_simple_host() {
-    assert_eq!(parse_socket_pid("synapse2-dookie-12345.sock"), Some(12345));
+    assert_eq!(parse_socket_pid("synapse-dookie-12345.sock"), Some(12345));
 }
 
 #[test]
 fn parse_socket_pid_hyphenated_host() {
     // Host names contain hyphens — pid must be parsed from the RIGHT.
     assert_eq!(
-        parse_socket_pid("synapse2-dookie-prod-01-67890.sock"),
+        parse_socket_pid("synapse-dookie-prod-01-67890.sock"),
         Some(67890)
     );
 }
@@ -57,9 +57,9 @@ fn parse_socket_pid_hyphenated_host() {
 #[test]
 fn parse_socket_pid_rejects_foreign() {
     assert_eq!(parse_socket_pid("other-thing-1.sock"), None);
-    assert_eq!(parse_socket_pid("synapse2-dookie.sock"), None); // no pid
-    assert_eq!(parse_socket_pid("synapse2-dookie-notapid.sock"), None);
-    assert_eq!(parse_socket_pid("synapse2-dookie-12345.txt"), None);
+    assert_eq!(parse_socket_pid("synapse-dookie.sock"), None); // no pid
+    assert_eq!(parse_socket_pid("synapse-dookie-notapid.sock"), None);
+    assert_eq!(parse_socket_pid("synapse-dookie-12345.txt"), None);
 }
 
 // ── startup sweep ───────────────────────────────────────────────────────────
@@ -70,8 +70,8 @@ fn sweep_removes_stale_sockets_only() {
     let live_pid = std::process::id();
     let dead_pid = pick_dead_pid();
 
-    let live = dir.path().join(format!("synapse2-hostA-{live_pid}.sock"));
-    let stale = dir.path().join(format!("synapse2-host-b-{dead_pid}.sock"));
+    let live = dir.path().join(format!("synapse-hostA-{live_pid}.sock"));
+    let stale = dir.path().join(format!("synapse-host-b-{dead_pid}.sock"));
     let foreign = dir.path().join("unrelated.sock");
 
     std::fs::write(&live, b"").unwrap();
@@ -153,7 +153,7 @@ fn scan_known_hosts_missing_file_is_none() {
 fn forward_socket_path_uses_private_runtime_directory() {
     let p = forward_socket_path(&host("dookie")).unwrap();
     let name = p.file_name().unwrap().to_str().unwrap();
-    assert!(name.starts_with("synapse2-"));
+    assert!(name.starts_with("synapse-"));
     assert!(name.ends_with(".sock"));
     assert!(
         !name.contains("dookie"),
@@ -392,7 +392,7 @@ async fn forwarded_socket_has_0600_perms_and_is_removed_on_close() {
     // forward target is absent but the LOCAL listener + perms still apply.
     let session = Arc::new(session);
     let local_path = std::env::temp_dir().join(format!(
-        "synapse2-fwdtest-{}-{}.sock",
+        "synapse-fwdtest-{}-{}.sock",
         std::process::id(),
         Instant::now().elapsed().as_nanos()
     ));

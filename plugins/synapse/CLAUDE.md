@@ -1,8 +1,8 @@
-# plugins/synapse2 — Claude Code instructions
+# plugins/synapse — Claude Code instructions
 
 ## What this directory is
 
-Multi-platform plugin package for the Synapse2 MCP server. Contains manifests for Claude Code, Codex, and Gemini CLI — all pointing at the same MCP connection config and skills.
+Multi-platform plugin package for the Synapse MCP server. Contains manifests for Claude Code, Codex, and Gemini CLI — all pointing at the same MCP connection config and skills.
 
 ## File map
 
@@ -14,7 +14,7 @@ Multi-platform plugin package for the Synapse2 MCP server. Contains manifests fo
 | `mcp.json` | Shared MCP server connection config used by all three platforms |
 | `bin/synapse` | Optional local release binary — populate with `just install` |
 | `monitors/monitors.json` | Background health monitor config (requires Claude Code v2.1.105+) |
-| `skills/synapse2/SKILL.md` | Three-tier tool documentation shared by Claude, Codex, and Gemini |
+| `skills/synapse/SKILL.md` | Three-tier tool documentation shared by Claude, Codex, and Gemini |
 
 ## Versioning rule
 
@@ -43,7 +43,7 @@ synapse setup plugin-hook              # check, repair if blocking failures
 synapse setup plugin-hook --no-repair  # audit only
 ```
 
-Export the `SYNAPSE_*` vars yourself (or put them in `~/.synapse2/.env`) before
+Export the `SYNAPSE_*` vars yourself (or put them in `~/.synapse/.env`) before
 running these. See `plugins/README.md` for the full option→env-var mapping.
 Client mode — connecting to a server that is already running elsewhere — needs
 none of this; `mcp.json` reads the plugin settings directly.
@@ -62,7 +62,7 @@ was missing; a direct invocation surfaces that as a monitor error instead.
 
 ## Updating the skill
 
-`skills/synapse2/SKILL.md` is shared by Claude Code and Codex. Gemini reads it via the `skills` path in `gemini-extension.json`. Edit it once — all platforms see the change.
+`skills/synapse/SKILL.md` is shared by Claude Code and Codex. Gemini reads it via the `skills` path in `gemini-extension.json`. Edit it once — all platforms see the change.
 
 The three-tier structure must be preserved:
 - **Tier 1** (above fold): tool name, quick action table, critical gotchas
@@ -81,10 +81,10 @@ substituted into skill content.
 
 ## Template adaptation
 
-When renaming `synapse2` → your service:
+When renaming `synapse` → your service:
 
-1. Replace all `synapse2` / `Synapse2` / `SYNAPSE_` identifiers in every file in this directory.
-2. Rename `skills/synapse2/` to `skills/<your-service>/`.
+1. Replace all `synapse` / `Synapse` / `SYNAPSE_` identifiers in every file in this directory.
+2. Rename `skills/synapse/` to `skills/<your-service>/`.
 3. Update the monitor command in `monitors/monitors.json` to your binary name.
 4. Keep the no-version rule: do not add `"version"` to any manifest.
 5. Keep the no-hooks rule: do not add a `hooks/` directory or a `hooks` key.

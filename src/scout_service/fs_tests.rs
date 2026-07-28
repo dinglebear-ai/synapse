@@ -170,7 +170,7 @@ async fn delta_rejects_content_over_1mb() {
     let result = delta(
         &host,
         &EchoExec,
-        "/tmp/synapse2_test_source",
+        "/tmp/synapse_test_source",
         None,
         None,
         Some(&big_content),

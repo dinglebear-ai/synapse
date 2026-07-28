@@ -1,9 +1,9 @@
-//! Tool JSON schemas for the MCP synapse2 tool.
+//! Tool JSON schemas for the MCP synapse tool.
 //!
-//! This file defines the action list and input schema for the `synapse2` tool.
+//! This file defines the action list and input schema for the `synapse` tool.
 //! MCP clients inspect this schema to know what arguments are valid.
 //!
-//! **Template**: rename `synapse2` to your tool name. Add/remove actions and
+//! **Template**: rename `synapse` to your tool name. Add/remove actions and
 //! parameters to match your service. Use `"required": [...]` for mandatory args.
 
 use std::sync::OnceLock;
@@ -27,7 +27,7 @@ fn build_tool_definitions() -> Vec<Value> {
     let mut definitions = vec![
         json!({
             "name": "flux",
-            "description": "Docker infrastructure management for synapse2. Supports docker (info/df/images/networks/volumes/pull/build/rmi/prune), container (list/inspect/logs/stats/top/search/start/stop/restart/pause/resume/pull/recreate/exec), host status, and compose (list/status/up/down/restart/recreate/logs/build/pull/refresh) actions across configured hosts. build/rmi/prune, compose down/restart/recreate, and container stop/recreate/exec are destructive and require confirmation.",
+            "description": "Docker infrastructure management for synapse. Supports docker (info/df/images/networks/volumes/pull/build/rmi/prune), container (list/inspect/logs/stats/top/search/start/stop/restart/pause/resume/pull/recreate/exec), host status, and compose (list/status/up/down/restart/recreate/logs/build/pull/refresh) actions across configured hosts. build/rmi/prune, compose down/restart/recreate, and container stop/recreate/exec are destructive and require confirmation.",
             "inputSchema": {
                 "type": "object",
                 "properties": {
@@ -79,7 +79,7 @@ fn build_tool_definitions() -> Vec<Value> {
         }),
         json!({
             "name": "scout",
-            "description": "SSH/local host inspection for synapse2 (B14+B15). Supports: nodes (list hosts), peek (file/dir view), find (glob search), ps (processes), df (disk usage), delta (file diff), exec (allowlisted command, destructive), emit (multi-host exec, destructive), beam (file transfer, destructive), zfs (pools/datasets/snapshots, read-only), logs (syslog/journal/dmesg/auth, read-only).",
+            "description": "SSH/local host inspection for synapse (B14+B15). Supports: nodes (list hosts), peek (file/dir view), find (glob search), ps (processes), df (disk usage), delta (file diff), exec (allowlisted command, destructive), emit (multi-host exec, destructive), beam (file transfer, destructive), zfs (pools/datasets/snapshots, read-only), logs (syslog/journal/dmesg/auth, read-only).",
             "inputSchema": {
                 "type": "object",
                 "properties": {

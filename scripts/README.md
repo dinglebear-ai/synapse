@@ -118,7 +118,7 @@ just openapi
 just openapi-check
 ```
 
-Generates `docs/generated/openapi.json` for the Synapse2 REST API surface, including probes and `POST /v1/synapse2`. Operation metadata is derived from `src/actions/operations.rs`; MCP-only operations remain documented separately.
+Generates `docs/generated/openapi.json` for the Synapse REST API surface, including probes and `POST /v1/synapse`. Operation metadata is derived from `src/actions/operations.rs`; MCP-only operations remain documented separately.
 
 ### `check-scaffold-intent-contract.py`
 
@@ -240,7 +240,7 @@ bash scripts/repair.sh
 just repair
 ```
 
-Stops, rebuilds, and restarts the `synapse2` service. Detects the active service manager automatically: prefers the `synapse2.service` systemd user unit, then falls back to Docker Compose. Useful after an in-place binary update without a full `docker compose build`.
+Stops, rebuilds, and restarts the `synapse` service. Detects the active service manager automatically: prefers the `synapse.service` systemd user unit, then falls back to Docker Compose. Useful after an in-place binary update without a full `docker compose build`.
 
 ### `run-ascii-check.sh`
 
@@ -293,7 +293,7 @@ Watches `apps/web/` for changes and rebuilds on save using `watchexec`. Ignores 
 
 ```bash
 scripts/validate-plugin-layout.sh
-PLUGIN_ROOT=plugins/synapse2 scripts/validate-plugin-layout.sh
+PLUGIN_ROOT=plugins/synapse scripts/validate-plugin-layout.sh
 just validate-plugin
 ```
 

@@ -75,8 +75,8 @@ impl PooledSession {
 /// Return a process-private directory for SSH ControlMaster sockets with mode
 /// 0700. Preference order:
 ///
-/// 1. `$XDG_RUNTIME_DIR/synapse2/` (already 0700, owned by the current user)
-/// 2. `<temp_dir>/synapse2-<pid>/` created with mode 0700
+/// 1. `$XDG_RUNTIME_DIR/synapse/` (already 0700, owned by the current user)
+/// 2. `<temp_dir>/synapse-<pid>/` created with mode 0700
 ///
 /// The directory is created on first call and reused thereafter. Using a
 /// process-private path prevents other local users from connecting through our

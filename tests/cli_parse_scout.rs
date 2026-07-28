@@ -1,4 +1,4 @@
-use synapse2::cli::{Command, parse_args_from};
+use synapse::cli::{Command, parse_args_from};
 
 #[test]
 fn scout_commands_parse() {

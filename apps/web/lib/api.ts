@@ -1,7 +1,7 @@
 /**
- * Typed client for the Synapse2 REST API.
+ * Typed client for the Synapse REST API.
  *
- * All actions are dispatched via POST /v1/synapse2 with:
+ * All actions are dispatched via POST /v1/synapse with:
  *   { "action": "<action>", "params": { ... } }
  *
  * The base URL is relative (empty string) so the same binary serves
@@ -127,7 +127,7 @@ function isCapabilitiesResult(value: unknown): value is CapabilitiesResult {
   );
 }
 
-/** POST /v1/synapse2 — dispatch an action */
+/** POST /v1/synapse — dispatch an action */
 export function callAction<T = unknown>(
   action: string,
   params: Record<string, unknown> = {},

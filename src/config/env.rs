@@ -38,8 +38,8 @@ pub fn load_dotenv_environment() -> anyhow::Result<()> {
 
 /// Directories searched for `config.toml` and `.env`, in priority order:
 ///   1. `SYNAPSE_HOME` (explicit override), if set.
-///   2. The service data dir — `/data` inside Docker (where the `~/.synapse2`
-///      bind mount lands) or `~/.synapse2` on bare-metal (`default_data_dir`).
+///   2. The service data dir — `/data` inside Docker (where the `~/.synapse`
+///      bind mount lands) or `~/.synapse` on bare-metal (`default_data_dir`).
 ///   3. The current working directory — local dev / repo-root fallback.
 ///
 /// First match wins for `config.toml`. Use `dotenv_precedence_dirs` for `.env`

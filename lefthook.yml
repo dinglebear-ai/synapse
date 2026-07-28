@@ -1,5 +1,6 @@
 # =============================================================================
 # lefthook.yml — Minimal pre-commit hooks
+# Current project identity: Synapse.
 #
 # TEMPLATE: Copy this file unchanged to any new server repo.
 #           Install: cargo install lefthook   OR   mise use lefthook

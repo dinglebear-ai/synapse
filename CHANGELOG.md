@@ -51,6 +51,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- TEMPLATE: Add changes here as you work. They move to a version section on release. -->
 
+### Changed
+
+- **Breaking: complete the Synapse identity cutover** — the Rust crate, MCP
+  server name, plugin package and skill, REST endpoint, app-data directory, and
+  image-tag variable now use `synapse` (`/v1/synapse`, `~/.synapse`, and
+  `SYNAPSE_VERSION`). Operators must migrate existing app data before deploying
+  this release; see `docs/DEPLOYMENT.md`.
+
 ### Security
 
 - **Topology-safe host routing** — host `protocol` is now authoritative. Omitted protocols default to SSH, and loopback SSH endpoints retain their configured user, key, port, and namespace instead of executing on the Synapse host.

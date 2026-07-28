@@ -240,14 +240,14 @@ The action must return graceful JSON for expected elicitation outcomes.
 
 ## Skill handoff
 
-The packaged Synapse2 skill is responsible for orienting agents to the current
+The packaged Synapse skill is responsible for orienting agents to the current
 server. A future `scaffold-project` skill may turn scaffold intent JSON into a
 plan, but this repo does not currently ship that handoff skill.
 
 Location:
 
 ```text
-plugins/synapse2/skills/synapse2/SKILL.md
+plugins/synapse/skills/synapse/SKILL.md
 ```
 
 A scaffold handoff skill, if added later, must:
@@ -312,7 +312,7 @@ The coding agent may mutate files only after the user approves the plan produced
 | MCP schema/action enum | `src/mcp/schemas.rs` via `action_names()` |
 | Generated schema docs | `docs/MCP_SCHEMA.md` |
 | Schema docs generator descriptions | `scripts/check-schema-docs.py` |
-| Tool skill reference | `plugins/synapse2/skills/synapse2/SKILL.md` |
+| Tool skill reference | `plugins/synapse/skills/synapse/SKILL.md` |
 | Handoff skill | Not currently packaged |
 | Web API explorer metadata | `apps/web/lib/template.ts` |
 
@@ -321,7 +321,7 @@ The coding agent may mutate files only after the user approves the plan produced
 After changing this flow, run:
 
 ```bash
-cargo fmt --package synapse2
+cargo fmt --package synapse
 cargo test --lib
 just schema-docs-check
 just scaffold-contract-check

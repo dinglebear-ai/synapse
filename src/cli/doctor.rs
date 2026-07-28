@@ -7,8 +7,8 @@
 //! # Usage
 //!
 //! ```text
-//! synapse2 doctor           # human-readable coloured output; exit 0/1
-//! synapse2 doctor --json    # machine-readable JSON; exit 0/1
+//! synapse doctor           # human-readable coloured output; exit 0/1
+//! synapse doctor --json    # machine-readable JSON; exit 0/1
 //! ```
 //!
 //! # TEMPLATE
@@ -50,8 +50,8 @@ pub async fn run_doctor(config: &Config, json: bool) -> Result<()> {
     // ── 1. Config and filesystem ──────────────────────────────────────────────
     //
     // TEMPLATE: The data dir is resolved via `config::default_data_dir()`.
-    //           In Docker it resolves to /data; bare-metal to ~/.synapse2/.
-    //           Replace ".synapse2" with your service name in config.rs.
+    //           In Docker it resolves to /data; bare-metal to ~/.synapse/.
+    //           Replace ".synapse" with your service name in config.rs.
     let data_dir = default_data_dir()?;
 
     checks.push(check_config_file(&data_dir));
@@ -60,7 +60,7 @@ pub async fn run_doctor(config: &Config, json: bool) -> Result<()> {
 
     // ── 2. Binary in PATH ─────────────────────────────────────────────────────
     //
-    // TEMPLATE: Replace "synapse2" with your binary name (Cargo.toml [[bin]] name).
+    // TEMPLATE: Replace "synapse" with your binary name (Cargo.toml [[bin]] name).
     checks.push(check_binary_in_path("synapse"));
 
     // ── 3. MCP server port ────────────────────────────────────────────────────
@@ -165,13 +165,13 @@ impl DoctorCheck {
 /// Output follows the §48 layout:
 ///
 /// ```text
-/// synapse2 v0.1.0 — environment check
+/// synapse v0.1.0 — environment check
 ///
 ///   Config
 ///   ────────────────────────────────────────────
-///   ✓ Config file:  ~/.synapse2/config.toml
+///   ✓ Config file:  ~/.synapse/config.toml
 ///   ✗ Data dir:     not writable
-///     → Fix: chmod u+w ~/.synapse2
+///     → Fix: chmod u+w ~/.synapse
 ///   ...
 /// ```
 ///
@@ -229,12 +229,12 @@ fn print_doctor_report(checks: &[DoctorCheck]) {
         };
     }
 
-    // TEMPLATE: Replace "synapse2" with your service name and binary name.
+    // TEMPLATE: Replace "synapse" with your service name and binary name.
     println!();
     println!(
         "{}",
         bold!(format!(
-            "synapse2 v{} — environment check",
+            "synapse v{} — environment check",
             env!("CARGO_PKG_VERSION")
         ))
     );
@@ -293,16 +293,16 @@ fn print_doctor_report(checks: &[DoctorCheck]) {
         println!(
             "  {}  All checks passed. Run: {}",
             green!("✓"),
-            bold!("synapse2 serve")
+            bold!("synapse serve")
         );
     } else {
-        // TEMPLATE: Replace "synapse2 serve" with your binary name.
+        // TEMPLATE: Replace "synapse serve" with your binary name.
         let noun = if issues == 1 { "issue" } else { "issues" };
         println!(
             "  {}  {} {noun} found. Fix before running: {}",
             red!("✗"),
             red!(issues.to_string()),
-            bold!("synapse2 serve")
+            bold!("synapse serve")
         );
     }
     println!();

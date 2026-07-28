@@ -1,8 +1,8 @@
-//! Configuration structs for the Synapse2 MCP server.
+//! Configuration structs for the Synapse MCP server.
 //!
 //! Values are loaded in priority order:
 //!   1. `config.toml` — non-secret defaults. Searched in the service data dir
-//!      (`/data` in Docker, `~/.synapse2` bare-metal) then the current directory.
+//!      (`/data` in Docker, `~/.synapse` bare-metal) then the current directory.
 //!      First match wins.
 //!   2. `.env` — secrets, URLs, and runtime vars. Lower-priority `./.env` is
 //!      applied before appdata/SYNAPSE_HOME so explicit appdata values win.
@@ -14,7 +14,7 @@
 
 use serde::{Deserialize, Serialize};
 
-const SERVICE_HOME_DIRNAME: &str = ".synapse2";
+const SERVICE_HOME_DIRNAME: &str = ".synapse";
 
 mod env;
 
@@ -66,7 +66,7 @@ pub struct McpConfig {
     /// Additional allowed CORS origins (comma-separated in env).
     pub allowed_origins: Vec<String>,
     /// Maximum number of concurrent in-flight requests on `/mcp` and
-    /// `/v1/synapse2` (SYNAPSE_MCP_MAX_CONCURRENCY). Additional requests are
+    /// `/v1/synapse` (SYNAPSE_MCP_MAX_CONCURRENCY). Additional requests are
     /// rejected with HTTP 429. Default: 50. Set to 0 to disable the limit.
     ///
     /// This is a global concurrency cap across all connected clients — not a
@@ -205,7 +205,7 @@ fn default_mcp_port() -> u16 {
     40080
 }
 fn default_server_name() -> String {
-    "synapse2".into()
+    "synapse".into()
 }
 fn default_max_concurrency() -> usize {
     50
@@ -281,9 +281,9 @@ impl Default for AuthConfig {
 /// | Environment   | Path                                |
 /// |---------------|-------------------------------------|
 /// | Container     | `/data` (bind-mounted from host)     |
-/// | Bare-metal    | `~/.synapse2` (user home dir)        |
+/// | Bare-metal    | `~/.synapse` (user home dir)        |
 ///
-/// TEMPLATE: Replace `.synapse2` with your service name (e.g. `.unraid`, `.gotify`).
+/// TEMPLATE: Replace `.synapse` with your service name (e.g. `.unraid`, `.gotify`).
 ///           The name should match the docker-compose.yml volume mount source.
 pub fn service_data_dir() -> anyhow::Result<std::path::PathBuf> {
     if let Some(home) = std::env::var_os("SYNAPSE_HOME") {
@@ -318,7 +318,7 @@ impl Config {
 
         // Search for config.toml in the service config dirs, first match wins.
         // See `config_search_dirs` for the resolved precedence — critically this
-        // includes `/data` in Docker, which is where the `~/.synapse2` bind mount
+        // includes `/data` in Docker, which is where the `~/.synapse` bind mount
         // lands, so config dropped in the appdata dir is honored in-container.
         for dir in config_search_dirs() {
             let path = dir.join("config.toml");

@@ -1,6 +1,6 @@
-# synapse2 MCP Schema Contract
+# synapse MCP Schema Contract
 
-`synapse2` exposes two MCP tools: `flux` and `scout`.
+`synapse` exposes two MCP tools: `flux` and `scout`.
 
 Run:
 
@@ -44,7 +44,7 @@ python3 scripts/check-schema-docs.py --check
 - `src/mcp/schemas.rs` must expose exactly the `flux` and `scout` tool schemas.
 - Both MCP tool schemas must reject unknown top-level parameters.
 - `help` is intentionally public and must have no required scope.
-- `README.md`, `docs/API.md`, and `plugins/synapse2/skills/synapse2/SKILL.md` must mention every shipped action.
+- `README.md`, `docs/API.md`, and `plugins/synapse/skills/synapse/SKILL.md` must mention every shipped action.
 - `src/mcp/resources.rs` owns stable resources and must keep `synapse://schema/flux` and `synapse://schema/scout` wired to `tool_definitions()`.
 - `src/mcp/prompts.rs` owns stable prompts and must keep `quick_start` covered by prompt tests.
 

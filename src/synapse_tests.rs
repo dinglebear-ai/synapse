@@ -170,7 +170,7 @@ fn connection_identity_changes_when_topology_or_credentials_change() {
 #[test]
 fn scout_read_paths_must_stay_under_allowed_roots() {
     let host = HostConfig::local();
-    assert!(validate_scout_read_path(&host, "/tmp/synapse2-readable.log").is_ok());
+    assert!(validate_scout_read_path(&host, "/tmp/synapse-readable.log").is_ok());
 
     let result = validate_scout_read_path(&host, "/etc/passwd");
     assert!(

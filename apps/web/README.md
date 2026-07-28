@@ -1,10 +1,10 @@
 # apps/web
 
-Operator dashboard and interactive tool runner for Synapse2. Built with Next.js 16 (static export), React 19, Tailwind CSS 4, Biome, and the Aurora design system.
+Operator dashboard and interactive tool runner for Synapse. Built with Next.js 16 (static export), React 19, Tailwind CSS 4, Biome, and the Aurora design system.
 
 ## What it is
 
-A static web UI served by the Rust binary alongside the MCP API. Synapse2 exposes API + CLI + MCP + Web for local Flux and Scout workflows.
+A static web UI served by the Rust binary alongside the MCP API. Synapse exposes API + CLI + MCP + Web for local Flux and Scout workflows.
 
 Three pages:
 
@@ -39,14 +39,14 @@ pnpm validate   # Biome check + typecheck + tests + static build
 
 ## How it connects to the backend
 
-All API calls go through `lib/api.ts`. Service names, endpoints, and action metadata live in `lib/template.ts` so the web UI has one obvious place to track the generated Synapse2 contract.
+All API calls go through `lib/api.ts`. Service names, endpoints, and action metadata live in `lib/template.ts` so the web UI has one obvious place to track the generated Synapse contract.
 
-By default, the base URL is empty (relative) — the Rust server serves both the static files and the API from the same origin, so no CORS configuration is needed. For local `pnpm dev` against a separately running backend, copy `.env.example` to `.env.local` and set `NEXT_PUBLIC_SYNAPSE2_API_BASE_URL` (for example, `http://localhost:40080`).
+By default, the base URL is empty (relative) — the Rust server serves both the static files and the API from the same origin, so no CORS configuration is needed. For local `pnpm dev` against a separately running backend, copy `.env.example` to `.env.local` and set `NEXT_PUBLIC_SYNAPSE_API_BASE_URL` (for example, `http://localhost:40080`).
 
 Every action is dispatched as:
 
 ```
-POST /v1/synapse2
+POST /v1/synapse
 { "action": "<action>", "params": { ... } }
 ```
 
@@ -112,7 +112,7 @@ apps/web/
 
 `lib/template.ts` must stay aligned with `docs/generated/openapi.json`. The Vitest contract test compares the web action list against the generated OpenAPI `ActionName` enum and `x-template.rest_actions` metadata.
 
-When Synapse2 adds or removes REST actions:
+When Synapse adds or removes REST actions:
 
 1. Regenerate the OpenAPI document.
 2. Update `ACTIONS` in `lib/template.ts` with action descriptions, parameters, scopes, examples, and sample responses.

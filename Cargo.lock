@@ -3017,7 +3017,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "synapse2"
+name = "synapse"
 version = "0.6.2"
 dependencies = [
  "anyhow",
@@ -3041,7 +3041,7 @@ dependencies = [
  "serde",
  "serde_json",
  "ssh2-config",
- "synapse2",
+ "synapse",
  "tempfile",
  "thiserror",
  "tokio",

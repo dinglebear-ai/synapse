@@ -1,5 +1,5 @@
 use serde_json::json;
-use synapse2::{mcp::execute_tool_without_peer_for_test, testing::loopback_state};
+use synapse::{mcp::execute_tool_without_peer_for_test, testing::loopback_state};
 
 async fn call_mcp_tool(tool: &str, args: serde_json::Value) -> serde_json::Value {
     let state = loopback_state();
@@ -98,7 +98,7 @@ async fn scout_nodes_returns_hosts_array() {
 #[tokio::test]
 async fn scout_read_only_families_dispatch_with_parameters() {
     let tempdir = tempfile::tempdir_in("/tmp").expect("tempdir should be created under /tmp");
-    let path = tempdir.path().join("synapse2-tool-dispatch.txt");
+    let path = tempdir.path().join("synapse-tool-dispatch.txt");
     std::fs::write(&path, "alpha\nbeta\n").expect("test fixture should be writable");
     let path = path.to_string_lossy().to_string();
     let dir = tempdir.path().to_string_lossy().to_string();
@@ -118,7 +118,7 @@ async fn scout_read_only_families_dispatch_with_parameters() {
             "action": "find",
             "host": "local",
             "path": dir,
-            "pattern": "synapse2-tool-dispatch.txt",
+            "pattern": "synapse-tool-dispatch.txt",
             "depth": 99,
             "limit": 1
         }),

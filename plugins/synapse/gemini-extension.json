@@ -1,13 +1,13 @@
 {
-  "name": "synapse2",
+  "name": "synapse",
   "description": "MCP server for Docker and SSH host management — exposes flux (Docker/container/compose/host) and scout (SSH exec/filesystem/ZFS/logs) tools across configured infrastructure hosts.",
   "author": "Jacob Magar",
   "repository": "https://github.com/jmagar/synapse",
   "license": "MIT",
-  "keywords": ["synapse2", "docker", "ssh", "infrastructure", "homelab", "mcp"],
+  "keywords": ["synapse", "docker", "ssh", "infrastructure", "homelab", "mcp"],
   "contextFileName": "GEMINI.md",
   "mcpServers": {
-    "synapse2": {
+    "synapse": {
       "type": "http",
       "url": "${settings.server_url}/mcp",
       "headers": {
@@ -19,7 +19,7 @@
   "settings": [
     {
       "name": "server_url",
-      "description": "Base URL of the MCP HTTP server. Keep http://localhost:40080 for local use; set to https://synapse2.yourdomain.com for a remote server. Do NOT include a trailing /mcp.",
+      "description": "Base URL of the MCP HTTP server. Keep http://localhost:40080 for local use; set to https://synapse.yourdomain.com for a remote server. Do NOT include a trailing /mcp.",
       "required": true,
       "default": "http://localhost:40080"
     },

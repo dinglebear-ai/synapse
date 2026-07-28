@@ -28,7 +28,7 @@
 //! BEFORE constructing the `CallToolResult`. Example:
 //!
 //! ```rust,ignore
-//! use synapse2::token_limit;
+//! use synapse::token_limit;
 //!
 //! let result = state.service.list_things(limit, offset).await?;
 //! let text = serde_json::to_string_pretty(&result)?;

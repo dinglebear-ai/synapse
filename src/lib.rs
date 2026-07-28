@@ -1,4 +1,4 @@
-//! `synapse2` library crate.
+//! `synapse` library crate.
 // The `json!` macro in schemas.rs requires a higher recursion limit due to the
 // large size of the tool schema definitions. 256 is sufficient; the default is 128.
 #![recursion_limit = "256"]
@@ -17,7 +17,7 @@
 //!   [`host_config`] — `HostRepository` trait + `FileHostRepository` (precedence chain + SSH auto-discovery)
 //!   [`mcp`]         — MCP protocol layer (tools, schemas, prompts, server handler)
 //!   [`server`]      — `AppState`, `AuthPolicy`, HTTP router
-//!   [`api`]         — REST API handlers (`POST /v1/synapse2`, health, status)
+//!   [`api`]         — REST API handlers (`POST /v1/synapse`, health, status)
 
 pub mod actions;
 pub mod activity;
@@ -100,7 +100,7 @@ pub mod testing {
         AppState {
             config: McpConfig {
                 auth: crate::config::AuthConfig {
-                    public_url: Some("https://synapse2.synapse2.com".to_string()),
+                    public_url: Some("https://synapse.synapse.com".to_string()),
                     ..Default::default()
                 },
                 ..McpConfig::default()
@@ -118,7 +118,7 @@ pub mod testing {
             ("SYNAPSE_MCP_AUTH_MODE".into(), "oauth".into()),
             (
                 "SYNAPSE_MCP_PUBLIC_URL".into(),
-                "https://synapse2.synapse2.com".into(),
+                "https://synapse.synapse.com".into(),
             ),
             (
                 "SYNAPSE_MCP_GOOGLE_CLIENT_ID".into(),
@@ -130,7 +130,7 @@ pub mod testing {
             ),
             (
                 "SYNAPSE_MCP_AUTH_ADMIN_EMAIL".into(),
-                "admin@synapse2.com".into(),
+                "admin@synapse.com".into(),
             ),
             (
                 "SYNAPSE_MCP_AUTH_SQLITE_PATH".into(),

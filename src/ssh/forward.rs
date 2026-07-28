@@ -25,7 +25,7 @@ pub fn forward_socket_path(host: &HostConfig) -> Result<PathBuf> {
     host.connection_key().hash(&mut hasher);
     let identity = hasher.finish();
     Ok(runtime_subdir("forward")?.join(format!(
-        "synapse2-{identity:016x}-{}.sock",
+        "synapse-{identity:016x}-{}.sock",
         std::process::id()
     )))
 }

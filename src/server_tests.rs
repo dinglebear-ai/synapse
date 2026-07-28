@@ -130,7 +130,7 @@ fn public_url_userinfo_is_rejected() {
 #[test]
 fn wildcard_public_url_is_rejected() {
     let mut config = config("0.0.0.0");
-    config.mcp.auth.public_url = Some("https://*.synapse2.com".into());
+    config.mcp.auth.public_url = Some("https://*.synapse.com".into());
     let error = resolve_auth_policy_kind(&config).unwrap_err();
     assert!(
         error

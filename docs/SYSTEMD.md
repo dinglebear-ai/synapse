@@ -2,18 +2,18 @@
 title: "systemd Deployment"
 doc_type: "guide"
 status: "active"
-owner: "synapse2"
+owner: "synapse"
 audience:
   - "contributors"
   - "agents"
-scope: "synapse2"
+scope: "synapse"
 source_of_truth: false
 last_reviewed: "2026-06-12"
 ---
 
 # systemd
 
-Synapse2 can run as a user-level systemd service when the release binary is
+Synapse can run as a user-level systemd service when the release binary is
 installed as `synapse`.
 
 ## Install the binary
@@ -38,11 +38,11 @@ synapse doctor
 
 ## Unit file
 
-Create `~/.config/systemd/user/synapse2.service`:
+Create `~/.config/systemd/user/synapse.service`:
 
 ```ini
 [Unit]
-Description=Synapse2 MCP server
+Description=Synapse MCP server
 After=network.target
 
 [Service]
@@ -50,7 +50,7 @@ Type=simple
 ExecStart=%h/.local/bin/synapse serve mcp
 Restart=on-failure
 RestartSec=5
-EnvironmentFile=%h/.synapse2/.env
+EnvironmentFile=%h/.synapse/.env
 
 [Install]
 WantedBy=default.target
@@ -58,7 +58,7 @@ WantedBy=default.target
 
 Key points:
 
-- Use `EnvironmentFile=%h/.synapse2/.env`; never hardcode tokens in unit files.
+- Use `EnvironmentFile=%h/.synapse/.env`; never hardcode tokens in unit files.
 - `%h` expands to the user home directory.
 - `serve mcp` is the canonical Streamable HTTP mode.
 - For bearer auth, set `SYNAPSE_MCP_TOKEN` in the environment file.
@@ -67,9 +67,9 @@ Key points:
 
 ```bash
 systemctl --user daemon-reload
-systemctl --user enable --now synapse2.service
-systemctl --user restart synapse2.service
-systemctl --user status synapse2.service
+systemctl --user enable --now synapse.service
+systemctl --user restart synapse.service
+systemctl --user status synapse.service
 ```
 
 ## Runtime verification
@@ -89,11 +89,11 @@ If hashes differ, install the new binary and restart the unit.
 With systemd, logs go to the journal:
 
 ```bash
-journalctl --user -u synapse2.service -f
-journalctl --user -u synapse2.service --since "1h ago"
+journalctl --user -u synapse.service -f
+journalctl --user -u synapse.service --since "1h ago"
 ```
 
-The binary also writes structured JSON logs to `~/.synapse2/logs/synapse.log`
+The binary also writes structured JSON logs to `~/.synapse/logs/synapse.log`
 when file logging is enabled by the runtime configuration.
 
 ## Doctor pre-flight

@@ -1,6 +1,6 @@
 # Authentication
 
-Synapse2 supports **static bearer tokens** and **OAuth 2.0** for the Streamable
+Synapse supports **static bearer tokens** and **OAuth 2.0** for the Streamable
 HTTP MCP and REST surfaces. Stdio MCP is local-process transport and does not use
 HTTP auth.
 
@@ -29,7 +29,7 @@ also satisfies the action scope. A static token remains read-only.
 
 ## Scopes
 
-Mounted HTTP auth enforces Synapse2 scopes. Read actions require
+Mounted HTTP auth enforces Synapse scopes. Read actions require
 `synapse:read`; write/destructive actions require `synapse:write`, which also
 satisfies read checks. The `help` action is public.
 
@@ -52,7 +52,7 @@ Authorization: Bearer <token>
 ```
 
 The server validates the header on protected requests to `/mcp` and
-`/v1/synapse2`.
+`/v1/synapse`.
 
 ---
 
@@ -62,7 +62,7 @@ Set the following environment variables:
 
 ```bash
 SYNAPSE_MCP_AUTH_MODE=oauth
-SYNAPSE_MCP_PUBLIC_URL=https://synapse2.example.com
+SYNAPSE_MCP_PUBLIC_URL=https://synapse.example.com
 SYNAPSE_MCP_GOOGLE_CLIENT_ID=...
 SYNAPSE_MCP_GOOGLE_CLIENT_SECRET=...
 SYNAPSE_MCP_AUTH_ADMIN_EMAIL=you@example.com

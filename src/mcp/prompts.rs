@@ -1,4 +1,4 @@
-//! MCP prompts for the synapse2 server.
+//! MCP prompts for the synapse server.
 //!
 //! Prompts are pre-canned message templates that MCP clients can invoke.
 //! They appear in the "Prompts" section of compatible MCP UIs.

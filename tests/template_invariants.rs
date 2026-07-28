@@ -74,9 +74,9 @@ fn justfile_exposes_ported_automation_recipes() {
 #[test]
 fn plugin_manifests_do_not_have_version_fields() {
     for path in [
-        "plugins/synapse2/.claude-plugin/plugin.json",
-        "plugins/synapse2/.codex-plugin/plugin.json",
-        "plugins/synapse2/gemini-extension.json",
+        "plugins/synapse/.claude-plugin/plugin.json",
+        "plugins/synapse/.codex-plugin/plugin.json",
+        "plugins/synapse/gemini-extension.json",
     ] {
         let manifest = json(path);
         assert!(

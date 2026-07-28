@@ -1,9 +1,9 @@
-# synapse2 API
+# synapse API
 
-`synapse2` exposes two MCP tools (`flux` and `scout`) and equivalent CLI
+`synapse` exposes two MCP tools (`flux` and `scout`) and equivalent CLI
 commands. MCP and CLI are the primary surfaces and expose the full 59-action set.
 
-The REST endpoint at `POST /v1/synapse2` is a thin compatibility shim. It routes
+The REST endpoint at `POST /v1/synapse` is a thin compatibility shim. It routes
 only 14 of the 59 actions: `help`, `scout.nodes`, `scout.peek`, `scout.exec`,
 `flux.container.list`, and the nine `flux.docker.*` subactions
 (`info`, `df`, `images`, `networks`, `volumes`, `pull`, `build`, `rmi`,
@@ -281,7 +281,7 @@ synapse scout logs journal --host myhost --unit docker --priority err
 
 ## REST Endpoint
 
-`POST /v1/synapse2`
+`POST /v1/synapse`
 
 ```json
 {
@@ -312,7 +312,7 @@ surfaces. Some write-scope actions are not available over REST.
 ## Parity Verification
 
 `tests/parity.rs` asserts every action in
-`../synapse-mcp/docs/INVENTORY.md` is covered by synapse2's `OPERATION_SPECS`
+`../synapse-mcp/docs/INVENTORY.md` is covered by synapse's `OPERATION_SPECS`
 and help map. Run with:
 
 ```bash
@@ -322,6 +322,6 @@ cargo test --test parity -- --nocapture
 Expected output: `synapse-mcp parity: 61 rows parsed → 61 matched, 0 missing`
 
 **Note:** `tests/parity.rs` silently skips when `../synapse-mcp/docs/INVENTORY.md`
-is absent (the sibling repo must be checked out alongside synapse2 for the test to
+is absent (the sibling repo must be checked out alongside synapse for the test to
 run). CI does not currently enforce the sibling repo's presence, so the parity
 guarantee may not run in practice. See `tests/parity.rs:55-72`.

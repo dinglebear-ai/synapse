@@ -2,18 +2,18 @@
 title: "Deployment"
 doc_type: "guide"
 status: "active"
-owner: "synapse2"
+owner: "synapse"
 audience:
   - "contributors"
   - "agents"
-scope: "synapse2"
+scope: "synapse"
 source_of_truth: true
 last_reviewed: "2026-07-27"
 ---
 
 # Deployment
 
-Synapse2 supports three deployment modes:
+Synapse supports three deployment modes:
 
 1. **Local development** with `just dev`.
 2. **Docker Compose** with `just docker-up`.
@@ -65,11 +65,11 @@ filesystem, atomically rename it into place, and preserve the old executable as
 
 ```bash
 mv -f ~/.local/bin/synapse.previous ~/.local/bin/synapse
-systemctl --user restart synapse2.service
+systemctl --user restart synapse.service
 synapse --version
 ```
 
-For Compose, pin `SYNAPSE2_VERSION` to a release or `sha-<full-commit>` tag and
+For Compose, pin `SYNAPSE_VERSION` to a release or `sha-<full-commit>` tag and
 record the previous tag before `pull`/`up`; `docs/DOCKER.md` contains the exact
 rollback commands.
 
@@ -87,7 +87,7 @@ fn is_containerized() -> bool {
 fn resolve_data_dir(config_path: Option<&str>) -> PathBuf {
     if let Some(p) = config_path { return PathBuf::from(p); }
     if is_containerized() { return PathBuf::from("/data"); }
-    dirs::home_dir().unwrap_or_default().join(".synapse2")
+    dirs::home_dir().unwrap_or_default().join(".synapse")
 }
 
 // Bind behavior is explicit in every environment. The binary default remains
@@ -101,9 +101,27 @@ All deployments share `~/.<service>` as the logical data root:
 
 | Deployment | Data directory |
 |---|---|
-| Local binary | `~/.synapse2/` |
-| Docker | `/data/` in container, mounted from `~/.synapse2/` on host |
-| Plugin | `$CLAUDE_PLUGIN_DATA` (symlinked to `~/.synapse2/`) |
+| Local binary | `~/.synapse/` |
+| Docker | `/data/` in container, mounted from `~/.synapse/` on host |
+| Plugin | `$CLAUDE_PLUGIN_DATA` (symlinked to `~/.synapse/`) |
+
+### Upgrade from Synapse2
+
+This release completes a breaking product-identity cutover. Before deploying it,
+stop the service and make a recoverable copy of the old appdata directory. Then
+move the directory, update the Compose override, and recreate the service:
+
+```bash
+cp -a ~/.synapse2 ~/.synapse2.pre-synapse-cutover
+mv ~/.synapse2 ~/.synapse
+sed -i 's|\.synapse2|.synapse|g' ~/.synapse/docker-compose.env.yml
+docker compose up -d --force-recreate synapse
+```
+
+Update MCP clients to use the server name `synapse` and REST clients to use
+`POST /v1/synapse`. The old server name and endpoint are removed in this
+release. Roll back by restoring the backup directory, its prior Compose
+override, and the previous image tag.
 
 ## Managed-host prerequisites
 
@@ -159,7 +177,7 @@ that after upgrading.
 - `/ready` is public and checks topology loading with a bounded timeout.
 - `/status` is public but redacted.
 - `/mcp` is the Streamable HTTP MCP endpoint.
-- `/v1/synapse2` is the REST action endpoint.
+- `/v1/synapse` is the REST action endpoint.
 
 ## Port assignments
 
@@ -175,7 +193,7 @@ Each service in the rmcp family uses a fixed port to avoid collisions:
 | unifi-mcp (rustifi) | 7474 | `unifi` |
 | tailscale-mcp (rustscale) | 7575 | `tailscale` |
 | apprise-mcp | 8765 | `apprise` |
-| synapse2 | 40080 | `synapse` |
+| synapse | 40080 | `synapse` |
 
 Set the port via `SYNAPSE_MCP_PORT` or in `config.toml`. Update `EXPOSE` in the Dockerfile and the port mapping in `docker-compose.yml` to match.
 

@@ -1,4 +1,4 @@
-//! Docker transport layer for synapse2 (`flux` domain).
+//! Docker transport layer for synapse (`flux` domain).
 //!
 //! This is the Docker spine: a [`DockerClient`] trait (segregated into
 //! [`ContainerOps`], [`ImageOps`], [`NetworkOps`], [`VolumeOps`], [`SystemOps`]

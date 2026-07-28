@@ -2,7 +2,7 @@
 title: "Philosophy"
 doc_type: "guide"
 status: "active"
-owner: "synapse2"
+owner: "synapse"
 audience:
   - "contributors"
   - "agents"
@@ -13,7 +13,7 @@ last_reviewed: "2026-06-13"
 
 # Philosophy
 
-Synapse2 follows the rmcp-template family philosophy: make MCP servers safe,
+Synapse follows the rmcp-template family philosophy: make MCP servers safe,
 boring, and easy for agents to operate.
 
 ## Boring by design
@@ -24,7 +24,7 @@ boring, and easy for agents to operate.
 - Clear layering between client, service, and transport shims.
 - Repeatable scripts and release gates.
 
-Synapse2 should be easy to understand, audit, and extend — not clever.
+Synapse should be easy to understand, audit, and extend — not clever.
 
 ## Thin shims, rich service layer
 
@@ -129,7 +129,7 @@ operator  →  <binary> setup plugin-hook
 
 The binary runs `setup check`, optionally `setup repair`, and returns a structured JSON report. Advisory failures exit 0; blocking failures exit nonzero.
 
-Synapse2 previously wrapped this in a `SessionStart` plugin hook. That wrapper was removed: plugin packages here ship manifests, skills, and monitors only, and setup is an explicit operator command. Because the binary already owned the behavior, removing the wrapper cost no capability — only its automatic invocation.
+Synapse previously wrapped this in a `SessionStart` plugin hook. That wrapper was removed: plugin packages here ship manifests, skills, and monitors only, and setup is an explicit operator command. Because the binary already owned the behavior, removing the wrapper cost no capability — only its automatic invocation.
 
 ## Three-tier skill fallback
 

@@ -1,7 +1,7 @@
 //! MCP tool dispatch — thin shims only.
 //!
 //! **Rule**: no business logic here. Parse args → call service → return Value.
-//! All logic belongs in `app.rs` (or `synapse2.rs` for transport concerns).
+//! All logic belongs in `app.rs` (or `synapse.rs` for transport concerns).
 //!
 //! The `peer` parameter is threaded through so that elicitation actions can
 //! ask the MCP client for user input mid-call. For non-elicitation actions
@@ -17,7 +17,7 @@ use crate::server::AppState;
 
 /// Dispatch an incoming MCP tool call to the appropriate handler.
 ///
-/// `name`   — tool name (matches schema, currently only "synapse2")
+/// `name`   — tool name (matches schema, currently only "synapse")
 /// `args`   — parsed JSON arguments from the MCP client
 /// `peer`   — connection to the MCP client; used for elicitation
 pub(super) async fn execute_tool(

@@ -34,7 +34,7 @@ pub enum ValidationError {
     WrongType { field: String },
     #[error("action={action} is not available over REST; use MCP or action=help for documentation")]
     NotAvailableOverRest { action: String },
-    #[error("unknown synapse2 action: {action}; use action=help for documentation")]
+    #[error("unknown synapse action: {action}; use action=help for documentation")]
     UnknownAction { action: String },
 }
 
@@ -42,7 +42,7 @@ pub enum ValidationError {
 
 pub const READ_SCOPE: &str = "synapse:read";
 pub const WRITE_SCOPE: &str = "synapse:write";
-pub const DENY_SCOPE: &str = "synapse2:__deny__";
+pub const DENY_SCOPE: &str = "synapse:__deny__";
 
 /// Returns true if `token_scopes` satisfy `required`.
 /// Write scope satisfies read (write ⊇ read).

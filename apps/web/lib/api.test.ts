@@ -32,7 +32,7 @@ describe("apiFetch", () => {
       vi.fn(async () => new Response(JSON.stringify({ error: "forbidden" }), { status: 403 })),
     );
 
-    await expect(apiFetch("/v1/synapse2")).resolves.toEqual({ error: "forbidden", status: 403 });
+    await expect(apiFetch("/v1/synapse")).resolves.toEqual({ error: "forbidden", status: 403 });
   });
 
   it("preserves HTTP status when an error body has no error field", async () => {
@@ -41,7 +41,7 @@ describe("apiFetch", () => {
       vi.fn(async () => new Response("Bad gateway", { status: 502 })),
     );
 
-    await expect(apiFetch("/v1/synapse2")).resolves.toEqual({ error: "HTTP 502", status: 502 });
+    await expect(apiFetch("/v1/synapse")).resolves.toEqual({ error: "HTTP 502", status: 502 });
   });
 
   it("normalizes thrown fetch failures", async () => {
@@ -144,7 +144,7 @@ describe("request lifecycle and capabilities API", () => {
     await callAction("help", {}, controller.signal);
 
     expect(fetchMock).toHaveBeenCalledWith(
-      "/v1/synapse2",
+      "/v1/synapse",
       expect.objectContaining({ signal: controller.signal }),
     );
   });

@@ -4,8 +4,8 @@ set -euo pipefail
 
 MODE="auto"
 PULL="false"
-UNIT="${SYNAPSE_MCP_SYSTEMD_UNIT:-synapse2.service}"
-SERVICE="${SYNAPSE_MCP_DOCKER_SERVICE:-synapse2}"
+UNIT="${SYNAPSE_MCP_SYSTEMD_UNIT:-synapse.service}"
+SERVICE="${SYNAPSE_MCP_DOCKER_SERVICE:-synapse}"
 COMPOSE_DIR="${SYNAPSE_MCP_COMPOSE_DIR:-$(pwd)}"
 EXPECTED_BINARY="${SYNAPSE_MCP_EXPECTED_BINARY:-}"
 
@@ -20,8 +20,8 @@ Checks:
 Options:
   --mode auto|systemd|docker  Runtime to check. Default: auto.
   --pull                      Docker only: pull compose image before comparing.
-  --unit NAME                 Systemd user unit. Default: synapse2.service.
-  --service NAME              Docker Compose service/container. Default: synapse2.
+  --unit NAME                 Systemd user unit. Default: synapse.service.
+  --service NAME              Docker Compose service/container. Default: synapse.
   --compose-dir DIR           Docker Compose project dir. Default: current directory.
   --expected-binary PATH      Systemd: also compare running binary to this path.
   -h, --help                  Show this help.

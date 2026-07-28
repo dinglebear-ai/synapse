@@ -1,6 +1,6 @@
 {
-  "name": "synapse2",
-  "description": "Connects Claude Code to the synapse2 MCP server — a Rust MCP + CLI server for Docker and SSH host management, exposing the flux (Docker/container/compose/host) and scout (SSH exec/filesystem/ZFS/logs) tools across configured infrastructure hosts.",
+  "name": "synapse",
+  "description": "Connects Claude Code to the synapse MCP server — a Rust MCP + CLI server for Docker and SSH host management, exposing the flux (Docker/container/compose/host) and scout (SSH exec/filesystem/ZFS/logs) tools across configured infrastructure hosts.",
   "author": {
     "name": "jmagar"
   },
@@ -8,7 +8,7 @@
   "homepage": "https://github.com/jmagar/synapse",
   "license": "MIT",
   "keywords": [
-    "synapse2",
+    "synapse",
     "docker",
     "ssh",
     "infrastructure",
@@ -23,7 +23,7 @@
     "server_url": {
       "type": "string",
       "title": "Server URL",
-      "description": "Base URL of the MCP HTTP server this Claude Code session connects to. If running locally: keep http://localhost:40080. If connecting to a remote server: set to http://hostname:40080 or https://synapse2.yourdomain.com. Do NOT include a trailing /mcp — the plugin appends it automatically.",
+      "description": "Base URL of the MCP HTTP server this Claude Code session connects to. If running locally: keep http://localhost:40080. If connecting to a remote server: set to http://hostname:40080 or https://synapse.yourdomain.com. Do NOT include a trailing /mcp — the plugin appends it automatically.",
       "required": true,
       "default": "http://localhost:40080"
     },
@@ -51,7 +51,7 @@
     "public_url": {
       "type": "string",
       "title": "Public URL",
-      "description": "Public base URL for OAuth issuer metadata, e.g. https://synapse2.yourdomain.com. Required when auth_mode=oauth. If empty, setup derives it from an https server_url by stripping /mcp suffix. Server mode only.",
+      "description": "Public base URL for OAuth issuer metadata, e.g. https://synapse.yourdomain.com. Required when auth_mode=oauth. If empty, setup derives it from an https server_url by stripping /mcp suffix. Server mode only.",
       "default": ""
     },
     "google_client_id": {

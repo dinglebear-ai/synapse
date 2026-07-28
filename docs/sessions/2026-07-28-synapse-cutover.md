@@ -21,7 +21,10 @@ merged branch/worktree, then finish the `synapse2` to `synapse` cutover.
 The initial live audit found PR #79 mergeable and fully green for its commit.
 The current worktree also contained nine user-authorized deletions: completed
 review reports and generated OpenWiki output. The requested quick-push flow
-will preserve those deletions in a separate cleanup commit before the PR merge.
+preserved those deletions in a separate cleanup commit before PR #79 merged.
+The remaining product identity has now been cut over from `synapse2` to
+`synapse` across the crate, MCP contract, REST endpoint, plugins, docs, web
+client, deployment configuration, and the live appdata mount.
 
 ## Key Findings
 
@@ -33,6 +36,11 @@ will preserve those deletions in a separate cleanup commit before the PR merge.
   its managed files, so no manual version bump is appropriate for this cleanup.
 - Main has separate failed CodeQL (pnpm install) and Docker Publish (Trivy)
   runs on release commit `6f95560`; PR #79's CI and MSRV runs are successful.
+- The live `synapse` container was still mounted from `~/.synapse2`; it had
+  config, environment, and logs but no OAuth database or signing key.
+- A recoverable copy was created at
+  `~/.synapse2.pre-cutover-20260728T155000Z`; the container now mounts
+  `~/.synapse` and `/status` returns `server: synapse` and `status: ok`.
 
 ## Files Changed
 
@@ -41,6 +49,7 @@ will preserve those deletions in a separate cleanup commit before the PR merge.
 | deleted | `.full-review/00-scope.md` through `05-final-report.md` | Remove completed review artifacts. |
 | deleted | `openwiki/.last-update.json`, `openwiki/index.md`, `openwiki/quickstart.md` | Remove generated OpenWiki output pending the workflow normalization fix. |
 | created | `docs/sessions/2026-07-28-synapse-cutover.md` | Record the closeout and cutover work. |
+| modified/renamed | Source, tests, web app, deployment docs, plugin package, generated OpenAPI | Replace active `synapse2` identity with `synapse`. |
 
 ## Beads Activity
 
@@ -53,11 +62,14 @@ will preserve those deletions in a separate cleanup commit before the PR merge.
 |---|---|
 | `repo_context.sh --json --include-gh` | PR #79 is mergeable; CI/MSRV checks pass. |
 | `check_mergeability.sh origin/main ci/openwiki-ascii-normalize` | Mergeable in an isolated temporary worktree. |
+| `SOLDR_BYPASS=1 cargo check --locked` | Passed after the normal wrapper stalled. |
+| `SOLDR_BYPASS=1 cargo test --locked -q` | Rust suite passed after the plugin manifest correction. |
+| `pnpm --dir apps/web check && pnpm --dir apps/web typecheck && pnpm --dir apps/web test` | 31 web tests passed. |
+| `curl http://127.0.0.1:40080/status` | Live container reports a healthy `synapse` server. |
 
 ## Next Steps
 
-1. Commit and push the authorized cleanup set with this session record.
-2. Merge PR #79, synchronize the local checkout to `main`, and remove the
-   merged branch/worktree.
-3. Replace remaining current product references to `synapse2` with `synapse`,
-   while retaining intentional compatibility or historical references.
+1. Merge the cutover branch after its CI succeeds, then release it through the
+   repository's release-please flow.
+2. Deploy the released image tag when available; the live appdata/config mount
+   is already migrated and its pre-cutover snapshot is retained for rollback.

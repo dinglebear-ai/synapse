@@ -1,12 +1,12 @@
 # Documentation index
 
-This directory contains focused guides for operating, testing, and releasing the `synapse2` MCP server.
+This directory contains focused guides for operating, testing, and releasing the `synapse` MCP server.
 
 ## Start here
 
 | Doc | Use when you want to... |
 |---|---|
-| `QUICKSTART.md` | Run a local Synapse2 smoke test quickly. |
+| `QUICKSTART.md` | Run a local Synapse smoke test quickly. |
 | `ARCHITECTURE.md` | Understand the Rust module layout and layering rules. |
 | `PHILOSOPHY.md` | Understand the design principles behind the rmcp server family. |
 | `AGENTS-FIRST.md` | Build outputs and workflows that are reliable for AI agents. |

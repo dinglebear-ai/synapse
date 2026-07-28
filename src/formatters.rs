@@ -40,7 +40,7 @@ mod tests;
 /// # Examples
 ///
 /// ```rust
-/// use synapse2::formatters::ResponseFormat;
+/// use synapse::formatters::ResponseFormat;
 ///
 /// assert_eq!(ResponseFormat::parse(None).unwrap(), ResponseFormat::Markdown);
 /// assert_eq!(ResponseFormat::parse(Some("json")).unwrap(), ResponseFormat::Json);

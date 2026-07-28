@@ -18,7 +18,7 @@ use crate::actions::{SynapseAction, execute_service_action};
 use crate::server::{AppState, AuthPolicy};
 use crate::token_limit::MAX_RESPONSE_BYTES;
 
-/// Request body for `POST /v1/synapse2`.
+/// Request body for `POST /v1/synapse`.
 ///
 /// REST uses an explicit `{ action, params }` envelope. MCP uses a flat
 /// argument object such as `{ action, message }`. Both convert into the same
@@ -31,7 +31,7 @@ pub struct ActionRequest {
     pub params: Value,
 }
 
-/// `POST /v1/synapse2` — dispatches an action by name.
+/// `POST /v1/synapse` — dispatches an action by name.
 ///
 /// Request:  `{"action": "flux.docker.info", "params": {}}`
 pub async fn api_dispatch(
@@ -117,7 +117,7 @@ pub async fn api_dispatch(
     }
 }
 
-/// REST compatibility subset of synapse2 actions.
+/// REST compatibility subset of synapse actions.
 ///
 /// This surface is intentionally limited to the dotted action names listed
 /// below — it is NOT a full mirror of the MCP/CLI surface. New actions must be

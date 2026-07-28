@@ -274,7 +274,7 @@ fn check_port(host: &str, port: u16, report: &mut SetupReport) {
 
 fn setup_data_dir() -> anyhow::Result<PathBuf> {
     // L11: setup_data_dir uses CLAUDE_PLUGIN_DATA/SYNAPSE_HOME while Config::load
-    // searches ~/.synapse2/config.toml first. In the plugin context CLAUDE_PLUGIN_DATA
+    // searches ~/.synapse/config.toml first. In the plugin context CLAUDE_PLUGIN_DATA
     // and the config search path should coincide, but they can diverge in non-standard
     // deployments. TEMPLATE: align these when adapting the template.
     if let Some(val) =

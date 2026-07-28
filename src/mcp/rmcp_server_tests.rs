@@ -185,7 +185,7 @@ fn unknown_action_gets_deny_scope() {
 fn unknown_action_is_rejected_as_validation_before_scope() {
     let error = reject_unknown_action_before_scope("nonexistent_action")
         .expect_err("unknown action should be invalid params");
-    assert!(error.message.contains("unknown synapse2 action"));
+    assert!(error.message.contains("unknown synapse action"));
 }
 
 #[test]
@@ -271,7 +271,7 @@ fn parse_mcp_action_maps_flux_and_scout_validation_errors() {
         }),
     )
     .expect_err("unknown action should map to invalid params");
-    assert!(error.message.contains("unknown synapse2 action"));
+    assert!(error.message.contains("unknown synapse action"));
 }
 
 #[test]
@@ -351,5 +351,5 @@ fn unknown_action_rejection_still_callable() {
     // and rejects unknown actions. The actual unauthenticated gate is in call_tool.
     let error = reject_unknown_action_before_scope("definitely_not_a_real_action")
         .expect_err("should reject unknown action");
-    assert!(error.message.contains("unknown synapse2 action"));
+    assert!(error.message.contains("unknown synapse action"));
 }

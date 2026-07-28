@@ -1,4 +1,4 @@
-# synapse2 Configuration
+# synapse Configuration
 
 ## MCP
 
@@ -6,7 +6,7 @@
 |---|---|---|
 | `SYNAPSE_MCP_HOST` | `127.0.0.1` | HTTP bind host |
 | `SYNAPSE_MCP_PORT` | `40080` | HTTP bind port |
-| `SYNAPSE_MCP_SERVER_NAME` | `synapse2` | MCP server name advertised to clients |
+| `SYNAPSE_MCP_SERVER_NAME` | `synapse` | MCP server name advertised to clients |
 | `SYNAPSE_MCP_TOKEN` | unset | Static bearer token for bearer mode |
 | `SYNAPSE_MCP_NO_AUTH` | false | Disable auth on loopback only |
 | `SYNAPSE_MCP_ALLOW_DESTRUCTIVE` | false | Skip destructive-operation confirmation prompts |
@@ -35,7 +35,7 @@
 | `SYNAPSE_HOSTS_CONFIG` | Inline host topology as a JSON array; highest priority |
 | `SYNAPSE_CONFIG_FILE` | Path to a hosts config file; used when inline hosts are unset |
 
-When neither variable is set, Synapse2 falls back to `~/.ssh/config` discovery. The declared host `protocol` is authoritative; omitted protocols default to `ssh`, while the built-in `local` host explicitly selects local execution. Loopback SSH endpoints therefore retain their configured user, key, and port. Recursive SSH `Include` files are tracked for live topology refresh.
+When neither variable is set, Synapse falls back to `~/.ssh/config` discovery. The declared host `protocol` is authoritative; omitted protocols default to `ssh`, while the built-in `local` host explicitly selects local execution. Loopback SSH endpoints therefore retain their configured user, key, and port. Recursive SSH `Include` files are tracked for live topology refresh.
 
 Per-host `exec_allowlist` entries enable explicitly trusted custom commands with a zero-argument policy. Commands that require arguments must have a built-in typed argument policy. `scoutReadRoots` and `composeSearchPaths` also constrain both endpoints of `scout beam`; sensitive paths and symlink traversal remain blocked.
 

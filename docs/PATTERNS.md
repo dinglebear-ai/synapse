@@ -1,6 +1,6 @@
-# Synapse2 Patterns
+# Synapse Patterns
 
-Synapse2 follows the rmcp-server family patterns maintained upstream in:
+Synapse follows the rmcp-server family patterns maintained upstream in:
 
 ```text
 /home/jmagar/workspace/rmcp-template/docs/PATTERNS.md
@@ -8,12 +8,12 @@ Synapse2 follows the rmcp-server family patterns maintained upstream in:
 
 Do not copy the full family catalog back into this repo. Update the upstream
 `rmcp-template` catalog when a reusable pattern changes, then keep this file to
-Synapse2-specific decisions and local exceptions.
+Synapse-specific decisions and local exceptions.
 
 ## Local Rules
 
 - Business actions keep MCP + CLI parity. REST remains a thin compatibility
-  endpoint at `POST /v1/synapse2`.
+  endpoint at `POST /v1/synapse`.
 - `flux` actions live on `FluxService`; `scout` actions live on `ScoutService`.
   `SynapseService` stays a thin facade.
 - Production Rust modules should stay below the soft line budget when a focused

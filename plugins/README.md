@@ -5,7 +5,7 @@ Claude Code and Codex plugin packages for the MCP server. Both platforms share t
 ## Structure
 
 ```
-plugins/synapse2/
+plugins/synapse/
 ├── .claude-plugin/
 │   └── plugin.json       # Claude Code manifest
 ├── .codex-plugin/
@@ -17,7 +17,7 @@ plugins/synapse2/
 ├── monitors/
 │   └── monitors.json     # Background health monitor config
 └── skills/
-    └── synapse2/
+    └── synapse/
         └── SKILL.md      # Tool documentation for Claude, Codex, and Gemini
 ```
 
@@ -93,7 +93,7 @@ automatic invocation is gone:
 synapse setup install
 
 # 2. Export the settings the hook used to translate for you, or put the
-#    same values in ~/.synapse2/.env.
+#    same values in ~/.synapse/.env.
 export SYNAPSE_MCP_TOKEN=...          # was plugin option: api_token
 export SYNAPSE_SERVER_URL=...         # was plugin option: server_url
 export SYNAPSE_HOSTS_CONFIG=...       # was plugin option: synapse_hosts_config
@@ -118,15 +118,15 @@ session start.
 
 ## Skills
 
-### `skills/synapse2/SKILL.md`
+### `skills/synapse/SKILL.md`
 
-Three-tier structured documentation for the Synapse2 `flux` and `scout` MCP tools, used by Claude Code and Codex to understand when and how to invoke them.
+Three-tier structured documentation for the Synapse `flux` and `scout` MCP tools, used by Claude Code and Codex to understand when and how to invoke them.
 
 **Tier 1** (above the fold): tool name, quick action table, most common usage.  
 **Tier 2**: full action reference — parameters, types, example calls, response shapes.  
 **Tier 3**: multi-step workflows demonstrating real-world use.
 
-Tier 3 also includes a REST fallback for when the MCP transport is unavailable: `POST /v1/synapse2` using the `SYNAPSE_MCP_HOST`, `SYNAPSE_MCP_PORT`, and `SYNAPSE_MCP_TOKEN` env vars.
+Tier 3 also includes a REST fallback for when the MCP transport is unavailable: `POST /v1/synapse` using the `SYNAPSE_MCP_HOST`, `SYNAPSE_MCP_PORT`, and `SYNAPSE_MCP_TOKEN` env vars.
 
 
 ---
@@ -141,8 +141,8 @@ by `Cargo.toml`, the npm launcher package, and the release manifest.
 
 ## Maintenance checklist
 
-1. Keep Claude, Codex, and Gemini manifests pointed at the same Synapse2 server.
-2. Keep `skills/synapse2/SKILL.md` aligned with the canonical operation registry
+1. Keep Claude, Codex, and Gemini manifests pointed at the same Synapse server.
+2. Keep `skills/synapse/SKILL.md` aligned with the canonical operation registry
    in `src/actions/operations.rs` (59 operations).
 3. Preserve the no-`version` manifest contract.
 4. Preserve the no-hooks contract: do not reintroduce a `hooks/` directory or a

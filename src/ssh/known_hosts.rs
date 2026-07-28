@@ -93,10 +93,10 @@ pub fn sweep_stale_sockets_in(dir: &Path) -> Vec<PathBuf> {
     removed
 }
 
-/// Parse the pid out of `synapse2-{identity}-{pid}.sock` or the legacy
-/// `synapse2-{host}-{pid}.sock` form by splitting from the right.
+/// Parse the pid out of `synapse-{identity}-{pid}.sock` or the legacy
+/// `synapse-{host}-{pid}.sock` form by splitting from the right.
 pub(crate) fn parse_socket_pid(name: &str) -> Option<u32> {
-    let inner = name.strip_prefix("synapse2-")?.strip_suffix(".sock")?;
+    let inner = name.strip_prefix("synapse-")?.strip_suffix(".sock")?;
     let (_host, pid) = inner.rsplit_once('-')?;
     pid.parse::<u32>().ok()
 }

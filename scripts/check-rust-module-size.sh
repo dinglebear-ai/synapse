@@ -2,7 +2,7 @@
 # =============================================================================
 # check-rust-module-size.sh — NO MONOLITHS gate for Rust production modules
 #
-# Ported from syslog-mcp and adapted for synapse2. Counts non-comment /
+# Ported from syslog-mcp and adapted for synapse. Counts non-comment /
 # non-blank / non-doc lines (real code) per production .rs file. Blank lines,
 # line comments (// /// //!), and block comments (/* ... */) are NOT counted.
 # Test files are exempt: *_tests.rs, *test.rs, anything under tests/.

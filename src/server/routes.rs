@@ -7,7 +7,7 @@
 //!   `GET  /status`      — Runtime status (unauthenticated, redacts secrets)
 //!   `GET  /capabilities` — Credential scopes (authenticated with API routes)
 //!   `GET  /openapi.json` — OpenAPI schema (auth-gated on non-loopback, see below)
-//!   `POST /v1/synapse2`  — REST API action dispatch (see `crate::api`)
+//!   `POST /v1/synapse`  — REST API action dispatch (see `crate::api`)
 //!   `/*`                — SPA fallback for embedded web UI (when web feature enabled)
 
 use std::sync::Arc;
@@ -149,7 +149,7 @@ pub fn router(state: AppState) -> Router {
         AuthPolicy::LoopbackDev | AuthPolicy::TrustedGatewayUnscoped => None,
     };
 
-    // Auth layer applied to both /mcp and /v1/synapse2.
+    // Auth layer applied to both /mcp and /v1/synapse.
     let auth_layer = build_auth_layer(
         &state.auth_policy,
         state.config.api_token.as_deref().map(Arc::<str>::from),
@@ -158,7 +158,7 @@ pub fn router(state: AppState) -> Router {
 
     let api_and_mcp: Router<AppState> = Router::new()
         .nest_service("/mcp", streamable_http_service(state.clone(), rmcp_config))
-        .route("/v1/synapse2", post(api_dispatch))
+        .route("/v1/synapse", post(api_dispatch))
         .route("/activity", get(activity))
         .route("/capabilities", get(capabilities));
 

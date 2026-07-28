@@ -6,7 +6,7 @@ const RESET: &str = "\x1b[0m";
 #[test]
 fn top_level_help_matches_cortex_grouped_shape() {
     let rendered = render_top_level(false);
-    assert!(rendered.contains("  SYNAPSE2 CLI\n"));
+    assert!(rendered.contains("  SYNAPSE CLI\n"));
     assert!(rendered.contains("  Version "));
     assert!(rendered.contains("  Usage\n"));
     assert!(rendered.contains("  synapse [options] <command> [args]\n"));

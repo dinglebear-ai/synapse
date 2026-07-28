@@ -1,4 +1,4 @@
-# Synapse2 Action Reference
+# Synapse Action Reference
 
 This reference expands the quick table in `../SKILL.md`. Prefer live MCP help
 when available:

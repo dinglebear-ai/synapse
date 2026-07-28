@@ -1,13 +1,13 @@
 //! Parity gate: assert every action listed in `synapse-mcp/docs/INVENTORY.md`
-//! is reachable in synapse2.
+//! is reachable in synapse.
 //!
 //! # What this test checks
 //!
 //! For each row in the INVENTORY table:
 //! - The **top-level action** (e.g. `container`, `zfs`) exists in `OPERATION_SPECS`
-//!   via [`synapse2::actions::is_known_action`].
+//!   via [`synapse::actions::is_known_action`].
 //! - The **subaction** (e.g. `list`, `pools`) is documented in the help map via
-//!   [`synapse2::mcp::help::topic_markdown`].  Scout simple actions (no
+//!   [`synapse::mcp::help::topic_markdown`].  Scout simple actions (no
 //!   subaction) are checked at the bare topic key (e.g. `"nodes"`, `"exec"`).
 //!   Help rows (`flux help`, `scout help`, `synapse_help`) collapse to the
 //!   single `help` action.
@@ -21,7 +21,7 @@
 //!
 //! The test **skips gracefully** (returns early without failing) when
 //! `../synapse-mcp/docs/INVENTORY.md` does not exist. This lets contributors
-//! work on synapse2 without the sibling repo checked out.
+//! work on synapse without the sibling repo checked out.
 //!
 //! # Non-vacuity
 //!
@@ -30,8 +30,8 @@
 //! It also verifies — at the bottom — that a bogus action and a bogus subaction
 //! are correctly reported as missing.
 
-use synapse2::actions::is_known_action;
-use synapse2::mcp::help::topic_markdown;
+use synapse::actions::is_known_action;
+use synapse::mcp::help::topic_markdown;
 
 /// A single entry parsed from the INVENTORY table.
 #[derive(Debug, Clone)]
@@ -116,7 +116,7 @@ fn parse_inventory(content: &str) -> Vec<InventoryRow> {
     rows
 }
 
-/// Check whether a single INVENTORY row is covered by synapse2.
+/// Check whether a single INVENTORY row is covered by synapse.
 ///
 /// Returns `true` if the action/subaction is reachable, `false` if missing.
 ///
@@ -129,7 +129,7 @@ fn parse_inventory(content: &str) -> Vec<InventoryRow> {
 ///   `topic_markdown("action:subaction")` returns Some.
 fn is_covered(row: &InventoryRow) -> bool {
     // synapse_help is a standalone tool in synapse-mcp but collapses to the
-    // `help` action in synapse2 (no subaction needed).
+    // `help` action in synapse (no subaction needed).
     if row.tool == "synapse_help" {
         return is_known_action("help");
     }
@@ -158,7 +158,7 @@ fn is_covered(row: &InventoryRow) -> bool {
 #[test]
 fn parity_with_synapse_mcp_inventory() {
     // ── Locate INVENTORY.md ───────────────────────────────────────────────────
-    // The test runs from the cargo workspace root (synapse2/); the sibling repo
+    // The test runs from the cargo workspace root (synapse/); the sibling repo
     // lives at ../synapse-mcp/.
     let inventory_path =
         std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../synapse-mcp/docs/INVENTORY.md");
@@ -166,7 +166,7 @@ fn parity_with_synapse_mcp_inventory() {
     if !inventory_path.exists() {
         eprintln!(
             "SKIP: {} not found — synapse-mcp sibling repo not checked out. \
-             Clone it alongside synapse2 to enable full parity verification.",
+             Clone it alongside synapse to enable full parity verification.",
             inventory_path.display()
         );
         return; // graceful skip, not a failure
@@ -213,7 +213,7 @@ fn parity_with_synapse_mcp_inventory() {
 
     if !missing.is_empty() {
         panic!(
-            "{} INVENTORY action(s) not covered by synapse2:\n  {}\n\n\
+            "{} INVENTORY action(s) not covered by synapse:\n  {}\n\n\
              Add the missing actions to OPERATION_SPECS, dispatch arms, and \
              help.rs before closing this bead.",
             missing.len(),

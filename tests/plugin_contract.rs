@@ -18,12 +18,12 @@ fn json(path: &str) -> Value {
 #[test]
 fn plugin_manifests_exist_for_all_supported_hosts() {
     for path in [
-        "plugins/synapse2/.claude-plugin/plugin.json",
-        "plugins/synapse2/.codex-plugin/plugin.json",
-        "plugins/synapse2/gemini-extension.json",
-        "plugins/synapse2/mcp.json",
-        "plugins/synapse2/monitors/monitors.json",
-        "plugins/synapse2/skills/synapse2/SKILL.md",
+        "plugins/synapse/.claude-plugin/plugin.json",
+        "plugins/synapse/.codex-plugin/plugin.json",
+        "plugins/synapse/gemini-extension.json",
+        "plugins/synapse/mcp.json",
+        "plugins/synapse/monitors/monitors.json",
+        "plugins/synapse/skills/synapse/SKILL.md",
     ] {
         assert!(std::path::Path::new(path).exists(), "{path} should exist");
     }
@@ -31,14 +31,14 @@ fn plugin_manifests_exist_for_all_supported_hosts() {
 
 #[test]
 fn plugin_manifests_share_identity_and_connection_settings() {
-    let claude = json("plugins/synapse2/.claude-plugin/plugin.json");
-    let codex = json("plugins/synapse2/.codex-plugin/plugin.json");
-    let gemini = json("plugins/synapse2/gemini-extension.json");
-    let mcp = json("plugins/synapse2/mcp.json");
+    let claude = json("plugins/synapse/.claude-plugin/plugin.json");
+    let codex = json("plugins/synapse/.codex-plugin/plugin.json");
+    let gemini = json("plugins/synapse/gemini-extension.json");
+    let mcp = json("plugins/synapse/mcp.json");
 
-    assert_eq!(claude["name"], "synapse2");
-    assert_eq!(codex["name"], "synapse2");
-    assert_eq!(gemini["name"], "synapse2");
+    assert_eq!(claude["name"], "synapse");
+    assert_eq!(codex["name"], "synapse");
+    assert_eq!(gemini["name"], "synapse");
 
     let repository = claude["repository"].as_str().unwrap();
     assert!(
@@ -80,19 +80,19 @@ fn plugin_manifests_share_identity_and_connection_settings() {
     }
 
     assert_eq!(
-        mcp["mcpServers"]["synapse2"]["url"],
+        mcp["mcpServers"]["synapse"]["url"],
         "${user_config.server_url}/mcp"
     );
     assert_eq!(
-        mcp["mcpServers"]["synapse2"]["headers"]["Authorization"],
+        mcp["mcpServers"]["synapse"]["headers"]["Authorization"],
         "Bearer ${user_config.api_token}"
     );
     assert_eq!(
-        gemini["mcpServers"]["synapse2"]["url"],
+        gemini["mcpServers"]["synapse"]["url"],
         "${settings.server_url}/mcp"
     );
     assert_eq!(
-        gemini["mcpServers"]["synapse2"]["headers"]["Authorization"],
+        gemini["mcpServers"]["synapse"]["headers"]["Authorization"],
         "Bearer ${settings.api_token}"
     );
 }
@@ -103,13 +103,13 @@ fn plugin_manifests_share_identity_and_connection_settings() {
 #[test]
 fn plugin_package_ships_no_lifecycle_hooks() {
     assert!(
-        !std::path::Path::new("plugins/synapse2/hooks").exists(),
+        !std::path::Path::new("plugins/synapse/hooks").exists(),
         "plugin package must not ship a hooks directory"
     );
     for path in [
-        "plugins/synapse2/.claude-plugin/plugin.json",
-        "plugins/synapse2/.codex-plugin/plugin.json",
-        "plugins/synapse2/gemini-extension.json",
+        "plugins/synapse/.claude-plugin/plugin.json",
+        "plugins/synapse/.codex-plugin/plugin.json",
+        "plugins/synapse/gemini-extension.json",
     ] {
         assert!(
             json(path).get("hooks").is_none(),
@@ -122,7 +122,7 @@ fn plugin_package_ships_no_lifecycle_hooks() {
 /// `hooks/` would reintroduce the shell layer that was deliberately removed.
 #[test]
 fn monitors_invoke_the_path_binary_directly() {
-    let monitors = json("plugins/synapse2/monitors/monitors.json");
+    let monitors = json("plugins/synapse/monitors/monitors.json");
     let entries = monitors.as_array().expect("monitors.json must be an array");
     assert!(!entries.is_empty(), "expected at least one monitor");
     for entry in entries {
@@ -156,7 +156,7 @@ fn plugin_hook_standard_is_documented() {
     }
 }
 
-fn synapse2_bin() -> &'static str {
+fn synapse_bin() -> &'static str {
     // Cargo exposes integration-test binaries at compile time. Using a runtime
     // lookup with a target/debug fallback is unreliable for alternate target
     // directories such as cargo-llvm-cov's target/llvm-cov-target.
@@ -164,7 +164,7 @@ fn synapse2_bin() -> &'static str {
 }
 
 fn setup_command(data_dir: &std::path::Path) -> Command {
-    let mut cmd = Command::new(synapse2_bin());
+    let mut cmd = Command::new(synapse_bin());
     cmd.env_clear()
         .env("HOME", data_dir)
         .env("PATH", std::env::var("PATH").unwrap_or_default())
@@ -272,17 +272,17 @@ fn assert_env_file_mode(path: &std::path::Path) {
 //   - Port is kept at 0 (from setup_command) to avoid mcp_port_in_use noise.
 
 fn oauth_setup_command(data_dir: &std::path::Path) -> Command {
-    let mut cmd = Command::new(synapse2_bin());
+    let mut cmd = Command::new(synapse_bin());
     cmd.env_clear()
         .env("HOME", data_dir)
         .env("PATH", std::env::var("PATH").unwrap_or_default())
         .env("CLAUDE_PLUGIN_DATA", data_dir)
         .env("SYNAPSE_MCP_PORT", "0")
         .env("SYNAPSE_MCP_AUTH_MODE", "oauth")
-        .env("SYNAPSE_MCP_PUBLIC_URL", "https://mcp.synapse2.test")
+        .env("SYNAPSE_MCP_PUBLIC_URL", "https://mcp.synapse.test")
         .env("SYNAPSE_MCP_GOOGLE_CLIENT_ID", "test-client-id")
         .env("SYNAPSE_MCP_GOOGLE_CLIENT_SECRET", "test-client-secret")
-        .env("SYNAPSE_MCP_AUTH_ADMIN_EMAIL", "admin@synapse2.test");
+        .env("SYNAPSE_MCP_AUTH_ADMIN_EMAIL", "admin@synapse.test");
     cmd
 }
 
@@ -419,7 +419,7 @@ fn setup_repair_oauth_writes_oauth_env_lines() {
         ".env should contain SYNAPSE_MCP_AUTH_MODE=oauth"
     );
     assert!(
-        env_file.contains("SYNAPSE_MCP_PUBLIC_URL=https://mcp.synapse2.test"),
+        env_file.contains("SYNAPSE_MCP_PUBLIC_URL=https://mcp.synapse.test"),
         ".env should contain SYNAPSE_MCP_PUBLIC_URL"
     );
     assert!(
@@ -431,7 +431,7 @@ fn setup_repair_oauth_writes_oauth_env_lines() {
         ".env should contain SYNAPSE_MCP_GOOGLE_CLIENT_SECRET"
     );
     assert!(
-        env_file.contains("SYNAPSE_MCP_AUTH_ADMIN_EMAIL=admin@synapse2.test"),
+        env_file.contains("SYNAPSE_MCP_AUTH_ADMIN_EMAIL=admin@synapse.test"),
         ".env should contain SYNAPSE_MCP_AUTH_ADMIN_EMAIL"
     );
     assert_env_file_mode(&data_dir.join(".env"));

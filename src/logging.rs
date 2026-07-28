@@ -18,10 +18,10 @@
 //! Replace the existing `tracing_subscriber` setup in `main.rs` with:
 //!
 //! ```rust,ignore
-//! use synapse2::logging;
+//! use synapse::logging;
 //!
-//! let data_dir = config.data_dir(); // e.g. ~/.synapse2
-//! logging::init(&data_dir, "synapse2")?;
+//! let data_dir = config.data_dir(); // e.g. ~/.synapse
+//! logging::init(&data_dir, "synapse")?;
 //! ```
 //!
 //! In stdio mode, suppress all logs to avoid polluting the MCP JSON stream:
@@ -34,14 +34,14 @@
 //!         .with_writer(std::io::stderr)
 //!         .init();
 //! } else {
-//!     logging::init(&data_dir, "synapse2")?;
+//!     logging::init(&data_dir, "synapse")?;
 //! }
 //! ```
 //!
 //! # TEMPLATE: Log file location
 //!
 //! Logs are written to `{data_dir}/logs/{service}.log`.
-//! For the synapse2 service this resolves to `~/.synapse2/logs/synapse2.log`.
+//! For the synapse service this resolves to `~/.synapse/logs/synapse.log`.
 //!
 //! The file rotates at 10 MiB with three retained archives. This keeps
 //! disk usage predictable even for long-running processes.
@@ -92,9 +92,9 @@ pub fn json_format_requested() -> bool {
 ///
 /// # Arguments
 ///
-/// - `data_dir` — service data directory (e.g. `~/.synapse2`). Logs go into
+/// - `data_dir` — service data directory (e.g. `~/.synapse`). Logs go into
 ///   `{data_dir}/logs/{service_name}.log`.
-/// - `service_name` — used as the log file name (e.g. `"synapse2"`).
+/// - `service_name` — used as the log file name (e.g. `"synapse"`).
 ///
 /// # Errors
 ///
@@ -107,7 +107,7 @@ pub fn json_format_requested() -> bool {
 /// Examples:
 /// - `RUST_LOG=debug` — show all debug logs
 /// - `RUST_LOG=info,rmcp=warn` — info level, suppress rmcp crate noise
-/// - `RUST_LOG=synapse2=trace` — trace this crate only
+/// - `RUST_LOG=synapse=trace` — trace this crate only
 ///
 /// Both the console and file writers share the same `EnvFilter`, so they
 /// always emit the same set of events.
@@ -185,7 +185,7 @@ pub fn init(data_dir: &Path, service_name: &str) -> Result<()> {
                 // - `.with_ansi(false)` — never emit ANSI codes to the file
                 // - `.with_writer(log_file)` — write to the log file we opened above
                 //
-                // JSON format synapse2:
+                // JSON format synapse:
                 // {"timestamp":"2026-05-13T14:32:01.123Z","level":"INFO","fields":{"message":"starting","bind":"0.0.0.0:3000"}}
                 tracing_subscriber::fmt::layer()
                     .json()
