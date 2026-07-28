@@ -297,7 +297,9 @@ PLUGIN_ROOT=plugins/synapse2 scripts/validate-plugin-layout.sh
 just validate-plugin
 ```
 
-Validates Claude, Codex, and Gemini plugin manifests, shared MCP config, hook config, skills, sensitive fields, and the rule that plugin manifests do not contain `version`.
+Validates Claude, Codex, and Gemini plugin manifests, shared MCP config, skills, sensitive fields, and the rule that plugin manifests do not contain `version`.
+
+Also enforces that the plugin ships **no lifecycle hooks**: no manifest declares a `hooks` key, no `hooks/` directory is packaged, and `monitors/monitors.json` invokes the `synapse` binary from `PATH` rather than a `hooks/` wrapper script. The old wrapper exited 0 when the binary was missing, which hid the failure; a direct invocation surfaces it as a monitor error.
 
 ---
 
