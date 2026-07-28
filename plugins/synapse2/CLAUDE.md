@@ -8,15 +8,13 @@ Multi-platform plugin package for the Synapse2 MCP server. Contains manifests fo
 
 | File | Role |
 |---|---|
-| `.claude-plugin/plugin.json` | Claude Code manifest — identity, hooks, skills, monitors, `userConfig` |
+| `.claude-plugin/plugin.json` | Claude Code manifest — identity, skills, monitors, `userConfig` |
 | `.codex-plugin/plugin.json` | Codex manifest — same data + Codex UI fields (`interface`) |
 | `gemini-extension.json` | Gemini CLI manifest — uses `settings` array instead of `userConfig` |
-| `.mcp.json` | Shared MCP server connection config used by all three platforms |
-| `bin/synapse` | Release binary used by the monitor — populate with `just install` |
-| `hooks/hooks.json` | Lifecycle hook definitions: `SessionStart`, `ConfigChange` |
-| `hooks/plugin-setup.sh` | Deployment and validation script (server mode or client mode) |
+| `mcp.json` | Shared MCP server connection config used by all three platforms |
+| `bin/synapse` | Optional local release binary — populate with `just install` |
 | `monitors/monitors.json` | Background health monitor config (requires Claude Code v2.1.105+) |
-| `skills/synapse2/SKILL.md` | Three-tier tool documentation shared by Claude and Codex |
+| `skills/synapse2/SKILL.md` | Three-tier tool documentation shared by Claude, Codex, and Gemini |
 
 ## Versioning rule
 
@@ -28,17 +26,39 @@ When changing connection config (URL, auth headers), update `.mcp.json` — do n
 
 When changing user-configurable settings, update all three manifests: `userConfig` in the Claude and Codex `plugin.json` files, and `settings` in `gemini-extension.json`. Keep field names and descriptions consistent across all three.
 
+## No hooks
+
+This plugin ships **no lifecycle hooks**: there is no `hooks/` directory and no
+`hooks` key in any manifest. `scripts/validate-plugin-layout.sh` asserts this.
+Do not reintroduce either.
+
+What the removed `SessionStart`/`ConfigChange` hook used to do — translate
+`CLAUDE_PLUGIN_OPTION_*` into `SYNAPSE_*`, create the appdata dir, write/repair
+`.env`, validate auth and port, and refresh `~/.local/bin/synapse` — is now a
+manual operator step. The binary still implements all of it:
+
+```bash
+synapse setup install                  # refresh ~/.local/bin/synapse
+synapse setup plugin-hook              # check, repair if blocking failures
+synapse setup plugin-hook --no-repair  # audit only
+```
+
+Export the `SYNAPSE_*` vars yourself (or put them in `~/.synapse2/.env`) before
+running these. See `plugins/README.md` for the full option→env-var mapping.
+Client mode — connecting to a server that is already running elsewhere — needs
+none of this; `mcp.json` reads the plugin settings directly.
+
 ## Monitors (Claude Code v2.1.105+)
 
-`monitors/monitors.json` runs `hooks/watch.sh`, which delegates to an installed
-`synapse` on PATH. Plugin monitors must not assume a bundled binary in the
-plugin directory.
+`monitors/monitors.json` invokes `synapse watch` from PATH directly. Plugin
+monitors must not assume a bundled binary in the plugin directory, and must not
+reference a wrapper script under `hooks/`.
 
 The monitor command uses `${user_config.server_url}` substitution — this is resolved at runtime from the user's plugin settings. Do not hardcode URLs in `monitors.json`.
 
-When adding a new monitor: add an entry to `monitors.json` and reference only
-scripts under `${CLAUDE_PLUGIN_ROOT}/hooks/`; those scripts should resolve the
-runtime binary from PATH and exit non-blocking when it is unavailable.
+When adding a new monitor: add an entry to `monitors.json` invoking the `synapse`
+binary from PATH. Note that the old `watch.sh` wrapper exited 0 when the binary
+was missing; a direct invocation surfaces that as a monitor error instead.
 
 ## Updating the skill
 
@@ -49,11 +69,15 @@ The three-tier structure must be preserved:
 - **Tier 2** (middle): full action reference with parameters and response shapes
 - **Tier 3** (bottom): workflows, HTTP fallback, error handling
 
-## Updating the setup script
+## Adding a userConfig field
 
-`hooks/plugin-setup.sh` reads `CLAUDE_PLUGIN_OPTION_*` env vars that map to the `userConfig` fields in `plugin.json`. When you add or rename a `userConfig` field, update the env var block in the setup script to match.
+`userConfig` fields are consumed at runtime by `mcp.json` substitution and by
+the operator when they export the matching `SYNAPSE_*` variable. When you add or
+rename a field, update all three manifests **and** the option→env-var table in
+`plugins/README.md`, which is now the only record of that mapping.
 
-Sensitive fields declared `"sensitive": true` in `plugin.json` are available as env vars in hooks but are **never** substituted into skill content.
+Sensitive fields declared `"sensitive": true` in `plugin.json` are **never**
+substituted into skill content.
 
 ## Template adaptation
 
@@ -61,5 +85,6 @@ When renaming `synapse2` → your service:
 
 1. Replace all `synapse2` / `Synapse2` / `SYNAPSE_` identifiers in every file in this directory.
 2. Rename `skills/synapse2/` to `skills/<your-service>/`.
-3. Update `hooks/plugin-setup.sh` — the env var block near the top maps `CLAUDE_PLUGIN_OPTION_*` to your service's actual `SYNAPSE_*` vars.
+3. Update the monitor command in `monitors/monitors.json` to your binary name.
 4. Keep the no-version rule: do not add `"version"` to any manifest.
+5. Keep the no-hooks rule: do not add a `hooks/` directory or a `hooks` key.

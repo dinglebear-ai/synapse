@@ -113,7 +113,7 @@ fn build_tool_definitions() -> Vec<Value> {
                     "target_path": { "type": "string", "description": "delta: target absolute path." },
                     "content": { "type": "string", "description": "delta: inline content to compare against source (≤1 MB; mutually exclusive with target_host/target_path)." },
                     // exec/emit
-                    "command": { "type": "string", "description": "exec/emit: command name from allowlist (cat/head/tail/grep/rg/find/ls/tree/wc/sort/uniq/diff/stat/file/du/df/pwd/hostname/uptime/whoami). git is NOT allowlisted." },
+                    "command": { "type": "string", "description": "exec/emit: command name from allowlist (cat/head/tail/grep/rg/ls/tree/wc/uniq/diff/stat/file/du/df/pwd/hostname/uptime/whoami). git is NOT allowlisted; use the dedicated find action for filesystem search." },
                     "args": { "type": "array", "items": { "type": "string" }, "description": "exec/emit: positional arguments (execvp-style, no shell)." },
                     "timeout_secs": { "type": "integer", "minimum": 1, "description": "exec/emit: per-host timeout in seconds (default 30)." },
                     // emit

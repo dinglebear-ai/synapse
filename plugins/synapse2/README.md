@@ -15,15 +15,15 @@ plugins/synapse2/
 ├── mcp.json                # Shared MCP server connection config (Claude/Codex)
 ├── bin/
 │   └── synapse             # Release binary (populate with: just install)
-├── hooks/
-│   ├── hooks.json          # SessionStart + ConfigChange hook definitions
-│   └── plugin-setup.sh     # Deployment and validation script
 ├── monitors/
 │   └── monitors.json       # Background health monitor (requires Claude Code v2.1.105+)
 └── skills/
     └── synapse2/
-        └── SKILL.md        # Tool documentation (shared by Claude and Codex)
+        └── SKILL.md        # Tool documentation (shared by Claude, Codex, Gemini)
 ```
+
+**No hooks.** This package ships no lifecycle hooks — no `hooks/` directory and
+no `hooks` key in any manifest. See [Setup](#setup).
 
 ## Platform manifests
 
@@ -55,17 +55,30 @@ Claude Code and Codex read their MCP connection config from the shared `mcp.json
 
 The `${user_config.*}` / `${settings.*}` variables are populated from each platform's user-configurable settings at runtime.
 
-## Hooks
+## Setup
 
-`hooks/hooks.json` fires `plugin-setup.sh` on `SessionStart` and `ConfigChange`.
+Nothing runs automatically at session start. Connecting to a server that is
+already running requires no setup at all — `mcp.json` substitutes your
+`server_url` and `api_token` directly.
 
-The setup script is a thin adapter. It maps plugin settings to environment variables, prepares appdata, ensures the bundled binary is available on `PATH`, and delegates setup checks or repair to `synapse setup plugin-hook "$@"`.
+If this machine also runs the server, bootstrap it once by hand:
+
+```bash
+synapse setup install                  # put/refresh the binary on PATH
+synapse setup plugin-hook              # check, then repair on blocking failures
+synapse setup plugin-hook --no-repair  # audit only; never mutates appdata
+```
+
+Export the matching `SYNAPSE_*` variables (or write them into `~/.synapse2/.env`)
+first — the removed hook used to translate the plugin options for you. See
+`plugins/README.md` for the option→variable mapping. Re-run
+`synapse setup install` after a plugin update.
 
 ## Monitors
 
 **Requires Claude Code v2.1.105+.**
 
-`monitors/monitors.json` declares a background `server-health` monitor that starts automatically at session start. It runs `hooks/watch.sh`, which delegates to an installed `synapse` on PATH, and delivers each stdout line to Claude as a notification whenever the MCP server changes state.
+`monitors/monitors.json` declares a background `server-health` monitor that starts automatically at session start. It runs `synapse watch` from `PATH` and delivers each stdout line to Claude as a notification whenever the MCP server changes state.
 
 The monitor emits only on state transitions — Claude is not notified while the server is stable. Three states:
 
@@ -86,6 +99,7 @@ Disabling the plugin mid-session does not stop an already-running monitor; it st
 
 1. Confirm the plugin does not rely on a bundled `synapse` binary.
 2. Confirm `synapse` is installed separately when testing runtime setup.
-3. Run `cargo test --test plugin_contract`.
+3. Run `cargo test --test plugin_contract` and `just validate-plugin`.
 4. Verify all manifests still omit explicit `version` fields.
-5. Install through the target marketplace or local plugin path.
+5. Verify no `hooks/` directory and no `hooks` manifest key have reappeared.
+6. Install through the target marketplace or local plugin path.

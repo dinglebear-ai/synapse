@@ -11,16 +11,19 @@ plugins/synapse2/
 ├── .codex-plugin/
 │   ├── plugin.json       # Codex manifest
 │   └── README.md         # Codex manifest field reference
-├── .mcp.json             # Shared MCP server connection config
-├── hooks/
-│   ├── hooks.json        # Lifecycle hook definitions
-│   └── plugin-setup.sh  # Deployment and validation script
+├── gemini-extension.json # Gemini CLI manifest
+├── mcp.json              # Shared MCP server connection config
+├── bin/synapse           # Optional local release binary (`just install`)
+├── monitors/
+│   └── monitors.json     # Background health monitor config
 └── skills/
-    ├── synapse2/
-    │   └── SKILL.md      # Tool documentation for Claude and Codex
-    └── scaffold-project/
-        └── SKILL.md      # Turns scaffold_intent JSON into an approval-first plan
+    └── synapse2/
+        └── SKILL.md      # Tool documentation for Claude, Codex, and Gemini
 ```
+
+This plugin ships **no lifecycle hooks**. It is a pure connection package:
+manifests, MCP config, one monitor, and skills. See [Setup](#setup) below for
+the manual equivalent of what the removed `SessionStart` hook used to do.
 
 ---
 
@@ -28,7 +31,7 @@ plugins/synapse2/
 
 ### `.claude-plugin/plugin.json`
 
-Claude Code plugin manifest. Defines the plugin identity, MCP server connection, lifecycle hooks, and user-configurable options.
+Claude Code plugin manifest. Defines the plugin identity, MCP server connection, skills, monitors, and user-configurable options. It declares no `hooks` key — see [Setup](#setup).
 
 **User config fields** (set via Claude Code plugin settings):
 
@@ -74,30 +77,42 @@ Shared MCP server connection config used by both plugins. Points both clients at
 
 ---
 
-## Hooks
+## Setup
 
-### `hooks/hooks.json`
+This plugin ships no hooks, so nothing runs automatically at session start.
+**Client mode** — connecting to an already-running Synapse server — needs no
+setup at all: `mcp.json` reads `server_url` and `api_token` straight from your
+plugin settings.
 
-Defines two lifecycle hooks:
+**Server mode** — where this machine also runs the server — needs a one-time
+manual bootstrap. All of the policy still lives in the Rust binary; only the
+automatic invocation is gone:
 
-| Hook | Trigger | Script |
-|---|---|---|
-| `SessionStart` | Every Claude Code session start | `hooks/plugin-setup.sh` |
-| `ConfigChange` | User updates plugin settings | `hooks/plugin-setup.sh` |
+```bash
+# 1. Put the binary on PATH (also refresh it after a plugin update).
+synapse setup install
 
-Timeout: 300 seconds.
+# 2. Export the settings the hook used to translate for you, or put the
+#    same values in ~/.synapse2/.env.
+export SYNAPSE_MCP_TOKEN=...          # was plugin option: api_token
+export SYNAPSE_SERVER_URL=...         # was plugin option: server_url
+export SYNAPSE_HOSTS_CONFIG=...       # was plugin option: synapse_hosts_config
+export SYNAPSE_CONFIG_FILE=...        # was plugin option: synapse_config_file
+export SYNAPSE_MCP_AUTH_MODE=...      # was plugin option: auth_mode
+export SYNAPSE_MCP_NO_AUTH=...        # was plugin option: no_auth
+# OAuth mode only:
+export SYNAPSE_MCP_PUBLIC_URL=...            SYNAPSE_MCP_GOOGLE_CLIENT_ID=...
+export SYNAPSE_MCP_GOOGLE_CLIENT_SECRET=...  SYNAPSE_MCP_AUTH_ADMIN_EMAIL=...
 
-### `hooks/plugin-setup.sh`
+# 3. Create/repair appdata + .env and validate auth and port.
+synapse setup plugin-hook              # check, then repair if needed
+synapse setup plugin-hook --no-repair  # audit only; report without mutating
+```
 
-The lifecycle adapter. Runs on every session start and config change.
-
-- Reads `CLAUDE_PLUGIN_OPTION_*` env vars from plugin `userConfig`
-- Exports those values as the binary's runtime environment variables
-- Prepares the plugin appdata directory
-- Ensures `synapse` is available on `PATH`
-- Calls `synapse setup plugin-hook "$@"`
-
-Deployment policy, repair behavior, and failure classification live in the Rust binary, not in the hook script. The script is idempotent and intentionally does not manage Docker, systemd, config rewrites, port conflicts, or OAuth redirect construction itself.
+`setup check`, `setup repair`, `setup install`, and `setup plugin-hook` are all
+still shipped by the binary and emit the same JSON report the hook used to
+print. Re-run step 1 after `/plugin update`; the hook used to do that on every
+session start.
 
 ---
 
@@ -111,7 +126,7 @@ Three-tier structured documentation for the Synapse2 `flux` and `scout` MCP tool
 **Tier 2**: full action reference — parameters, types, example calls, response shapes.  
 **Tier 3**: multi-step workflows demonstrating real-world use.
 
-Also includes HTTP fallback examples using `CLAUDE_PLUGIN_OPTION_SERVER_URL` and `CLAUDE_PLUGIN_OPTION_API_TOKEN` env vars for when the MCP connection isn't available.
+Tier 3 also includes a REST fallback for when the MCP transport is unavailable: `POST /v1/synapse2` using the `SYNAPSE_MCP_HOST`, `SYNAPSE_MCP_PORT`, and `SYNAPSE_MCP_TOKEN` env vars.
 
 
 ---
@@ -127,6 +142,9 @@ by `Cargo.toml`, the npm launcher package, and the release manifest.
 ## Maintenance checklist
 
 1. Keep Claude, Codex, and Gemini manifests pointed at the same Synapse2 server.
-2. Keep `skills/synapse2/SKILL.md` aligned with the canonical operation registry.
+2. Keep `skills/synapse2/SKILL.md` aligned with the canonical operation registry
+   in `src/actions/operations.rs` (59 operations).
 3. Preserve the no-`version` manifest contract.
-4. Run `scripts/validate-plugin-layout.sh` after plugin changes.
+4. Preserve the no-hooks contract: do not reintroduce a `hooks/` directory or a
+   `hooks` key in any manifest.
+5. Run `scripts/validate-plugin-layout.sh` after plugin changes.

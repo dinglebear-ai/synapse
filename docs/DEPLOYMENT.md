@@ -149,7 +149,9 @@ Non-loopback HTTP deployments must use bearer auth or OAuth. OAuth public URLs m
 }
 ```
 
-The binary must be in `$PATH`. The plugin's `plugin-setup.sh` symlinks it to `~/.local/bin/` on SessionStart.
+The binary must be in `$PATH`. The plugin ships no hooks and will not install it
+for you — run `synapse setup install` to copy it into `~/.local/bin/`, and re-run
+that after upgrading.
 
 ## Public endpoints
 

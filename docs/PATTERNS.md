@@ -21,10 +21,12 @@ Synapse2-specific decisions and local exceptions.
 - Root and nested agent memory files use `CLAUDE.md` as source of truth;
   `AGENTS.md` and `GEMINI.md` must be symlinks to it.
 - Plugin manifests do not carry explicit `version` fields.
-- Plugin setup hooks delegate to `<binary> setup plugin-hook` for repair mode
-  and `<binary> setup plugin-hook --no-repair` for audit mode. The JSON contract
-  includes `exit_policy`, `blocking_failures`, `advisory_failures`, and
-  `ran_repair`.
+- Plugin packages ship no lifecycle hooks: no `hooks/` directory, no `hooks` key
+  in any manifest. Monitors invoke the PATH binary directly.
+- Setup is an operator command, not a hook: `<binary> setup plugin-hook` for
+  repair mode and `<binary> setup plugin-hook --no-repair` for audit mode. The
+  JSON contract includes `exit_policy`, `blocking_failures`,
+  `advisory_failures`, and `ran_repair`.
 
 ## Current Local Exceptions
 

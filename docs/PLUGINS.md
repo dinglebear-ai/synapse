@@ -19,9 +19,8 @@ plugins/synapse2/
     README.md            # Codex manifest field reference
   mcp.json               # Shared Claude/Codex MCP connection config
   gemini-extension.json  # Gemini CLI extension manifest
-  hooks/
-    hooks.json           # Claude lifecycle hook declarations
-    plugin-setup.sh      # Thin adapter to the binary setup command
+  monitors/
+    monitors.json        # Claude background health monitor config
   bin/
     synapse             # Optional Git LFS-tracked plugin binary artifact
   skills/
@@ -52,30 +51,28 @@ Claude Code uses `plugins/synapse2/.claude-plugin/plugin.json`.
 Responsibilities:
 
 - identifies the plugin and repository
-- declares `mcpServers`, `hooks`, and `skills` paths
+- declares `mcpServers`, `skills`, and `experimental.monitors` paths
 - defines `userConfig` settings exposed in Claude Code
 - marks sensitive values with `sensitive: true`
 
-Claude-specific lifecycle hooks live in `plugins/synapse2/hooks/hooks.json`. The default hooks are:
+**This package ships no lifecycle hooks.** There is no `hooks/` directory and no
+`hooks` key in any manifest; `scripts/validate-plugin-layout.sh` asserts both.
 
-| Hook | Trigger | Command |
-| --- | --- | --- |
-| `SessionStart` | every Claude Code session start | `${CLAUDE_PLUGIN_ROOT}/hooks/plugin-setup.sh` |
-| `ConfigChange` | plugin user settings change | `${CLAUDE_PLUGIN_ROOT}/hooks/plugin-setup.sh` |
-
-`plugin-setup.sh` must stay a thin adapter. The standard command is:
-
-```bash
-<binary> setup plugin-hook
-```
-
-For rollout audits, the binary must also support:
+Setup is therefore an explicit operator step rather than something that runs at
+session start. Client mode — pointing at a server that is already running —
+needs nothing: `mcp.json` substitutes `server_url` and `api_token` directly from
+plugin settings. Server mode needs a one-time bootstrap:
 
 ```bash
-<binary> setup plugin-hook --no-repair
+<binary> setup install                  # put/refresh the binary on PATH
+<binary> setup plugin-hook              # check, repair only if needed
+<binary> setup plugin-hook --no-repair  # rollout audit; never mutates
 ```
 
-The hook script may map `CLAUDE_PLUGIN_OPTION_*` values into runtime env vars, create the appdata directory, ensure the binary is available, and call the binary. It should not own Docker/systemd orchestration, config rewriting, smoke-test policy, or failure classification.
+The operator is responsible for exporting the service's `SYNAPSE_*` env vars (or
+writing them into the appdata `.env`) before running setup; `plugins/README.md`
+holds the plugin-option→env-var mapping. Policy, repair behavior, and failure
+classification live in the binary, never in manifest-specific shell code.
 
 ## Codex
 
@@ -146,10 +143,11 @@ The validator checks:
 
 - Claude, Codex, and Gemini manifests are valid JSON
 - plugin manifests do not contain a `version` field
-- manifests point to the shared `mcp.json`, hooks, and skills paths
+- manifests point to the shared `mcp.json`, monitors, and skills paths
 - shared MCP config exposes the `synapse2` HTTP server at `${user_config.server_url}/mcp`
 - Gemini config exposes the same `synapse2` HTTP server at `${settings.server_url}/mcp`
-- hook config runs `${CLAUDE_PLUGIN_ROOT}/hooks/plugin-setup.sh`
+- no manifest declares a `hooks` key and no `hooks/` directory is shipped
+- monitors invoke the PATH binary rather than a wrapper script
 - every skill has `name:` and `description:` frontmatter
 
 Use `PLUGIN_ROOT=plugins/<service>` when validating an adapted service package.
@@ -225,9 +223,10 @@ The skill should also include:
 
 Do not maintain separate skill docs per host. Update the shared skill when the action surface changes; Claude, Codex, and Gemini all read the same file.
 
-## Binary-Owned Hook Standard
+## Binary-Owned Setup Standard
 
-Every Rust server with a Claude plugin should expose:
+These commands are invoked by an operator, not by a plugin hook. Every Rust
+server with a Claude plugin should still expose:
 
 ```bash
 <binary> setup plugin-hook
@@ -244,7 +243,7 @@ Every Rust server with a Claude plugin should expose:
 - include `exit_policy`, `blocking_failures`, `advisory_failures`, `ran_repair`, and `no_repair`
 - exit `0` for success or advisory failures
 - exit nonzero for blocking failures
-- enforce a bounded total hook runtime
+- enforce a bounded total runtime
 
 Advisory failures are non-blocking local conditions such as missing `.env` files when process env already supplies values, occupied MCP ports, optional startup proofs, or model prewarm. Blocking failures are prerequisites required for the plugin to function, such as missing appdata directories, missing required upstream credentials, or invalid OAuth/auth configuration.
 
@@ -273,7 +272,7 @@ When updating the Synapse2 plugin:
 
 1. Update all three manifests with the current repository, description, author, keywords, and capability claims.
 3. Keep credential names aligned across Claude `userConfig`, Codex shared `mcp.json`, and Gemini `settings`.
-4. Update `plugins/synapse2/hooks/plugin-setup.sh` to map service-specific plugin options into env vars.
+4. Update the plugin-option→env-var mapping table in `plugins/README.md` when `userConfig` changes.
 5. Keep `synapse setup plugin-hook`, `--no-repair`, `check`, and `repair` working.
 7. Update shared skill docs for the actual action surface.
 8. Replace Codex `defaultPrompt` entries with realistic prompts.
@@ -284,8 +283,8 @@ When updating the Synapse2 plugin:
 
 Each server should include tests that prove:
 
-- Claude hook config points to `hooks/plugin-setup.sh`
-- hook script delegates to `<binary> setup plugin-hook`
+- no `hooks/` directory and no `hooks` key in any manifest
+- monitors invoke the PATH binary rather than a wrapper script
 - `setup plugin-hook --no-repair` parses and does not mutate appdata
 - JSON plugin-hook output contains `exit_policy`, `blocking_failures`, `advisory_failures`, `ran_repair`, and `no_repair`
 - advisory failures exit `0`

@@ -371,7 +371,7 @@ install-local: build-release
     install -m 755 target/release/synapse "${HOME}/.local/bin/synapse"
     @echo "Installed ${HOME}/.local/bin/synapse"
 
-# Validate all plugin manifests, MCP config, hooks, and skills
+# Validate all plugin manifests, MCP config, monitors, and skills
 validate-plugin:
     bash scripts/validate-plugin-layout.sh
 

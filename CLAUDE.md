@@ -12,6 +12,24 @@ full-parity Rust port of `synapse-mcp`, exposing two MCP tools:
 The binary is named `synapse`. HTTP MCP defaults to `127.0.0.1:40080`, and the
 REST compatibility endpoint is `POST /v1/synapse2`.
 
+## Repo facts
+
+| Fact | Value |
+|---|---|
+| Remote | `git@github.com:dinglebear-ai/synapse.git` |
+| Cargo workspace | 2 members: `.` (crate `synapse2`) and `xtask` |
+| Edition / MSRV | 2024 / `rust-version = 1.90` (`rust-toolchain.toml` pins channel `1.90`) |
+| MCP framework | `rmcp = "2.2.0"` (exact string in `Cargo.toml`; verify against `Cargo.lock`) |
+| Binary | `synapse` (`[[bin]]`, `autobins = false`) |
+| Service port | `40080` |
+| Tools | two: `flux` and `scout` |
+| Action surface | **59 operations** in `OPERATION_SPECS` — 14 REST-reachable, 45 MCP-only |
+
+`Cargo.toml`, `server.json`, and the plugin manifests still carry
+`github.com/jmagar/synapse` URLs and the `ghcr.io/jmagar/synapse` image path.
+Those resolve only through GitHub's org-transfer redirect. Do not "fix" the
+`ghcr.io` path casually — it changes where deployments pull from.
+
 ## Module map
 
 | File | Role |
@@ -34,6 +52,8 @@ REST compatibility endpoint is `POST /v1/synapse2`.
 | `src/scout_service/proc.rs` | Scout process/disk (ps/df) implementations. |
 | `src/scout_service/zfs.rs` | Scout ZFS introspection (pools/datasets/snapshots) implementations. |
 | `src/actions.rs` | Top-level action metadata, scope constants, `SynapseAction` enum, shared param helpers. |
+| `src/actions/operations.rs` | **Canonical `OPERATION_SPECS` registry (59 entries)** — name, tool, action, subaction, scope, destructive flag, transport, required params. Source of truth for MCP, REST, schemas, and docs. |
+| `src/actions/rest.rs` | REST-reachable subset of the operation registry. |
 | `src/actions/dispatch.rs` | `execute_service_action` dispatch, error-type helpers. |
 | `src/actions/flux.rs` | Typed flux argument structs and `from_flux_args` parser. |
 | `src/actions/scout.rs` | Typed scout argument structs and `from_scout_args` parser. |
@@ -74,6 +94,9 @@ REST compatibility endpoint is `POST /v1/synapse2`.
 | `src/color_policy.rs` | `NO_COLOR`/`FORCE_COLOR` detection and terminal color capability. |
 | `src/scaffold.rs` | First-run directory/config scaffolding for bare-metal installs. |
 | `src/synapse.rs` | Cross-cutting types and traits shared by flux and scout. |
+| `src/synapse/command_policy.rs` | **Security-critical**: `ALLOWED_READ_COMMANDS` (18 commands), `EXEC_DENYLIST`, and `validate_command`. Any change here must be mirrored in `src/mcp/schemas.rs`, `src/mcp/help_topics.rs`, `docs/API.md`, `README.md`, and the plugin SKILL. |
+| `src/secure_path.rs` | Read-root confinement and sensitive/symlink path rejection. |
+| `src/activity.rs` | In-memory activity ring backing the `synapse://activity` resource. |
 | `src/compose.rs` | Compose project discovery and caching logic. |
 | `src/scout.rs` | Scout domain types and shared SSH execution helpers. |
 | `src/docker.rs` | Docker domain types and shared container/image helpers. |
@@ -82,9 +105,13 @@ REST compatibility endpoint is `POST /v1/synapse2`.
 | `src/web.rs` | Optional static web UI: asset serving and SPA fallback. |
 | `src/main.rs` | Mode dispatch: HTTP server, stdio MCP, CLI. |
 | `src/lib.rs` | Public API plus `testing` helpers for integration tests. |
-| `tests/cli_parse.rs` | CLI argument parsing tests. |
+| `tests/cli_parse.rs` | CLI argument parsing tests (plus `cli_parse_{docker,container,flux,scout}.rs`). |
 | `tests/tool_dispatch.rs` | MCP tool dispatch tests using loopback state. |
 | `tests/api_routes.rs` | REST route/auth tests. |
+| `tests/parity.rs` | Asserts the action surface matches the synapse-mcp INVENTORY table. |
+| `tests/plugin_contract.rs` | Plugin manifest/monitor invariants and `setup plugin-hook` JSON contract. |
+| `tests/docker_client.rs`, `tests/ssh_pool.rs` | Docker client and SSH pool integration tests. |
+| `tests/template_invariants.rs` | Repo-shape invariants inherited from the scaffold. |
 
 ## Thin-shim rule
 
@@ -207,14 +234,19 @@ just health
 ```
 
 `cargo-llvm-cov` coverage currently needs the direct-rustc workaround on this
-host when the local `sccache-wrapper` mishandles `--check-cfg`:
+host when the local `sccache-wrapper` mishandles `--check-cfg`. Resolve the
+toolchain rather than hardcoding a version — `rust-toolchain.toml` pins channel
+`1.90`, so a literal path pinned to some other release will silently be wrong:
 
 ```bash
 env -u RUSTC_WRAPPER \
-  RUSTC=/home/jmagar/.rustup/toolchains/1.94.0-x86_64-unknown-linux-gnu/bin/rustc \
+  RUSTC="$(rustup which rustc)" \
   LLVM_PROFILE_FILE=target/llvm-cov/profiles/%p-%m.profraw \
   cargo llvm-cov --locked --workspace --lcov --output-path target/llvm-cov/lcov.info
 ```
+
+Coverage runs drop `*.profraw` files in the repo root; delete them afterwards so
+they do not get committed.
 
 ## Test helpers
 
@@ -228,8 +260,14 @@ Prefer sibling sidecar tests for production modules (`src/foo_tests.rs` or
 ## CLI and MCP parity
 
 Every production MCP action must also be reachable from the CLI, except protocol
-concepts such as MCP resources/prompts and elicitation-only flows. Current
-production action families:
+concepts such as MCP resources/prompts and elicitation-only flows.
+
+The action surface is **59 operations** — count them with
+`grep -c 'operation!(' src/actions/operations.rs`, never by hand from this list.
+Breakdown: `flux docker` 9, `flux container` 14, `flux host` 9, `flux compose`
+10, `scout` simple 9, `scout zfs` 3, `scout logs` 4, plus one shared `help`
+(= 59). By transport: 14 `Rest`, 45 `McpOnly`. Current production action
+families:
 
 - `flux docker`: `info`, `df`, `images`, `networks`, `volumes`, `pull`, `build`,
   `rmi`, `prune`
@@ -251,6 +289,33 @@ Plugin manifests (`.claude-plugin/plugin.json`, `.codex-plugin/plugin.json`,
 `gemini-extension.json`) do not contain a `version` field. The marketplace
 derives versions from git commits. Do not add `version` or run version-bump
 scripts against plugin manifests.
+
+## No plugin hooks
+
+`plugins/synapse2/` ships **no lifecycle hooks**: no `hooks/` directory, no
+`hooks` key in any manifest. `scripts/validate-plugin-layout.sh` and
+`tests/plugin_contract.rs` both assert this. Do not reintroduce either.
+
+The removed `SessionStart`/`ConfigChange` hook translated `CLAUDE_PLUGIN_OPTION_*`
+settings into `SYNAPSE_*` env vars, created `SYNAPSE_HOME` mode 700, wrote and
+repaired `.env`, validated auth and port, and refreshed `~/.local/bin/synapse`.
+All of that behavior still lives in the binary (`src/cli/setup.rs`) — only the
+automatic invocation is gone. Manual equivalent:
+
+```bash
+synapse setup install                  # refresh ~/.local/bin/synapse
+synapse setup plugin-hook              # check, then repair on blocking failures
+synapse setup plugin-hook --no-repair  # audit only; never mutates appdata
+```
+
+Export the `SYNAPSE_*` variables yourself, or put them in `~/.synapse2/.env`,
+before running these. `plugins/README.md` holds the plugin-option→env-var
+mapping. Client mode — connecting to a server running elsewhere — needs none of
+this; `mcp.json` substitutes the plugin settings directly.
+
+`monitors/monitors.json` now invokes `synapse watch` from PATH instead of a
+`hooks/watch.sh` wrapper. The wrapper used to exit 0 when the binary was
+missing; a direct invocation surfaces that as a monitor error instead.
 
 ## Common gotchas
 

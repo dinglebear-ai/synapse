@@ -23,7 +23,7 @@ MCP_JSON="${PLUGIN_ROOT}/mcp.json"
 if [[ ! -f "${MCP_JSON}" && -f "${PLUGIN_ROOT}/.mcp.json" ]]; then
   MCP_JSON="${PLUGIN_ROOT}/.mcp.json"
 fi
-HOOKS_JSON="${PLUGIN_ROOT}/hooks/hooks.json"
+MONITORS_JSON="${PLUGIN_ROOT}/monitors/monitors.json"
 SKILLS_DIR="${PLUGIN_ROOT}/skills"
 
 check() {
@@ -74,7 +74,7 @@ check "Gemini extension manifest is valid JSON" "jq empty '${GEMINI_EXTENSION_JS
 check "Gemini extension name is ${PLUGIN_NAME}" "test \"\$(jq -er '.name' '${GEMINI_EXTENSION_JSON}')\" = '${PLUGIN_NAME}'"
 check "Gemini extension has no version field" "test \"\$(jq -er 'has(\"version\")' '${GEMINI_EXTENSION_JSON}')\" = 'false'"
 check "Gemini extension points to skills directory" "test \"\$(jq -er '.skills' '${GEMINI_EXTENSION_JSON}')\" = './skills'"
-check "Gemini extension points to hooks config" "test \"\$(jq -er '.hooks' '${GEMINI_EXTENSION_JSON}')\" = './hooks/hooks.json'"
+check "Gemini extension declares no hooks" "test \"\$(jq -er 'has(\"hooks\")' '${GEMINI_EXTENSION_JSON}')\" = 'false'"
 check "Gemini MCP server is named ${PLUGIN_NAME}" "jq -er --arg name '${PLUGIN_NAME}' '.mcpServers[\$name]' '${GEMINI_EXTENSION_JSON}'"
 check "Gemini MCP transport is HTTP" "jq -er --arg name '${PLUGIN_NAME}' '.mcpServers[\$name].type == \"http\"' '${GEMINI_EXTENSION_JSON}'"
 check "Gemini MCP URL uses settings server_url" "jq -er --arg name '${PLUGIN_NAME}' '.mcpServers[\$name].url == \"\${settings.server_url}/mcp\"' '${GEMINI_EXTENSION_JSON}'"
@@ -87,10 +87,13 @@ check "MCP transport is HTTP" "jq -er --arg name '${PLUGIN_NAME}' '.mcpServers[\
 check "MCP URL uses server_url and /mcp path" "jq -er --arg name '${PLUGIN_NAME}' '.mcpServers[\$name].url == \"\${user_config.server_url}/mcp\"' '${MCP_JSON}'"
 check "MCP Authorization header uses api_token" "jq -er --arg name '${PLUGIN_NAME}' '.mcpServers[\$name].headers.Authorization == \"Bearer \${user_config.api_token}\"' '${MCP_JSON}'"
 
-check "hooks config exists" "test -f '${HOOKS_JSON}'"
-check "hooks config is valid JSON" "jq empty '${HOOKS_JSON}'"
-check "SessionStart runs plugin setup" "jq -er '.hooks.SessionStart[]?.hooks[]?.command == \"\${CLAUDE_PLUGIN_ROOT}/hooks/plugin-setup.sh\"' '${HOOKS_JSON}'"
-check "ConfigChange runs plugin setup" "jq -er '.hooks.ConfigChange[]? | select(.matcher == \"user_settings\") | .hooks[]?.command == \"\${CLAUDE_PLUGIN_ROOT}/hooks/plugin-setup.sh\"' '${HOOKS_JSON}'"
+check "Claude plugin declares no hooks" "test \"\$(jq -er 'has(\"hooks\")' '${CLAUDE_PLUGIN_JSON}')\" = 'false'"
+check "Codex plugin declares no hooks" "test \"\$(jq -er 'has(\"hooks\")' '${CODEX_PLUGIN_JSON}')\" = 'false'"
+check "no plugin hooks directory is shipped" "test ! -e '${PLUGIN_ROOT}/hooks'"
+
+check "monitors config exists" "test -f '${MONITORS_JSON}'"
+check "monitors config is valid JSON" "jq empty '${MONITORS_JSON}'"
+check "monitors invoke the PATH binary, not a hook script" "jq -er 'all(.[]; (.command | contains(\"hooks/\")) | not)' '${MONITORS_JSON}'"
 
 check "skills directory exists" "test -d '${SKILLS_DIR}'"
 

@@ -22,8 +22,7 @@ fn plugin_manifests_exist_for_all_supported_hosts() {
         "plugins/synapse2/.codex-plugin/plugin.json",
         "plugins/synapse2/gemini-extension.json",
         "plugins/synapse2/mcp.json",
-        "plugins/synapse2/hooks/hooks.json",
-        "plugins/synapse2/hooks/plugin-setup.sh",
+        "plugins/synapse2/monitors/monitors.json",
         "plugins/synapse2/skills/synapse2/SKILL.md",
     ] {
         assert!(std::path::Path::new(path).exists(), "{path} should exist");
@@ -98,37 +97,49 @@ fn plugin_manifests_share_identity_and_connection_settings() {
     );
 }
 
+/// The plugin package ships no lifecycle hooks. Setup is an explicit operator
+/// command (`synapse setup plugin-hook`), not something a `SessionStart` hook
+/// runs. Guards against a hooks directory or manifest key creeping back in.
 #[test]
-fn claude_hooks_delegate_to_plugin_setup_script() {
-    let hooks = json("plugins/synapse2/hooks/hooks.json");
-    for hook_name in ["SessionStart", "ConfigChange"] {
-        let command = hooks["hooks"][hook_name][0]["hooks"][0]["command"]
-            .as_str()
-            .unwrap();
-        assert_eq!(command, "${CLAUDE_PLUGIN_ROOT}/hooks/plugin-setup.sh");
+fn plugin_package_ships_no_lifecycle_hooks() {
+    assert!(
+        !std::path::Path::new("plugins/synapse2/hooks").exists(),
+        "plugin package must not ship a hooks directory"
+    );
+    for path in [
+        "plugins/synapse2/.claude-plugin/plugin.json",
+        "plugins/synapse2/.codex-plugin/plugin.json",
+        "plugins/synapse2/gemini-extension.json",
+    ] {
+        assert!(
+            json(path).get("hooks").is_none(),
+            "{path} must not declare a hooks key"
+        );
     }
 }
 
+/// Monitors must invoke the binary resolved from PATH. A wrapper script under
+/// `hooks/` would reintroduce the shell layer that was deliberately removed.
 #[test]
-fn plugin_setup_delegates_to_binary_owned_hook_command() {
-    let setup = read("plugins/synapse2/hooks/plugin-setup.sh");
-    assert!(
-        setup.contains("\"${synapse_bin}\" setup plugin-hook"),
-        "plugin setup should delegate to the verified bundled binary path"
-    );
-    assert!(
-        setup.find("synapse_bin=\"$(synapse_binary)\"").unwrap()
-            < setup.find("export_if_set SYNAPSE_MCP_TOKEN").unwrap(),
-        "plugin setup should verify the bundled binary before exporting secrets"
-    );
-    assert!(
-        !setup.contains("systemctl --user"),
-        "plugin setup should not own systemd orchestration"
-    );
-    assert!(
-        !setup.contains("docker compose"),
-        "plugin setup should not own Docker orchestration"
-    );
+fn monitors_invoke_the_path_binary_directly() {
+    let monitors = json("plugins/synapse2/monitors/monitors.json");
+    let entries = monitors.as_array().expect("monitors.json must be an array");
+    assert!(!entries.is_empty(), "expected at least one monitor");
+    for entry in entries {
+        let command = entry["command"].as_str().unwrap();
+        assert!(
+            !command.contains("hooks/"),
+            "monitor must not call a hooks/ wrapper script: {command}"
+        );
+        assert!(
+            command.starts_with("synapse "),
+            "monitor must invoke the PATH binary: {command}"
+        );
+        assert!(
+            command.contains("${user_config.server_url}"),
+            "monitor must use server_url substitution, not a hardcoded URL: {command}"
+        );
+    }
 }
 
 #[test]

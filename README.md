@@ -14,18 +14,22 @@ commands, covering all 59 production actions from the original TypeScript server
 - [Install](#install)
 - [Quickstart](#quickstart)
 - [Client Configuration](#client-configuration)
+- [Plugin Packages](#plugin-packages)
 - [Runtime Surfaces](#runtime-surfaces)
 - [MCP Tool Reference](#mcp-tool-reference)
 - [CLI Reference](#cli-reference)
-- [Configuration](#configuration)
 - [Authentication](#authentication)
 - [Safety And Trust Model](#safety-and-trust-model)
-- [Architecture](#architecture)
 - [Distribution Contract](#distribution-contract)
-- [Development](#development)
 - [Verification](#verification)
 - [Deployment](#deployment)
 - [Troubleshooting](#troubleshooting)
+- [Tools and Actions](#tools-and-actions)
+- [Known Parity Gaps](#known-parity-gaps)
+- [Configuration](#configuration)
+- [Run](#run)
+- [Architecture](#architecture)
+- [Development](#development)
 - [Documentation](#documentation)
 - [Related Servers](#related-servers)
 - [License](#license)
@@ -78,6 +82,10 @@ For a permanent command:
 npm i -g synapse-rmcp
 synapse --version
 ```
+
+The npm package downloads the `synapse` binary from GitHub Releases during
+`postinstall`, keeping the release tag aligned with
+`packages/synapse-rmcp/package.json`.
 
 From source:
 
@@ -158,6 +166,26 @@ Streamable HTTP uses `/mcp` on the configured host and port:
 }
 ```
 
+## Plugin Packages
+
+`plugins/synapse2/` ships Claude Code, Codex, and Gemini CLI manifests that all
+point at the same HTTP MCP endpoint and the same shared skill.
+
+These packages contain **no lifecycle hooks**. Connecting to a server that is
+already running needs no setup — the manifests substitute your `server_url` and
+`api_token` directly. If this machine also *runs* the server, bootstrap it once
+by hand:
+
+```bash
+synapse setup install                  # put/refresh the binary on PATH
+synapse setup plugin-hook              # check, then repair on blocking failures
+synapse setup plugin-hook --no-repair  # audit only; never mutates appdata
+```
+
+Export the relevant `SYNAPSE_*` variables (or write them to `~/.synapse2/.env`)
+first; `plugins/README.md` maps each plugin option to its variable. Re-run
+`synapse setup install` after a plugin update.
+
 ## Runtime Surfaces
 
 | Surface | Status | Purpose |
@@ -226,6 +254,18 @@ known-hosts behavior, and command execution uses execvp/argv semantics without
 shell interpolation. `scout beam` enforces both endpoints' configured read roots,
 blocks sensitive and symlinked paths, and caps each transfer at 64 MiB.
 
+`scout exec` and `scout emit` accept only these 18 typed commands
+(`ALLOWED_READ_COMMANDS` in `src/synapse/command_policy.rs`):
+
+`cat`, `head`, `tail`, `grep`, `rg`, `ls`, `tree`, `wc`, `uniq`, `diff`, `stat`,
+`file`, `du`, `df`, `pwd`, `hostname`, `uptime`, `whoami`
+
+`git` is deliberately excluded, as are shells, interpreters, network clients, and
+mutating tools (`EXEC_DENYLIST`). There is no `find` or `sort` in the allowlist —
+use the dedicated `scout find` action for filesystem search. Per-host custom
+commands may be enabled via `execAllowlist`, but receive a zero-argument policy
+until a typed argument policy is registered.
+
 ## Distribution Contract
 
 The source of truth for release identity is the version shared by `Cargo.toml`,
@@ -245,7 +285,7 @@ Distribution/version invariants:
 ## Verification
 
 ```bash
-python3 /home/jmagar/workspace/soma/scripts/check-readme-guide.py README.md
+just validate-plugin          # plugin manifests, MCP config, monitors, skills
 npm --prefix packages/synapse-rmcp run check
 cargo fmt --check
 cargo check
@@ -277,40 +317,6 @@ present; local operator usage can stay on stdio.
   policy.
 - SSH errors: verify OpenSSH known_hosts, mux/socket availability, and host
   reachability outside Synapse first.
-
-## npm / npx
-
-Run the stdio MCP server or CLI without a manual binary install:
-
-```bash
-npx -y synapse-rmcp --help
-```
-
-MCP clients can use the same launcher:
-
-```json
-{
-  "mcpServers": {
-    "synapse": {
-      "command": "npx",
-      "args": ["-y", "synapse-rmcp"]
-    }
-  }
-}
-```
-
-The npm package downloads the `synapse` binary from GitHub Releases during `postinstall` and keeps the release tag aligned with `packages/synapse-rmcp/package.json`.
-
-Across the rmcp family, naming follows `repo=<service>-rmcp`, `npm=<service>-rmcp`, and `CLI=r<service>`. Synapse is the exception: the npm package is `synapse-rmcp`, but the installed CLI and binary alias remain `synapse`.
-
-## Surfaces
-
-| Surface | Status | Purpose |
-|---|---:|---|
-| MCP | Required | Agent-facing `flux` and `scout` tools |
-| CLI | Required | Scriptable parity surface |
-| REST | Present | Thin local action endpoint |
-| Web | Present | Lightweight static admin shell |
 
 ## Tools and Actions
 
@@ -551,17 +557,17 @@ Source-of-truth docs and code are split as follows:
 
 ## Related Servers
 
-- `unifi-rmcp / rustifi` - UniFi controller REST API bridge.
-- `tailscale-rmcp / rustscale` - Tailscale API bridge for devices, users, and tailnet operations.
-- `unraid-rmcp / unrust` - Unraid GraphQL bridge for NAS and server management.
-- `apprise-rmcp` - Apprise notification fan-out bridge for many delivery backends.
-- `gotify-rmcp` - Gotify push notification bridge for sends, messages, apps, and clients.
-- `arcane-rmcp` - Arcane Docker management bridge for containers and related resources.
-- `yarr-rmcp` - Media-stack bridge for Sonarr, Radarr, Prowlarr, Plex, and related services.
-- `ytdl-mcp` - Media download and metadata workflow server.
+- `runifi` - UniFi controller REST API bridge.
+- `rtailscale` - Tailscale API bridge for devices, users, and tailnet operations.
+- `unraid` / `runraid` - Unraid GraphQL bridge for NAS and server management.
+- `rapprise` - Apprise notification fan-out bridge for many delivery backends.
+- `rgotify` - Gotify push notification bridge for sends, messages, apps, and clients.
+- `rarcane` - Arcane Docker management bridge for containers and related resources.
+- `yarr` - Media-stack bridge for Sonarr, Radarr, Prowlarr, Plex, and related services.
+- `rytdl` - Media download and metadata workflow server.
 - `cortex` - Syslog and homelab log aggregation MCP server.
 - `axon` - RAG, crawl, scrape, extract, and semantic search project.
-- `lab` - Homelab control plane and Labby gateway project.
+- `labby` - Homelab control plane and Labby gateway project.
 - `lumen` - Local semantic code search MCP server.
 - `nugs` - Project/package management helper for local agent workflows.
 - `agentcast` - Agent transcript and activity publishing project.

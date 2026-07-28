@@ -83,6 +83,8 @@ unknown-registry = "deny"
 unknown-git = "deny"
 allow-registry = ["https://github.com/rust-lang/crates.io-index"]
 allow-git = [
-  # lab-auth is vendored from the private lab mono-repo at a pinned rev
-  "https://github.com/jmagar/lab.git",
+  # lab-auth is vendored from the labby mono-repo at a pinned rev.
+  # Formerly jmagar/lab.git, which now resolves only via GitHub's org-transfer
+  # redirect; pointing at the canonical name keeps the build off that redirect.
+  "https://github.com/dinglebear-ai/labby.git",
 ]
