@@ -83,6 +83,20 @@ jobs:
 
           openwiki --update --print
 
+      # The generator emits smart punctuation (U+2019 and friends), which
+      # scripts/asciicheck.py rejects. Left alone it lands in the PR, merges,
+      # and turns Template Contracts red on main -- and because release-please
+      # only runs after a successful CI run, that also freezes the release PR.
+      # Normalize here so the bot's output is ASCII before the PR is opened.
+      - name: Normalize generated docs to ASCII
+        run: |
+          set -euo pipefail
+          mapfile -t files < <(find openwiki -name '*.md')
+          if ((${#files[@]})); then
+            python3 scripts/asciicheck.py --fix "${files[@]}"
+            python3 scripts/asciicheck.py "${files[@]}"
+          fi
+
       - name: Upload generated documentation
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
         with:
