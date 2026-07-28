@@ -169,14 +169,18 @@ jobs:
       - name: Exercise live MCP JSON-RPC through SSH
         shell: bash
         env:
+          SYNAPSE_HOME: ${{ runner.temp }}/synapse-home
+          SYNAPSE_MCP_HOST: 127.0.0.1
+          SYNAPSE_MCP_PORT: "40080"
           SYNAPSE_MCP_NO_AUTH: "true"
-          SYNAPSE_HOSTS_CONFIG: >-
-            [{"name":"ci-ssh","host":"127.0.0.1","protocol":"ssh","sshUser":"synapse-ci","sshKeyPath":"${{ runner.temp }}/id_ed25519","sshPort":2222,"scoutReadRoots":["/tmp"]}]
         run: |
+          mkdir -p "$SYNAPSE_HOME"
+          synapse_hosts_config="$(python3 -c 'import json, os; print(json.dumps([{"name": "ci-ssh", "host": "127.0.0.1", "protocol": "ssh", "sshUser": "synapse-ci", "sshKeyPath": os.path.join(os.environ["RUNNER_TEMP"], "id_ed25519"), "sshPort": int(os.environ["SYNAPSE_TEST_SSH_PORT"]), "scoutReadRoots": ["/tmp"]}]))')"
+          export SYNAPSE_HOSTS_CONFIG="$synapse_hosts_config"
           cargo build --locked
           target/debug/synapse serve mcp >"$RUNNER_TEMP/synapse.log" 2>&1 &
           server_pid=$!
-          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          trap 'rc=$?; if (( rc != 0 )); then cat "$RUNNER_TEMP/synapse.log"; fi; kill "$server_pid" 2>/dev/null || true; exit $rc' EXIT
           bash scripts/test-live-jsonrpc.sh
 
   # ── web: pnpm install, lint, audit, static build ─────────────────────────────
