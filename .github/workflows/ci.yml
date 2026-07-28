@@ -190,6 +190,13 @@ jobs:
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
+      # The unraid self-hosted image ships no Node, so the pnpm bootstrap below
+      # died with "npm: command not found". The npm-launcher job already
+      # provisions Node this way; this job just never did.
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 22
+
       - name: Install pnpm
         run: npm install -g "$(node -p "require('./package.json').packageManager")"
 
