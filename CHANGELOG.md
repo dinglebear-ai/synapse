@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
                Format: ## [X.Y.Z] — YYYY-MM-DD
                Use Added / Changed / Deprecated / Removed / Fixed / Security headers. -->
 
+## [1.0.0](https://github.com/dinglebear-ai/synapse/compare/v0.6.2...v1.0.0) (2026-07-29)
+
+
+### ⚠ BREAKING CHANGES
+
+* complete Synapse identity cutover ([#80](https://github.com/dinglebear-ai/synapse/issues/80))
+
+### Added
+
+* complete Synapse identity cutover ([#80](https://github.com/dinglebear-ai/synapse/issues/80)) ([cf1f3f9](https://github.com/dinglebear-ai/synapse/commit/cf1f3f9ef5925b28f5a5a1ca2d8da5af28815cc2))
+
 ## [0.6.2](https://github.com/dinglebear-ai/synapse/compare/v0.6.1...v0.6.2) (2026-07-28)
 
 
