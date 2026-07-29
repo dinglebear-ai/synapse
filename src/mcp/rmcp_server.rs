@@ -14,10 +14,10 @@ use lab_auth::AuthContext;
 use rmcp::{
     ErrorData, RoleServer, ServerHandler,
     model::{
-        CallToolRequestParams, CallToolResult, GetPromptRequestParams, GetPromptResult,
+        CallToolRequestParams, CallToolResponse, GetPromptRequestParams, GetPromptResponse,
         Implementation, ListPromptsResult, ListResourcesResult, ListToolsResult,
-        PaginatedRequestParams, ReadResourceRequestParams, ReadResourceResult, ServerCapabilities,
-        ServerInfo, Tool,
+        PaginatedRequestParams, ReadResourceRequestParams, ReadResourceResponse,
+        ReadResourceResult, ServerCapabilities, ServerInfo, Tool,
     },
     service::{Peer, RequestContext},
 };
@@ -72,7 +72,7 @@ impl ServerHandler for SynapseRmcpServer {
         &self,
         request: CallToolRequestParams,
         context: RequestContext<RoleServer>,
-    ) -> Result<CallToolResult, ErrorData> {
+    ) -> Result<CallToolResponse, ErrorData> {
         let tool_name = request.name.to_string();
         let arguments = request
             .arguments
@@ -201,7 +201,7 @@ impl ServerHandler for SynapseRmcpServer {
                 self.state
                     .activity
                     .record("mcp", &activity_action, result.is_ok(), None);
-                result
+                result.map(Into::into)
             }
             Err(error) if crate::actions::is_confirmation_denied(&error) => {
                 self.state.activity.record(
@@ -244,7 +244,7 @@ impl ServerHandler for SynapseRmcpServer {
                     error = %error,
                     "MCP tool execution failed"
                 );
-                Ok(tool_error_result(&activity_action, &error.to_string()))
+                Ok(tool_error_result(&activity_action, &error.to_string()).into())
             }
         }
     }
@@ -267,7 +267,7 @@ impl ServerHandler for SynapseRmcpServer {
         &self,
         request: ReadResourceRequestParams,
         context: RequestContext<RoleServer>,
-    ) -> Result<ReadResourceResult, ErrorData> {
+    ) -> Result<ReadResourceResponse, ErrorData> {
         let auth = require_auth_context(&self.state, &context)?;
         if resources::requires_read_scope(&request.uri)
             && let Some(auth) = auth
@@ -283,7 +283,7 @@ impl ServerHandler for SynapseRmcpServer {
                     ErrorData::internal_error(format!("resource read failed: {e}"), None)
                 }
             })?;
-        Ok(ReadResourceResult::new(vec![contents]))
+        Ok(ReadResourceResult::new(vec![contents]).into())
     }
 
     // ── prompts ───────────────────────────────────────────────────────────────
@@ -301,9 +301,11 @@ impl ServerHandler for SynapseRmcpServer {
         &self,
         request: GetPromptRequestParams,
         context: RequestContext<RoleServer>,
-    ) -> Result<GetPromptResult, ErrorData> {
+    ) -> Result<GetPromptResponse, ErrorData> {
         require_auth_context(&self.state, &context)?;
-        prompts::get_prompt(request).map_err(|e| ErrorData::invalid_params(e.to_string(), None))
+        prompts::get_prompt(request)
+            .map(Into::into)
+            .map_err(|e| ErrorData::invalid_params(e.to_string(), None))
     }
 
     // ── server info ───────────────────────────────────────────────────────────

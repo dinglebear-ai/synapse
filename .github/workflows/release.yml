@@ -77,7 +77,7 @@ jobs:
       - name: Install Rust + soldr
         uses: ./.github/actions/setup-rust-soldr
         with:
-          toolchain: 1.90.0
+          toolchain: 1.97.1
           targets: ${{ matrix.target }}
 
       - name: Build web assets

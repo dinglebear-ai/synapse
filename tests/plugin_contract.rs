@@ -21,7 +21,7 @@ fn plugin_manifests_exist_for_all_supported_hosts() {
         "plugins/synapse/.claude-plugin/plugin.json",
         "plugins/synapse/.codex-plugin/plugin.json",
         "plugins/synapse/gemini-extension.json",
-        "plugins/synapse/mcp.json",
+        "plugins/synapse/.mcp.json",
         "plugins/synapse/monitors/monitors.json",
         "plugins/synapse/skills/synapse/SKILL.md",
     ] {
@@ -34,7 +34,7 @@ fn plugin_manifests_share_identity_and_connection_settings() {
     let claude = json("plugins/synapse/.claude-plugin/plugin.json");
     let codex = json("plugins/synapse/.codex-plugin/plugin.json");
     let gemini = json("plugins/synapse/gemini-extension.json");
-    let mcp = json("plugins/synapse/mcp.json");
+    let mcp = json("plugins/synapse/.mcp.json");
 
     assert_eq!(claude["name"], "synapse");
     assert_eq!(codex["name"], "synapse");
@@ -135,9 +135,17 @@ fn monitors_invoke_the_path_binary_directly() {
             command.starts_with("synapse "),
             "monitor must invoke the PATH binary: {command}"
         );
+        // Inverted 2026-07-29. This previously REQUIRED `${user_config.server_url}`.
+        // Claude Code v2.1.207 rejects `${user_config.*}` in monitor commands, and a
+        // monitor process is not given `CLAUDE_PLUGIN_OPTION_*` either — so a monitor
+        // has no way to receive plugin config and the substitution silently killed the
+        // monitor. `dbae089` removed it; this assertion is what keeps it from coming
+        // back. The binary resolves its own URL from config/env.
         assert!(
-            command.contains("${user_config.server_url}"),
-            "monitor must use server_url substitution, not a hardcoded URL: {command}"
+            !command.contains("${user_config."),
+            "monitor commands cannot use ${{user_config.*}} — Claude Code rejects it \
+             and gives monitors no CLAUDE_PLUGIN_OPTION_* either; let the binary \
+             resolve its own config: {command}"
         );
     }
 }
