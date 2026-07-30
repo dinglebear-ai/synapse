@@ -2,32 +2,28 @@
 # .github/workflows/docker-publish.yml — Build and publish Docker image
 #
 # Triggers:
-#   - push to main → builds and pushes :latest tag
-#   - push of v* tag → builds and pushes :<version> tag + GitHub Release assets
+#   - published GitHub release → builds and pushes the immutable release image
 #
-# Registry: ghcr.io/jmagar/synapse
+# Registry: ghcr.io/dinglebear-ai/synapse
 # =============================================================================
 
 name: Docker Publish
 
 on:
-  push:
-    branches: [main]
-    tags: ["v*"]
+  release:
+    types: [published]
 
-# Prevent an older main build from finishing after a newer one and moving the
-# mutable `latest` tag backwards. Tag builds use their own ref-specific group.
 concurrency:
-  group: docker-publish-${{ github.ref }}
-  cancel-in-progress: true
+  group: docker-publish-${{ github.event.release.tag_name }}
+  cancel-in-progress: false
 
 env:
-  IMAGE_NAME: ghcr.io/jmagar/synapse
+  IMAGE_NAME: ghcr.io/dinglebear-ai/synapse
 
 jobs:
   docker:
     name: Build & Push Docker image
-    runs-on: [self-hosted, unraid]
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     permissions:
       contents: read
@@ -47,24 +43,18 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Determine the Docker tags to push:
-      #   main branch  → :latest
-      #   v1.2.3 tag   → :1.2.3 and :1.2 (latest is promoted by main only)
+      # Determine immutable Docker tags from the published release tag.
       - name: Docker metadata
         id: meta
         uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6
         with:
           images: ${{ env.IMAGE_NAME }}
           tags: |
-            type=ref,event=branch
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=sha,format=long
-            type=raw,value=latest,enable={{is_default_branch}}
 
       # Single-platform amd64 build and push.
-      # arm64 was dropped: emulated QEMU arm64 Rust builds exceeded the job
-      # timeout. Re-add via a native arm64 runner matrix if arm64 is needed.
       - name: Build exact image for scanning
         uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
         with:
