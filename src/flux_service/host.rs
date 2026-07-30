@@ -4,7 +4,7 @@
 //! # Architecture seam
 //!
 //! Pure per-host functions here take `&dyn HostExec` — a thin seam over either
-//! `std::process::Command` (local) or `SshExecutor` (remote). [`FluxService`]
+//! `std::process::Command` (local) or `SshExecutor` (remote). `FluxService`
 //! routes local vs. SSH, resolves hosts, drives fanout, and calls these fns.
 //!
 //! # Command strategy

@@ -1,3 +1,9 @@
+---
+title: "Destructive CLI Smoke Route"
+created: 2026-06-06
+updated: 2026-07-30
+---
+
 # Destructive CLI Smoke Route
 
 This route validates mutating `synapse flux` commands against disposable Docker

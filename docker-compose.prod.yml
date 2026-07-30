@@ -31,7 +31,7 @@ x-common-service: &common-service
 services:
   synapse:
     <<: *common-service
-    image: ghcr.io/jmagar/synapse:${SYNAPSE_VERSION:-latest}
+    image: ghcr.io/dinglebear-ai/synapse:${SYNAPSE_VERSION:-latest}
     container_name: synapse
     env_file:
       - path: .env

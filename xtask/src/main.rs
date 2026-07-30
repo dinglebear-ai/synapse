@@ -408,7 +408,7 @@ fn symlink_docs() -> Result<()> {
 /// Run this to get a clear error message before starting the server, rather
 /// than a cryptic runtime failure.
 ///
-/// TEMPLATE: Replace the variable names in REQUIRED_VARS with your service's
+/// TEMPLATE: Replace the variable names in `REQUIRED_VARS` with your service's
 ///           actual required environment variables.
 ///
 /// Variables listed as "optional" are checked for presence but not required —

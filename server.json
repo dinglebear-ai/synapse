@@ -2,11 +2,11 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "ai.dinglebear/synapse-rmcp",
   "title": "Synapse RMCP",
-  "description": "Rust MCP and CLI server for Docker, host inspection, SSH, logs, ZFS, and safe file operations.",
+  "description": "MCP server and CLI for host and container operations: Docker and Compose control, SSH, host inspection, logs, ZFS, and safe file transfer.",
   "version": "0.6.2",
-  "websiteUrl": "https://github.com/jmagar/synapse",
+  "websiteUrl": "https://github.com/dinglebear-ai/synapse",
   "repository": {
-    "url": "https://github.com/jmagar/synapse",
+    "url": "https://github.com/dinglebear-ai/synapse",
     "source": "github",
     "id": "1247261737"
   },
@@ -67,7 +67,7 @@
           "format": "string",
           "isRequired": false,
           "isSecret": false,
-          "placeholder": "v0.5.3"
+          "placeholder": "v0.6.2"
         },
         {
           "name": "SYNAPSE_RMCP_REPO",
@@ -75,8 +75,8 @@
           "format": "string",
           "isRequired": false,
           "isSecret": false,
-          "default": "jmagar/synapse",
-          "placeholder": "jmagar/synapse"
+          "default": "dinglebear-ai/synapse",
+          "placeholder": "dinglebear-ai/synapse"
         },
         {
           "name": "SYNAPSE_RMCP_RELEASE_BASE_URL",
@@ -110,7 +110,7 @@
       },
       "buildInfo": {
         "version": "0.6.2",
-        "repository": "https://github.com/jmagar/synapse"
+        "repository": "https://github.com/dinglebear-ai/synapse"
       }
     }
   }

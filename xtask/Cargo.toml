@@ -13,8 +13,12 @@
 
 [package]
 name = "xtask"
-version = "0.6.2"
-edition = "2024"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
 # Exclude from crates.io — this is a private automation crate.
 publish = false
 

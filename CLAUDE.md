@@ -18,17 +18,15 @@ REST compatibility endpoint is `POST /v1/synapse`.
 |---|---|
 | Remote | `git@github.com:dinglebear-ai/synapse.git` |
 | Cargo workspace | 2 members: `.` (crate `synapse`) and `xtask` |
-| Edition / MSRV | 2024 / `rust-version = 1.90` (`rust-toolchain.toml` pins channel `1.90`) |
-| MCP framework | `rmcp = "2.2.0"` (exact string in `Cargo.toml`; verify against `Cargo.lock`) |
+| Edition / MSRV | 2024 / `rust-version = 1.97.1` (`rust-toolchain.toml` pins channel `1.97.1`) |
+| MCP framework | `rmcp = "=3.0.0-beta.2"` via `[workspace.dependencies]`; verify against `Cargo.lock` |
 | Binary | `synapse` (`[[bin]]`, `autobins = false`) |
 | Service port | `40080` |
 | Tools | two: `flux` and `scout` |
 | Action surface | **59 operations** in `OPERATION_SPECS` — 14 REST-reachable, 45 MCP-only |
 
-`Cargo.toml`, `server.json`, and the plugin manifests still carry
-`github.com/jmagar/synapse` URLs and the `ghcr.io/jmagar/synapse` image path.
-Those resolve only through GitHub's org-transfer redirect. Do not "fix" the
-`ghcr.io` path casually — it changes where deployments pull from.
+Cargo, package, plugin, registry, and Compose metadata use the canonical
+`dinglebear-ai/synapse` repository and GHCR namespaces.
 
 ## Module map
 
@@ -236,7 +234,7 @@ just health
 `cargo-llvm-cov` coverage currently needs the direct-rustc workaround on this
 host when the local `sccache-wrapper` mishandles `--check-cfg`. Resolve the
 toolchain rather than hardcoding a version — `rust-toolchain.toml` pins channel
-`1.90`, so a literal path pinned to some other release will silently be wrong:
+`1.97.1`, so a literal path pinned to some other release will silently be wrong:
 
 ```bash
 env -u RUSTC_WRAPPER \

@@ -19,7 +19,7 @@ test("maps linux platform to release asset", () => {
 });
 
 test("rejects unsupported platforms", () => {
-  assert.throws(() => targetFor("darwin", "arm64"), /Unsupported platform/);
+  assert.throws(() => targetFor("linux", "riscv64"), /Unsupported platform/);
   assert.throws(() => targetFor("win32", "x64"), /Unsupported platform/);
 });
 

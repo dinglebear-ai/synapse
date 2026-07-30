@@ -1,11 +1,11 @@
 {
   "name": "synapse",
-  "description": "Connects Claude Code to the synapse MCP server — a Rust MCP + CLI server for Docker and SSH host management, exposing the flux (Docker/container/compose/host) and scout (SSH exec/filesystem/ZFS/logs) tools across configured infrastructure hosts.",
+  "description": "MCP server and CLI for host and container operations: Docker and Compose control, SSH, host inspection, logs, ZFS, and safe file transfer.",
   "author": {
     "name": "jmagar"
   },
-  "repository": "https://github.com/jmagar/synapse",
-  "homepage": "https://github.com/jmagar/synapse",
+  "repository": "https://github.com/dinglebear-ai/synapse",
+  "homepage": "https://github.com/dinglebear-ai/synapse",
   "license": "MIT",
   "keywords": [
     "synapse",

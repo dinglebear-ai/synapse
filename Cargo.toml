@@ -1,38 +1,67 @@
-# =============================================================================
-# Cargo.toml — Workspace root for the synapse project
-#
-# TEMPLATE: This is a cargo workspace containing two crates:
-#   - . (the main library/binary crate)
-#   - xtask/ (repo automation: dist, ci, symlink-docs, check-env)
-#
-# When creating your own server, rename "synapse" and add your own
-# workspace members if needed.
-# =============================================================================
-
 [workspace]
-# TEMPLATE: Add any additional crates here (e.g. a shared types crate).
 members = [".", "xtask"]
-resolver = "2"
+resolver = "3"
 
-[workspace.lints.clippy]
-# Enforce the foo.rs-sibling module style; forbid foo/mod.rs.
-mod_module_files = "deny"
-
-[package]
-name = "synapse"
+[workspace.package]
 version = "0.6.2"
 edition = "2024"
 rust-version = "1.97.1"
-categories = ["command-line-utilities", "development-tools"]
-keywords = ["mcp", "docker", "ssh", "zfs", "homelab"]
-repository = "https://github.com/jmagar/synapse"
-homepage = "https://github.com/jmagar/synapse#readme"
-description = "Rust MCP and CLI server for local Synapse workflows: Docker/Compose control, host inspection, SSH, logs, ZFS, and files."
+authors = ["dinglebear.ai <hello@dinglebear.ai>"]
 license = "MIT"
+readme = "README.md"
+homepage = "https://github.com/dinglebear-ai/synapse#readme"
+repository = "https://github.com/dinglebear-ai/synapse"
+
+[workspace.dependencies]
+rmcp = { version = "=3.0.0-beta.2", default-features = false }
+schemars = "=1.2.1"
+
+[workspace.lints.rustdoc]
+broken_intra_doc_links = "deny"
+private_intra_doc_links = "warn"
+invalid_codeblock_attributes = "deny"
+invalid_html_tags = "deny"
+invalid_rust_codeblocks = "deny"
+bare_urls = "warn"
+unescaped_backticks = "warn"
+redundant_explicit_links = "warn"
+
+[workspace.lints.rust]
+missing_docs = "allow"
+missing_crate_level_docs = "deny"
+unsafe_op_in_unsafe_fn = "deny"
+
+[workspace.lints.clippy]
+all = { level = "warn", priority = -1 }
+mod_module_files = "deny"
+missing_safety_doc = "deny"
+missing_errors_doc = "warn"
+missing_panics_doc = "warn"
+doc_markdown = "warn"
+
+[package]
+name = "synapse"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+readme.workspace = true
+homepage.workspace = true
+repository.workspace = true
+categories = ["command-line-utilities", "virtualization", "filesystem", "network-programming", "development-tools"]
+keywords = ["mcp", "docker", "ssh", "zfs", "homelab"]
+description = "MCP server and CLI for host and container operations: Docker and Compose control, SSH, host inspection, logs, ZFS, and safe file transfer."
+publish = false
 autobins = false
 
 [lints]
 workspace = true
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs", "--generate-link-to-definition"]
+targets = ["x86_64-unknown-linux-gnu"]
 
 [[bin]]
 name = "synapse"
@@ -45,7 +74,7 @@ futures = "0.3"
 
 # HTTP / MCP transport
 axum = "0.8"
-rmcp = { version = "=3.0.0-beta.2", default-features = false, features = [
+rmcp = { workspace = true, features = [
   "server",
   "macros",
   "transport-streamable-http-server",
@@ -58,7 +87,7 @@ tower-http = { version = "0.7", features = ["cors", "limit", "trace"] }
 # Serialization
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-schemars = "1.2.1"
+schemars.workspace = true
 
 # Time
 chrono = { version = "0.4", features = ["serde"] }
@@ -138,7 +167,7 @@ tokio = { version = "1", features = ["test-util"] }
 bytes = "1"
 tempfile = "3"
 tower = { version = "0.5", features = ["util"] }
-rmcp = { version = "=3.0.0-beta.2", default-features = false, features = [
+rmcp = { workspace = true, features = [
   "client",
   "transport-child-process",
 ] }

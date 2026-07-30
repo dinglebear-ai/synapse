@@ -5,7 +5,7 @@
 //!
 //! The **pure** per-host functions in this module operate on `&dyn ContainerOps`
 //! (and `&dyn ImageOps`) so they are fully unit-testable with
-//! [`MockDockerClient`](crate::docker_client::MockDockerClient) — no live docker
+//! `MockDockerClient` — no live docker
 //! daemon required.
 //!
 //! # Destructive gating (B5)

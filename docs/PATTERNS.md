@@ -1,3 +1,9 @@
+---
+title: "Synapse Patterns"
+created: 2026-05-22
+updated: 2026-07-30
+---
+
 # Synapse Patterns
 
 Synapse follows the rmcp-server family patterns maintained upstream in:

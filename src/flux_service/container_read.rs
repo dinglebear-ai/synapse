@@ -5,7 +5,7 @@
 //!
 //! The **pure** per-host functions in this module operate on
 //! `&dyn ContainerOps` so they are fully unit-testable with
-//! [`MockDockerClient`](crate::docker_client::MockDockerClient) — no live docker
+//! `MockDockerClient` — no live docker
 //! daemon required. [`FluxService`](super::FluxService) resolves hosts, acquires
 //! the cached bollard client, and drives the fanout; it then calls these pure
 //! functions per host.

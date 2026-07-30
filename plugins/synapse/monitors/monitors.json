@@ -1,7 +1,7 @@
 [
   {
     "name": "server-health",
-    "command": "synapse watch --interval 15",
+    "command": "synapse watch --url ${user_config.server_url} --interval 15",
     "description": "MCP server health \u2014 emits a line when the server goes up, down, or recovers"
   }
 ]
