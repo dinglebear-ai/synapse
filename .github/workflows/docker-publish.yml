@@ -1,95 +1,30 @@
-# =============================================================================
-# .github/workflows/docker-publish.yml — Build and publish Docker image
-#
-# Triggers:
-#   - published GitHub release → builds and pushes the immutable release image
-#
-# Registry: ghcr.io/dinglebear-ai/synapse
-# =============================================================================
-
-name: Docker Publish
+name: Container Release
 
 on:
   release:
     types: [published]
 
+permissions:
+  contents: read
+  packages: write
+  attestations: write
+  id-token: write
+
 concurrency:
-  group: docker-publish-${{ github.event.release.tag_name }}
+  group: container-release-${{ github.event.release.tag_name }}
   cancel-in-progress: false
 
-env:
-  IMAGE_NAME: ghcr.io/dinglebear-ai/synapse
-
 jobs:
-  docker:
-    name: Build & Push Docker image
-    runs-on: ubuntu-24.04
-    timeout-minutes: 30
-    permissions:
-      contents: read
-      packages: write
-      security-events: write
-
-    steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4
-
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@af1e73f918a031802d376d3c8bbc3fe56130a9b0 # v4
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      # Determine immutable Docker tags from the published release tag.
-      - name: Docker metadata
-        id: meta
-        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6
-        with:
-          images: ${{ env.IMAGE_NAME }}
-          tags: |
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=sha,format=long
-
-      # Single-platform amd64 build and push.
-      - name: Build exact image for scanning
-        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
-        with:
-          context: .
-          # TEMPLATE: Dockerfile lives at config/Dockerfile.
-          file: config/Dockerfile
-          platforms: linux/amd64
-          push: false
-          load: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Run Trivy
-        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
-        with:
-          image-ref: ${{ fromJSON(steps.meta.outputs.json).tags[0] }}
-          format: sarif
-          output: trivy-results.sarif
-          severity: CRITICAL,HIGH
-          exit-code: "1"
-          ignore-unfixed: true
-
-      - name: Upload Trivy results to GitHub Security
-        if: always() && hashFiles('trivy-results.sarif') != ''
-        uses: github/codeql-action/upload-sarif@99df26d4f13ea111d4ec1a7dddef6063f76b97e9 # v4.37.0
-        with:
-          sarif_file: trivy-results.sarif
-
-      - name: Publish verified image tags
-        if: success()
-        env:
-          IMAGE_TAGS: ${{ steps.meta.outputs.tags }}
-        run: |
-          while IFS= read -r tag; do
-            [[ -n "$tag" ]] && docker push "$tag"
-          done <<< "$IMAGE_TAGS"
+  container:
+    name: Build, verify, and publish x86_64 image
+    uses: dinglebear-ai/workflows/.github/workflows/hosted-container-release.yml@eb5f36cf517ffc949aca1c81e2ccbc71b5a85267
+    with:
+      checkout-ref: ${{ github.event.release.tag_name }}
+      image: ghcr.io/dinglebear-ai/synapse
+      release-tag: ${{ github.event.release.tag_name }}
+      dockerfile: config/Dockerfile
+      smoke-command: docker run --rm "$IMAGE_REF" --version
+      cache-scope: synapse-container-release
+    secrets:
+      REGISTRY_USERNAME: ${{ github.actor }}
+      REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}

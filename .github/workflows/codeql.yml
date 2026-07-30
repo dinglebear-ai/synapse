@@ -4,61 +4,30 @@ on:
   push:
     branches: [main]
   schedule:
-    # Weekly scan on Wednesdays at 08:00 UTC
     - cron: "0 8 * * 3"
 
+permissions:
+  contents: read
+  actions: read
+  security-events: write
+
 jobs:
-  analyze:
-    name: Analyze (${{ matrix.language }})
-    runs-on: [self-hosted, ci-pool-ops]
-    timeout-minutes: 20
-    permissions:
-      security-events: write
-      actions: read
-      contents: read
+  rust:
+    name: Rust
+    uses: dinglebear-ai/workflows/.github/workflows/codeql.yml@eb5f36cf517ffc949aca1c81e2ccbc71b5a85267
+    with:
+      language: rust
+      build-mode: manual
+      build-command: |
+        cd apps/web
+        corepack enable
+        pnpm install --frozen-lockfile
+        pnpm build
+        cd ../..
+        cargo build --release --locked
 
-    strategy:
-      fail-fast: false
-      matrix:
-        language: [rust, javascript-typescript]
-
-    steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@99df26d4f13ea111d4ec1a7dddef6063f76b97e9 # v4.37.0
-        with:
-          languages: ${{ matrix.language }}
-          queries: security-extended
-
-      - name: Cache Cargo
-        if: matrix.language == 'rust'
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ github.repository }}-codeql-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ github.repository }}-codeql-
-
-      - name: Install pnpm
-        if: matrix.language == 'rust'
-        working-directory: apps/web
-        run: npm install -g "$(node -p "require('./package.json').packageManager")"
-
-      - name: Build web assets
-        if: matrix.language == 'rust'
-        working-directory: apps/web
-        run: |
-          pnpm install --frozen-lockfile
-          pnpm build
-
-      - name: Build
-        if: matrix.language == 'rust'
-        run: cargo build --release
-
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@99df26d4f13ea111d4ec1a7dddef6063f76b97e9 # v4.37.0
-        with:
-          category: "/language:${{ matrix.language }}"
+  web:
+    name: JavaScript and TypeScript
+    uses: dinglebear-ai/workflows/.github/workflows/codeql.yml@eb5f36cf517ffc949aca1c81e2ccbc71b5a85267
+    with:
+      language: javascript-typescript

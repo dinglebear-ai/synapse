@@ -33,39 +33,19 @@ env:
   CARGO_INCREMENTAL: "0"
 
 jobs:
-  # ── fmt: cargo fmt --check ──────────────────────────────────────────────────
-  fmt:
-    name: Format
-    runs-on: [self-hosted, ci-pool-rust]
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-
-      - name: Install Rust and kache
-        uses: ./.github/actions/setup-rust-kache
-        with:
-          toolchain: 1.97.1
-          components: rustfmt
-
-      - name: cargo fmt --check
-        run: cargo fmt --all -- --check
-
-  # ── clippy: zero warnings ────────────────────────────────────────────────────
-  clippy:
-    name: Clippy
-    runs-on: [self-hosted, ci-pool-rust]
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-
-      - name: Install Rust and kache
-        uses: ./.github/actions/setup-rust-kache
-        with:
-          toolchain: 1.97.1
-          components: clippy
-
-      - name: cargo clippy -- -D warnings
-        run: cargo clippy --all-targets -- -D warnings
+  rust:
+    name: Fast Rust
+    uses: dinglebear-ai/workflows/.github/workflows/fast-rust.yml@eb5f36cf517ffc949aca1c81e2ccbc71b5a85267
+    with:
+      toolchain: "1.97.1"
+      check-command: cargo check --all-targets --locked
+      clippy-command: cargo clippy --all-targets --locked -- -D warnings
+      # The dedicated nextest lane below preserves its CI profile.
+      test-command: cargo test --workspace --locked --no-run
+      kache-manifest-key: synapse-fast-rust
+    secrets:
+      KACHE_S3_ACCESS_KEY: ${{ secrets.KACHE_S3_ACCESS_KEY }}
+      KACHE_S3_SECRET_KEY: ${{ secrets.KACHE_S3_SECRET_KEY }}
 
   # ── test: cargo nextest run --profile ci ─────────────────────────────────────
   test:
@@ -202,39 +182,13 @@ jobs:
   # ── web: pnpm install, lint, audit, static build ─────────────────────────────
   web:
     name: Web
-    runs-on: [self-hosted, ci-pool-typescript]
-    timeout-minutes: 20
-    defaults:
-      run:
-        working-directory: apps/web
-    steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-
-      - name: Install Node.js
-        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
-        with:
-          node-version: 22
-
-      - name: Install pnpm
-        run: npm install -g "$(node -p "require('./package.json').packageManager")"
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: pnpm audit
-        run: pnpm audit --prod --audit-level high
-
-      - name: pnpm lint
-        run: pnpm lint
-
-      - name: pnpm typecheck
-        run: pnpm typecheck
-
-      - name: pnpm test
-        run: pnpm test
-
-      - name: pnpm build
-        run: pnpm build
+    uses: dinglebear-ai/workflows/.github/workflows/fast-pnpm.yml@eb5f36cf517ffc949aca1c81e2ccbc71b5a85267
+    with:
+      node-version: "22"
+      pnpm-version: "10.33.2"
+      working-directory: apps/web
+      audit-command: pnpm audit --prod --audit-level high
+      build-command: pnpm build
 
   # ── toml: taplo check ─────────────────────────────────────────────────────────
   toml:
@@ -312,44 +266,37 @@ jobs:
   # ── deny: dependency advisories, licenses, bans, sources ─────────────────────
   audit:
     name: Cargo Deny
-    runs-on: [self-hosted, ci-pool-rust]
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-
-      - name: Install Rust and kache
-        uses: ./.github/actions/setup-rust-kache
-        with:
-          toolchain: 1.97.1
-
-      - name: cargo deny check
-        uses: EmbarkStudios/cargo-deny-action@bb137d7af7e4fb67e5f82a49c4fce4fad40782fe # v2
-        with:
-          command: check
-          arguments: --all-features
-
-      - name: Install cargo-deny for exception guard
-        uses: taiki-e/install-action@95cc2373c3f00275e315c306e56fef1c7a8854c0
-        with:
-          tool: cargo-deny
-
-      - name: Enforce time-bounded yanked exceptions
-        run: python3 scripts/check-yanked-exceptions.py
+    uses: dinglebear-ai/workflows/.github/workflows/rust-security.yml@eb5f36cf517ffc949aca1c81e2ccbc71b5a85267
+    with:
+      toolchain: "1.97.1"
+      command: cargo deny check --all-features && python3 scripts/check-yanked-exceptions.py
 
   npm:
     name: npm launcher
-    runs-on: [self-hosted, ci-pool-typescript]
-    steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
-        with:
-          node-version: 22
-      - name: Test npm launcher
-        run: npm test --prefix packages/synapse-rmcp
-      - name: Check npm launcher syntax
-        run: npm run check --prefix packages/synapse-rmcp
-      - name: Dry-run npm package
-        run: npm pack --dry-run --json ./packages/synapse-rmcp
+    uses: dinglebear-ai/workflows/.github/workflows/fast-node.yml@eb5f36cf517ffc949aca1c81e2ccbc71b5a85267
+    with:
+      node-version: "22"
+      working-directory: packages/synapse-rmcp
+      enable-cache: false
+      install-command: ""
+      audit-command: ""
+      lint-command: npm run check
+      typecheck-command: ""
+      test-command: npm test
+      contract-command: npm pack --dry-run --json
+
+  fleet-policy:
+    name: Fleet Policy
+    uses: dinglebear-ai/workflows/.github/workflows/fleet-policy.yml@eb5f36cf517ffc949aca1c81e2ccbc71b5a85267
+    with:
+      release-file-regex: '(^|/)(release|docker-publish)\.ya?ml$'
+
+  fleet-contract:
+    name: Fleet Contract
+    uses: dinglebear-ai/workflows/.github/workflows/fleet-contract.yml@eb5f36cf517ffc949aca1c81e2ccbc71b5a85267
+    with:
+      profile: rust
+      implementation-ref: eb5f36cf517ffc949aca1c81e2ccbc71b5a85267
 
   container:
     name: Container smoke
@@ -412,3 +359,32 @@ jobs:
               --host local \
               --response-format json)"
           grep -F 'synapse-ci-smoke' <<<"$output"
+
+  ci-gate:
+    name: CI Gate
+    if: always()
+    runs-on: [self-hosted, ci-pool-ops]
+    timeout-minutes: 10
+    needs:
+      - rust
+      - test
+      - coverage
+      - live-integration
+      - web
+      - toml
+      - template
+      - audit
+      - npm
+      - container
+      - fleet-policy
+      - fleet-contract
+    steps:
+      - name: Require all CI lanes
+        env:
+          RESULTS: >-
+            ${{ join(needs.*.result, ' ') }}
+        run: |
+          set -euo pipefail
+          for result in $RESULTS; do
+            [[ "$result" == success || "$result" == skipped ]]
+          done
