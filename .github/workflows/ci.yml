@@ -35,7 +35,7 @@ env:
 jobs:
   rust:
     name: Fast Rust
-    uses: dinglebear-ai/workflows/.github/workflows/fast-rust.yml@542ea7b7e5ca2d4e21f3277bfcf158584fee90ec
+    uses: dinglebear-ai/workflows/.github/workflows/fast-rust.yml@66e64b9f31de7ac1f9aa8c9f87ede9bbec5eae1d
     with:
       toolchain: "1.97.1"
       check-command: cargo check --all-targets --locked
@@ -182,7 +182,7 @@ jobs:
   # ── web: pnpm install, lint, audit, static build ─────────────────────────────
   web:
     name: Web
-    uses: dinglebear-ai/workflows/.github/workflows/fast-pnpm.yml@542ea7b7e5ca2d4e21f3277bfcf158584fee90ec
+    uses: dinglebear-ai/workflows/.github/workflows/fast-pnpm.yml@66e64b9f31de7ac1f9aa8c9f87ede9bbec5eae1d
     with:
       node-version: "22"
       pnpm-version: "10.33.2"
@@ -267,14 +267,14 @@ jobs:
   # ── deny: dependency advisories, licenses, bans, sources ─────────────────────
   audit:
     name: Cargo Deny
-    uses: dinglebear-ai/workflows/.github/workflows/rust-security.yml@542ea7b7e5ca2d4e21f3277bfcf158584fee90ec
+    uses: dinglebear-ai/workflows/.github/workflows/rust-security.yml@66e64b9f31de7ac1f9aa8c9f87ede9bbec5eae1d
     with:
       toolchain: "1.97.1"
       command: cargo deny check --all-features && python3 scripts/check-yanked-exceptions.py
 
   npm:
     name: npm launcher
-    uses: dinglebear-ai/workflows/.github/workflows/fast-node.yml@542ea7b7e5ca2d4e21f3277bfcf158584fee90ec
+    uses: dinglebear-ai/workflows/.github/workflows/fast-node.yml@66e64b9f31de7ac1f9aa8c9f87ede9bbec5eae1d
     with:
       node-version: "22"
       working-directory: packages/synapse-rmcp
@@ -288,16 +288,16 @@ jobs:
 
   fleet-policy:
     name: Fleet Policy
-    uses: dinglebear-ai/workflows/.github/workflows/fleet-policy.yml@542ea7b7e5ca2d4e21f3277bfcf158584fee90ec
+    uses: dinglebear-ai/workflows/.github/workflows/fleet-policy.yml@66e64b9f31de7ac1f9aa8c9f87ede9bbec5eae1d
     with:
       release-file-regex: '(^|/)(release|docker-publish)\.ya?ml$'
 
   fleet-contract:
     name: Fleet Contract
-    uses: dinglebear-ai/workflows/.github/workflows/fleet-contract.yml@542ea7b7e5ca2d4e21f3277bfcf158584fee90ec
+    uses: dinglebear-ai/workflows/.github/workflows/fleet-contract.yml@66e64b9f31de7ac1f9aa8c9f87ede9bbec5eae1d
     with:
       profile: rust
-      implementation-ref: 542ea7b7e5ca2d4e21f3277bfcf158584fee90ec
+      implementation-ref: 66e64b9f31de7ac1f9aa8c9f87ede9bbec5eae1d
 
   container:
     name: Container smoke

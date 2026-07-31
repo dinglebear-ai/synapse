@@ -14,7 +14,7 @@ permissions:
 jobs:
   rust:
     name: Rust
-    uses: dinglebear-ai/workflows/.github/workflows/codeql.yml@542ea7b7e5ca2d4e21f3277bfcf158584fee90ec
+    uses: dinglebear-ai/workflows/.github/workflows/codeql.yml@66e64b9f31de7ac1f9aa8c9f87ede9bbec5eae1d
     with:
       language: rust
       build-mode: manual
@@ -28,6 +28,6 @@ jobs:
 
   web:
     name: JavaScript and TypeScript
-    uses: dinglebear-ai/workflows/.github/workflows/codeql.yml@542ea7b7e5ca2d4e21f3277bfcf158584fee90ec
+    uses: dinglebear-ai/workflows/.github/workflows/codeql.yml@66e64b9f31de7ac1f9aa8c9f87ede9bbec5eae1d
     with:
       language: javascript-typescript
