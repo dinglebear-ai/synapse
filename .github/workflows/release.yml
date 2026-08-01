@@ -189,7 +189,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if npm view "@dinglebear/synapse-mcp@${{ steps.npm-version.outputs.version }}" version >/dev/null 2>&1; then
+          if npm view "@dinglebear/synapse@${{ steps.npm-version.outputs.version }}" version >/dev/null 2>&1; then
             echo "exists=true" >> "$GITHUB_OUTPUT"
           else
             echo "exists=false" >> "$GITHUB_OUTPUT"
@@ -208,12 +208,12 @@ jobs:
           cache="$(mktemp -d)"
           trap 'rm -rf "$cache"' EXIT
           for attempt in {1..12}; do
-            if npm view "@dinglebear/synapse-mcp@${{ steps.npm-version.outputs.version }}" version >/dev/null 2>&1; then
+            if npm view "@dinglebear/synapse@${{ steps.npm-version.outputs.version }}" version >/dev/null 2>&1; then
               break
             fi
             if [[ "$attempt" == 12 ]]; then
-              npm view "@dinglebear/synapse-mcp@${{ steps.npm-version.outputs.version }}" version
+              npm view "@dinglebear/synapse@${{ steps.npm-version.outputs.version }}" version
             fi
             sleep 5
           done
-          npm_config_cache="$cache" npx -y "@dinglebear/synapse-mcp@${{ steps.npm-version.outputs.version }}" --version
+          npm_config_cache="$cache" npx -y "@dinglebear/synapse@${{ steps.npm-version.outputs.version }}" --version

@@ -1,5 +1,5 @@
 {
-  "name": "@dinglebear/synapse-mcp",
+  "name": "@dinglebear/synapse",
   "version": "0.6.2",
   "description": "MCP server and CLI for host and container operations: Docker and Compose control, SSH, host inspection, logs, ZFS, and safe file transfer.",
   "license": "MIT",

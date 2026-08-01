@@ -24,7 +24,7 @@
     {
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
-      "identifier": "@dinglebear/synapse-mcp",
+      "identifier": "@dinglebear/synapse",
       "version": "0.6.2",
       "runtimeHint": "npx",
       "packageArguments": [
@@ -105,8 +105,8 @@
       "namespace": "ai.dinglebear",
       "dnsDomain": "dinglebear.ai",
       "distribution": {
-        "npm": "@dinglebear/synapse-mcp@0.6.2",
-        "nodePackage": "@dinglebear/synapse-mcp"
+        "npm": "@dinglebear/synapse@0.6.2",
+        "nodePackage": "@dinglebear/synapse"
       },
       "buildInfo": {
         "version": "0.6.2",
