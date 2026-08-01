@@ -1,3 +1,9 @@
+---
+title: "synapse MCP Schema Contract"
+created: 2026-08-01
+updated: 2026-08-01
+---
+
 # synapse MCP Schema Contract
 
 `synapse` exposes two MCP tools: `flux` and `scout`.
