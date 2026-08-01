@@ -160,7 +160,7 @@ just schema-docs
 just schema-docs-check
 ```
 
-Treats `src/actions/operations.rs::OPERATION_SPECS` as canonical and verifies schema docs, help text, README, and plugin skill mentions. Generated output lives in `docs/MCP_SCHEMA.md`.
+Treats `src/actions/operations.rs::OPERATION_SPECS` as canonical and verifies schema docs, help text, README, and plugin skill mentions. Generated output lives in `docs/MCP_SCHEMA.md`, including the required title and created/updated frontmatter used by the fleet documentation contract.
 
 ### `build-web.sh`
 
