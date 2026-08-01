@@ -179,10 +179,12 @@ jobs:
         env:
           SYNAPSE_HOME: ${{ runner.temp }}/synapse-home
           SYNAPSE_MCP_HOST: 127.0.0.1
-          SYNAPSE_MCP_PORT: "40080"
           SYNAPSE_MCP_NO_AUTH: "true"
         run: |
           mkdir -p "$SYNAPSE_HOME"
+          mcp_port="$(python3 -c 'import socket; s=socket.socket(); s.bind(("127.0.0.1", 0)); print(s.getsockname()[1]); s.close()')"
+          export SYNAPSE_MCP_PORT="$mcp_port"
+          export SYNAPSE_TEST_BASE_URL="http://127.0.0.1:$mcp_port"
           synapse_hosts_config="$(python3 -c 'import json, os; print(json.dumps([{"name": "ci-ssh", "host": "127.0.0.1", "protocol": "ssh", "sshUser": "synapse-ci", "sshKeyPath": os.path.join(os.environ["RUNNER_TEMP"], "id_ed25519"), "sshPort": int(os.environ["SYNAPSE_TEST_SSH_PORT"]), "scoutReadRoots": ["/tmp"]}]))')"
           export SYNAPSE_HOSTS_CONFIG="$synapse_hosts_config"
           cargo build --locked
@@ -322,16 +324,13 @@ jobs:
         with:
           toolchain: 1.97.1
 
-      - name: cargo deny check
-        uses: EmbarkStudios/cargo-deny-action@bb137d7af7e4fb67e5f82a49c4fce4fad40782fe # v2
-        with:
-          command: check
-          arguments: --all-features
-
-      - name: Install cargo-deny for exception guard
+      - name: Install cargo-deny
         uses: taiki-e/install-action@95cc2373c3f00275e315c306e56fef1c7a8854c0
         with:
           tool: cargo-deny
+
+      - name: cargo deny check
+        run: cargo deny --all-features check
 
       - name: Enforce time-bounded yanked exceptions
         run: python3 scripts/check-yanked-exceptions.py
@@ -365,12 +364,15 @@ jobs:
         run: docker build -f config/Dockerfile -t synapse2:ci .
       - name: Smoke liveness
         run: |
-          docker run -d --rm --name synapse2-ci -p 127.0.0.1:40080:40080 \
+          host_port="$(python3 -c 'import socket; s=socket.socket(); s.bind(("127.0.0.1", 0)); print(s.getsockname()[1]); s.close()')"
+          container_name="synapse2-ci-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          docker rm -f "$container_name" >/dev/null 2>&1 || true
+          docker run -d --rm --name "$container_name" -p "127.0.0.1:${host_port}:40080" \
             -e SYNAPSE_MCP_HOST=0.0.0.0 \
             -e SYNAPSE_MCP_TOKEN=ci-smoke-token-with-sufficient-length synapse2:ci
-          trap 'docker logs synapse2-ci; docker stop synapse2-ci >/dev/null' EXIT
+          trap 'docker logs "$container_name"; docker stop "$container_name" >/dev/null' EXIT
           for _attempt in {1..30}; do
-            curl -fsS http://127.0.0.1:40080/health && exit 0
+            curl -fsS "http://127.0.0.1:${host_port}/health" && exit 0
             sleep 1
           done
           exit 1
