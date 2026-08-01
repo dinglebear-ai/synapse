@@ -1,3 +1,11 @@
+# Toolchain used to BUILD synapse locally and in CI. Tracks the fleet's current
+# Rust (1.97.1) so local builds match CI exactly.
+#
+# This is deliberately NOT the MSRV. The compatibility floor is Cargo.toml's
+# `rust-version` and it is enforced separately by .github/workflows/msrv.yml,
+# which pins its own older toolchain. Bumping this file does not change what
+# synapse promises to compile on.
 [toolchain]
-channel = "1.90"
+channel = "1.97.1"
 components = ["rustfmt", "clippy"]
+profile = "minimal"

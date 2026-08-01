@@ -1,8 +1,11 @@
 # synapse-rmcp
 
-Rust MCP and CLI server for local Synapse workflows — a full-parity port of
-[synapse-mcp](https://github.com/jmagar/synapse-mcp) implemented in Rust with
-the [rmcp](https://github.com/modelcontextprotocol/rust-sdk) framework.
+MCP server and CLI for host and container operations: Docker and Compose control,
+SSH, host inspection, logs, ZFS, and safe file transfer.
+
+Synapse is a full-parity Rust port of
+[synapse-mcp](https://github.com/dinglebear-ai/synapse-mcp), built with the
+[rmcp](https://github.com/modelcontextprotocol/rust-sdk) framework.
 
 The server exposes two MCP tools (`flux` and `scout`) plus equivalent CLI
 commands, covering all 59 production actions from the original TypeScript server.
@@ -72,14 +75,14 @@ Use the npm launcher for stdio MCP or CLI access without a manual binary
 install:
 
 ```bash
-npx -y synapse-rmcp --help
-npx -y synapse-rmcp mcp
+npx -y @dinglebear/synapse --help
+npx -y @dinglebear/synapse mcp
 ```
 
 For a permanent command:
 
 ```bash
-npm i -g synapse-rmcp
+npm i -g @dinglebear/synapse
 synapse --version
 ```
 
@@ -104,7 +107,7 @@ at `~/.synapse` on the host and `/data` in the container.
 The first-screen 30-second path is:
 
 ```bash
-npx -y synapse-rmcp mcp
+npx -y @dinglebear/synapse mcp
 ```
 
 Then configure an MCP client with stdio:
@@ -276,7 +279,7 @@ Distribution/version invariants:
 
 - The npm package downloads the matching GitHub Release binary.
 - The installed binary remains `synapse`.
-- `server.json` must point at `ghcr.io/jmagar/synapse:<version>`.
+- `server.json` must point at `ghcr.io/dinglebear-ai/synapse:<version>`.
 - Plugin manifests stay versionless where marketplaces derive identity from git
   state.
 - Generated docs and schemas must come from source-controlled generation

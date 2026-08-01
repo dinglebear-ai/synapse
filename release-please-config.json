@@ -63,8 +63,8 @@
   ],
   "packages": {
     ".": {
-      "package-name": "synapse-rmcp",
-      "component": "synapse-rmcp",
+      "package-name": "@dinglebear/synapse",
+      "component": "@dinglebear/synapse",
       "changelog-path": "CHANGELOG.md",
       "extra-files": [
         "packages/synapse-rmcp/package.json",
@@ -81,7 +81,7 @@
         {
           "type": "json",
           "path": "server.json",
-          "jsonpath": "$.packages[?(@.identifier == 'synapse-rmcp')].version"
+          "jsonpath": "$.packages[?(@.identifier == '@dinglebear/synapse')].version"
         },
         {
           "type": "json",

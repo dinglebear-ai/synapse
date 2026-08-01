@@ -34,7 +34,7 @@ use crate::formatters::{format_bytes, format_timestamp, str_field};
 /// | squirts |
 /// | boops |
 /// | nicks |
-/// ```
+/// ```text
 pub fn render_scout_nodes_markdown(data: &Value) -> String {
     let hosts: Vec<String> = if let Some(arr) = data.get("hosts").and_then(|v| v.as_array()) {
         arr.iter()
@@ -81,10 +81,7 @@ pub fn render_scout_nodes_markdown(data: &Value) -> String {
 /// ```text
 /// File Read: squirts:/etc/hostname
 /// Size: 8 B | truncated: no
-///
-/// ```
 /// squirts
-/// ```
 /// ```
 pub fn render_scout_peek_markdown(data: &Value) -> String {
     let host = str_field(data, "host");
@@ -140,9 +137,7 @@ pub fn render_scout_peek_markdown(data: &Value) -> String {
 /// **Exit:** 0
 ///
 /// **Output:**
-/// ```
 /// 15:23:45 up 3 days
-/// ```
 /// ```
 pub fn render_scout_exec_markdown(data: &Value) -> String {
     let host = str_field(data, "host");

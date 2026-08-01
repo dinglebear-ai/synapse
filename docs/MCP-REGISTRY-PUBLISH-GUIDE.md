@@ -1,5 +1,11 @@
 ---
 title: "MCP Registry Publishing Guide"
+created: 2026-05-22
+updated: 2026-07-30
+---
+
+---
+title: "MCP Registry Publishing Guide"
 doc_type: "guide"
 status: "active"
 owner: "synapse"
@@ -26,8 +32,8 @@ using the `server.json` manifest at the repo root.
 | Field | Current value |
 |---|---|
 | `name` | `tv.tootie/synapse` |
-| `repository.url` | `https://github.com/jmagar/synapse` |
-| `packages[0].identifier` | `ghcr.io/jmagar/synapse:<version>` |
+| `repository.url` | `https://github.com/dinglebear-ai/synapse` |
+| `packages[0].identifier` | `ghcr.io/dinglebear-ai/synapse:<version>` |
 | Hosted remote | Not declared; add `remotes` only when a public hosted `/mcp` endpoint exists |
 
 ## Prerequisites
@@ -104,7 +110,7 @@ tag before calling the publisher:
   run: |
     VERSION="${GITHUB_REF_NAME#v}"
     jq --arg v "$VERSION" \
-       --arg img "ghcr.io/jmagar/synapse:${VERSION}" \
+       --arg img "ghcr.io/dinglebear-ai/synapse:${VERSION}" \
        '.version = $v | .packages[0].identifier = $img | .packages[0].version = $v' \
        server.json > server.tmp && mv server.tmp server.json
 

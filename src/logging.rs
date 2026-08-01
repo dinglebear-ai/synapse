@@ -311,7 +311,7 @@ fn rotate_log(state: &mut RotatingLogState) -> std::io::Result<()> {
 ///
 /// Priority order (highest to lowest):
 ///
-/// 1. `NO_COLOR` env var set → **no color** (https://no-color.org convention)
+/// 1. `NO_COLOR` env var set → **no color** (<https://no-color.org> convention)
 /// 2. `FORCE_COLOR` env var set → **force color** (useful in Docker/CI)
 /// 3. `stderr` is a TTY → **color** (interactive terminal)
 /// 4. `stderr` is not a TTY → **no color** (piped/redirected)

@@ -1,4 +1,10 @@
 ---
+title: "Security model"
+created: 2026-07-28
+updated: 2026-07-30
+---
+
+---
 title: "Security Model"
 doc_type: "guide"
 status: "active"

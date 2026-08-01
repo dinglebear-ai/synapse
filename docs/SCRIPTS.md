@@ -1,5 +1,11 @@
 ---
 title: "Scripts"
+created: 2026-05-22
+updated: 2026-07-30
+---
+
+---
+title: "Scripts"
 doc_type: "guide"
 status: "active"
 owner: "synapse"
@@ -94,7 +100,7 @@ preflight() {
 
 One-line install:
 ```bash
-curl -fsSL https://raw.githubusercontent.com/jmagar/synapse/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/dinglebear-ai/synapse/main/install.sh | bash
 ```
 
 After install: `synapse doctor` to validate the environment.

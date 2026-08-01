@@ -1,3 +1,9 @@
+---
+title: "synapse API"
+created: 2026-05-22
+updated: 2026-07-30
+---
+
 # synapse API
 
 `synapse` exposes two MCP tools (`flux` and `scout`) and equivalent CLI

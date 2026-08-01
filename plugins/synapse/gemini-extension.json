@@ -1,8 +1,8 @@
 {
   "name": "synapse",
-  "description": "MCP server for Docker and SSH host management — exposes flux (Docker/container/compose/host) and scout (SSH exec/filesystem/ZFS/logs) tools across configured infrastructure hosts.",
+  "description": "MCP server and CLI for host and container operations: Docker and Compose control, SSH, host inspection, logs, ZFS, and safe file transfer.",
   "author": "Jacob Magar",
-  "repository": "https://github.com/jmagar/synapse",
+  "repository": "https://github.com/dinglebear-ai/synapse",
   "license": "MIT",
   "keywords": ["synapse", "docker", "ssh", "infrastructure", "homelab", "mcp"],
   "contextFileName": "GEMINI.md",

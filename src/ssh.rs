@@ -1,6 +1,6 @@
 //! SSH transport layer for synapse.
 //!
-//! Provides an [`SshSession`] abstraction over the `openssh` crate covering
+//! Provides an `SshSession` abstraction over the `openssh` crate covering
 //! connection lifecycle, command execution, and unix-socket forwarding. This is
 //! the bedrock for every remote operation: `scout` (remote exec/peek) and
 //! `flux` (remote docker via forwarded socket).
@@ -16,7 +16,7 @@
 //!   hang modes).
 //! - **One `Arc<Session>` per host.** openssh ControlMaster multiplexes, so a
 //!   pool of N control sockets gives no concurrency benefit. A single session
-//!   is shared by all callers; a per-host [`Semaphore`] (default 8) caps
+//!   is shared by all callers; a per-host `Semaphore` (default 8) caps
 //!   concurrent `command()` invocations.
 //! - **Passive health.** Sessions are marked dead on command failure and lazily
 //!   reconnected on next checkout. A background task evicts sessions idle > 5

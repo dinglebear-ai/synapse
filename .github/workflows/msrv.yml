@@ -10,23 +10,22 @@ permissions:
   contents: read
 
 env:
-  # REQUIRED under a compile wrapper (soldr/zccache).
+  # REQUIRED under a compile wrapper (kache).
   CARGO_INCREMENTAL: "0"
   # Persistent per-runner zccache compile store.
-  SOLDR_CACHE_DIR: ${{ github.workspace }}/../.soldr-cache
 
 jobs:
   msrv:
-    name: Minimum Supported Rust Version (1.90)
-    runs-on: [self-hosted, unraid]
+    name: Minimum Supported Rust Version
+    runs-on: ci-pool-rust
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
-      - name: Install Rust 1.90 + soldr
-        uses: ./.github/actions/setup-rust-soldr
+      - name: Install Rust and kache
+        uses: ./.github/actions/setup-rust-kache
         with:
-          toolchain: "1.90.0"
+          toolchain: "1.97.1"
 
       - name: cargo check (MSRV)
         run: cargo check --all-targets --locked

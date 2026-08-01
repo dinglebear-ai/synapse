@@ -1,12 +1,12 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "ai.dinglebear/synapse-rmcp",
+  "name": "ai.dinglebear/synapse",
   "title": "Synapse RMCP",
-  "description": "Rust MCP and CLI server for Docker, host inspection, SSH, logs, ZFS, and safe file operations.",
+  "description": "MCP server and CLI for host and container operations: Docker and Compose control, SSH, host inspection, logs, ZFS, and safe file transfer.",
   "version": "1.0.0",
-  "websiteUrl": "https://github.com/jmagar/synapse",
+  "websiteUrl": "https://github.com/dinglebear-ai/synapse",
   "repository": {
-    "url": "https://github.com/jmagar/synapse",
+    "url": "https://github.com/dinglebear-ai/synapse",
     "source": "github",
     "id": "1247261737"
   },
@@ -24,7 +24,7 @@
     {
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
-      "identifier": "synapse-rmcp",
+      "identifier": "@dinglebear/synapse",
       "version": "1.0.0",
       "runtimeHint": "npx",
       "packageArguments": [
@@ -67,7 +67,7 @@
           "format": "string",
           "isRequired": false,
           "isSecret": false,
-          "placeholder": "v0.5.3"
+          "placeholder": "v1.0.0"
         },
         {
           "name": "SYNAPSE_RMCP_REPO",
@@ -75,8 +75,8 @@
           "format": "string",
           "isRequired": false,
           "isSecret": false,
-          "default": "jmagar/synapse",
-          "placeholder": "jmagar/synapse"
+          "default": "dinglebear-ai/synapse",
+          "placeholder": "dinglebear-ai/synapse"
         },
         {
           "name": "SYNAPSE_RMCP_RELEASE_BASE_URL",
@@ -105,12 +105,12 @@
       "namespace": "ai.dinglebear",
       "dnsDomain": "dinglebear.ai",
       "distribution": {
-        "npm": "synapse-rmcp@1.0.0",
-        "nodePackage": "synapse-rmcp"
+        "npm": "@dinglebear/synapse@1.0.0",
+        "nodePackage": "@dinglebear/synapse"
       },
       "buildInfo": {
         "version": "1.0.0",
-        "repository": "https://github.com/jmagar/synapse"
+        "repository": "https://github.com/dinglebear-ai/synapse"
       }
     }
   }

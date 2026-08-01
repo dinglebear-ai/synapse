@@ -46,12 +46,12 @@ FROM docker@sha256:be132a9f282288de4afaf63379dff75711fda0147c6b72a9df44e51841402
 
 # ── Stage 3: Builder ──────────────────────────────────────────────────────────
 # DIGEST-PIN: Refresh with:
-#   docker pull rust:1.90-slim-bookworm
-#   docker inspect --format '{{index .RepoDigests 0}}' rust:1.90-slim-bookworm
+#   docker pull rust:1.97.1-slim-bookworm
+#   docker inspect --format '{{index .RepoDigests 0}}' rust:1.97.1-slim-bookworm
 # Then replace the tag below with:
-#   FROM rust@sha256:<digest> AS builder  # rust:1.90-slim-bookworm
-# rust:1.90-slim-bookworm
-FROM rust@sha256:64232e656c058f4468e8d024e990acff04f0fd5a5c0a88a574dc37773d7325c9 AS builder
+#   FROM rust@sha256:<digest> AS builder  # rust:1.97.1-slim-bookworm
+# rust:1.97.1-slim-bookworm
+FROM rust@sha256:99e09cb2284e2ddbb73a995deee3e91783fd04d177602ccf6eab326d778ee777 AS builder
 
 WORKDIR /app
 

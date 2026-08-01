@@ -51,7 +51,7 @@ impl SynapseService {
     /// The host repository resolves the real host topology (`SYNAPSE_HOSTS_CONFIG`
     /// → `SYNAPSE_CONFIG_FILE` → `~/.ssh/config`) shared by both flux and scout.
     ///
-    /// A single [`SshPool`] is threaded from flux through to the scout service and
+    /// A single `SshPool` is threaded from flux through to the scout service and
     /// the Docker client cache, so all three consumers share ControlMaster
     /// connections rather than opening independent pools (`C-1`/`P-C1`).
     pub fn new() -> Self {

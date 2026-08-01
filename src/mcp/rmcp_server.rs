@@ -14,10 +14,10 @@ use lab_auth::AuthContext;
 use rmcp::{
     ErrorData, RoleServer, ServerHandler,
     model::{
-        CallToolRequestParams, CallToolResult, GetPromptRequestParams, GetPromptResult,
-        Implementation, ListPromptsResult, ListResourcesResult, ListToolsResult,
-        PaginatedRequestParams, ReadResourceRequestParams, ReadResourceResult, ServerCapabilities,
-        ServerInfo, Tool,
+        CallToolRequestParams, CallToolResponse, CallToolResult, GetPromptRequestParams,
+        GetPromptResponse, Implementation, ListPromptsResult, ListResourcesResult, ListToolsResult,
+        PaginatedRequestParams, ReadResourceRequestParams, ReadResourceResponse,
+        ReadResourceResult, ServerCapabilities, ServerInfo, Tool,
     },
     service::{Peer, RequestContext},
 };
@@ -72,7 +72,7 @@ impl ServerHandler for SynapseRmcpServer {
         &self,
         request: CallToolRequestParams,
         context: RequestContext<RoleServer>,
-    ) -> Result<CallToolResult, ErrorData> {
+    ) -> Result<CallToolResponse, ErrorData> {
         let tool_name = request.name.to_string();
         let arguments = request
             .arguments
@@ -175,78 +175,80 @@ impl ServerHandler for SynapseRmcpServer {
         tracing::info!(tool = %tool_name, action = %action, "MCP tool execution started");
 
         let render_args = arguments.clone();
-        match execute_tool(&self.state, &tool_name, arguments, &peer).await {
-            Ok(result) => {
-                tracing::info!(
-                    tool = %tool_name,
-                    elapsed_ms = started.elapsed().as_millis(),
-                    "MCP tool execution completed"
-                );
-                let text = match render_mcp_tool_output(&tool_name, &render_args, &result) {
-                    Ok(text) => text,
-                    Err(error) => {
-                        self.state.activity.record(
-                            "mcp",
-                            &activity_action,
-                            false,
-                            Some("execution failed"),
-                        );
-                        return Err(ErrorData::internal_error(
-                            format!("render error: {error}"),
-                            None,
-                        ));
-                    }
-                };
-                let result = tool_result_from_text(text);
-                self.state
-                    .activity
-                    .record("mcp", &activity_action, result.is_ok(), None);
-                result
-            }
-            Err(error) if crate::actions::is_confirmation_denied(&error) => {
-                self.state.activity.record(
-                    "mcp",
-                    &activity_action,
-                    false,
-                    Some("confirmation denied"),
-                );
-                tracing::warn!(
-                    tool = %tool_name,
-                    elapsed_ms = started.elapsed().as_millis(),
-                    "MCP tool destructive op not confirmed"
-                );
-                Err(ErrorData::invalid_request(error.to_string(), None))
-            }
-            Err(error) if crate::actions::is_validation_error(&error) => {
-                self.state.activity.record(
-                    "mcp",
-                    &activity_action,
-                    false,
-                    Some(&error.to_string()),
-                );
-                tracing::warn!(
-                    tool = %tool_name,
-                    elapsed_ms = started.elapsed().as_millis(),
-                    "MCP tool rejected invalid params"
-                );
-                Err(ErrorData::invalid_params(error.to_string(), None))
-            }
-            Err(error) => {
-                self.state.activity.record(
-                    "mcp",
-                    &activity_action,
-                    false,
-                    Some(&error.to_string()),
-                );
-                tracing::error!(
-                    tool = %tool_name,
-                    elapsed_ms = started.elapsed().as_millis(),
-                    error = %error,
-                    "MCP tool execution failed"
-                );
-                Ok(tool_error_result(&activity_action, &error.to_string()))
-            }
-        }
+        let outcome: Result<CallToolResult, ErrorData> =
+            match execute_tool(&self.state, &tool_name, arguments, &peer).await {
+                Ok(result) => {
+                    tracing::info!(
+                        tool = %tool_name,
+                        elapsed_ms = started.elapsed().as_millis(),
+                        "MCP tool execution completed"
+                    );
+                    let text = match render_mcp_tool_output(&tool_name, &render_args, &result) {
+                        Ok(text) => text,
+                        Err(error) => {
+                            self.state.activity.record(
+                                "mcp",
+                                &activity_action,
+                                false,
+                                Some("execution failed"),
+                            );
+                            return Err(ErrorData::internal_error(
+                                format!("render error: {error}"),
+                                None,
+                            ));
+                        }
+                    };
+                    let result = tool_result_from_text(text);
+                    self.state
+                        .activity
+                        .record("mcp", &activity_action, result.is_ok(), None);
+                    result
+                }
+                Err(error) if crate::actions::is_confirmation_denied(&error) => {
+                    self.state.activity.record(
+                        "mcp",
+                        &activity_action,
+                        false,
+                        Some("confirmation denied"),
+                    );
+                    tracing::warn!(
+                        tool = %tool_name,
+                        elapsed_ms = started.elapsed().as_millis(),
+                        "MCP tool destructive op not confirmed"
+                    );
+                    Err(ErrorData::invalid_request(error.to_string(), None))
+                }
+                Err(error) if crate::actions::is_validation_error(&error) => {
+                    self.state.activity.record(
+                        "mcp",
+                        &activity_action,
+                        false,
+                        Some(&error.to_string()),
+                    );
+                    tracing::warn!(
+                        tool = %tool_name,
+                        elapsed_ms = started.elapsed().as_millis(),
+                        "MCP tool rejected invalid params"
+                    );
+                    Err(ErrorData::invalid_params(error.to_string(), None))
+                }
+                Err(error) => {
+                    self.state.activity.record(
+                        "mcp",
+                        &activity_action,
+                        false,
+                        Some(&error.to_string()),
+                    );
+                    tracing::error!(
+                        tool = %tool_name,
+                        elapsed_ms = started.elapsed().as_millis(),
+                        error = %error,
+                        "MCP tool execution failed"
+                    );
+                    Ok(tool_error_result(&activity_action, &error.to_string()))
+                }
+            };
+        outcome.map(Into::into)
     }
 
     // ── resources ─────────────────────────────────────────────────────────────
@@ -267,7 +269,7 @@ impl ServerHandler for SynapseRmcpServer {
         &self,
         request: ReadResourceRequestParams,
         context: RequestContext<RoleServer>,
-    ) -> Result<ReadResourceResult, ErrorData> {
+    ) -> Result<ReadResourceResponse, ErrorData> {
         let auth = require_auth_context(&self.state, &context)?;
         if resources::requires_read_scope(&request.uri)
             && let Some(auth) = auth
@@ -283,7 +285,7 @@ impl ServerHandler for SynapseRmcpServer {
                     ErrorData::internal_error(format!("resource read failed: {e}"), None)
                 }
             })?;
-        Ok(ReadResourceResult::new(vec![contents]))
+        Ok(ReadResourceResult::new(vec![contents]).into())
     }
 
     // ── prompts ───────────────────────────────────────────────────────────────
@@ -301,9 +303,11 @@ impl ServerHandler for SynapseRmcpServer {
         &self,
         request: GetPromptRequestParams,
         context: RequestContext<RoleServer>,
-    ) -> Result<GetPromptResult, ErrorData> {
+    ) -> Result<GetPromptResponse, ErrorData> {
         require_auth_context(&self.state, &context)?;
-        prompts::get_prompt(request).map_err(|e| ErrorData::invalid_params(e.to_string(), None))
+        prompts::get_prompt(request)
+            .map(Into::into)
+            .map_err(|e| ErrorData::invalid_params(e.to_string(), None))
     }
 
     // ── server info ───────────────────────────────────────────────────────────

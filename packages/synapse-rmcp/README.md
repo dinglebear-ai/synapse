@@ -1,8 +1,11 @@
 # synapse-rmcp
 
-Rust MCP and CLI server for local Synapse workflows — a full-parity port of
-[synapse-mcp](https://github.com/jmagar/synapse-mcp) implemented in Rust with
-the [rmcp](https://github.com/modelcontextprotocol/rust-sdk) framework.
+MCP server and CLI for host and container operations: Docker and Compose control,
+SSH, host inspection, logs, ZFS, and safe file transfer.
+
+Synapse is a full-parity Rust port of
+[synapse-mcp](https://github.com/dinglebear-ai/synapse-mcp), built with the
+[rmcp](https://github.com/modelcontextprotocol/rust-sdk) framework.
 
 The server exposes two MCP tools (`flux` and `scout`) plus equivalent CLI
 commands, covering all 59 production actions from the original TypeScript server.
@@ -14,18 +17,22 @@ commands, covering all 59 production actions from the original TypeScript server
 - [Install](#install)
 - [Quickstart](#quickstart)
 - [Client Configuration](#client-configuration)
+- [Plugin Packages](#plugin-packages)
 - [Runtime Surfaces](#runtime-surfaces)
 - [MCP Tool Reference](#mcp-tool-reference)
 - [CLI Reference](#cli-reference)
-- [Configuration](#configuration)
 - [Authentication](#authentication)
 - [Safety And Trust Model](#safety-and-trust-model)
-- [Architecture](#architecture)
 - [Distribution Contract](#distribution-contract)
-- [Development](#development)
 - [Verification](#verification)
 - [Deployment](#deployment)
 - [Troubleshooting](#troubleshooting)
+- [Tools and Actions](#tools-and-actions)
+- [Known Parity Gaps](#known-parity-gaps)
+- [Configuration](#configuration)
+- [Run](#run)
+- [Architecture](#architecture)
+- [Development](#development)
 - [Documentation](#documentation)
 - [Related Servers](#related-servers)
 - [License](#license)
@@ -49,7 +56,8 @@ workflows through two MCP tools and the equivalent CLI:
 - `flux` manages Docker infrastructure, containers, Compose projects, and host
   inspection.
 - `scout` handles SSH/local host inspection, safe file reads, allowlisted
-  command execution, ZFS introspection, and log retrieval.
+  command execution, bounded descriptor-confined file transfer, ZFS introspection,
+  and log retrieval.
 - REST exists only as a compatibility shim for a subset of actions.
 - The web surface is a lightweight static admin shell, not a full dashboard.
 
@@ -67,16 +75,20 @@ Use the npm launcher for stdio MCP or CLI access without a manual binary
 install:
 
 ```bash
-npx -y synapse-rmcp --help
-npx -y synapse-rmcp mcp
+npx -y @dinglebear/synapse --help
+npx -y @dinglebear/synapse mcp
 ```
 
 For a permanent command:
 
 ```bash
-npm i -g synapse-rmcp
+npm i -g @dinglebear/synapse
 synapse --version
 ```
+
+The npm package downloads the `synapse` binary from GitHub Releases during
+`postinstall`, keeping the release tag aligned with
+`packages/synapse-rmcp/package.json`.
 
 From source:
 
@@ -84,12 +96,18 @@ From source:
 cargo build --release
 ```
 
+The production image includes Python 3 plus the official Docker CLI/Compose
+plugin because Scout's remote descriptor wrappers and Flux Compose operations
+invoke those runtime tools. The image does not contain a Docker daemon; Flux
+uses the mounted socket or SSH-forwarded remote socket. Persistent appdata lives
+at `~/.synapse` on the host and `/data` in the container.
+
 ## Quickstart
 
 The first-screen 30-second path is:
 
 ```bash
-npx -y synapse-rmcp mcp
+npx -y @dinglebear/synapse mcp
 ```
 
 Then configure an MCP client with stdio:
@@ -150,6 +168,26 @@ Streamable HTTP uses `/mcp` on the configured host and port:
   }
 }
 ```
+
+## Plugin Packages
+
+`plugins/synapse/` ships Claude Code, Codex, and Gemini CLI manifests that all
+point at the same HTTP MCP endpoint and the same shared skill.
+
+These packages contain **no lifecycle hooks**. Connecting to a server that is
+already running needs no setup — the manifests substitute your `server_url` and
+`api_token` directly. If this machine also *runs* the server, bootstrap it once
+by hand:
+
+```bash
+synapse setup install                  # put/refresh the binary on PATH
+synapse setup plugin-hook              # check, then repair on blocking failures
+synapse setup plugin-hook --no-repair  # audit only; never mutates appdata
+```
+
+Export the relevant `SYNAPSE_*` variables (or write them to `~/.synapse/.env`)
+first; `plugins/README.md` maps each plugin option to its variable. Re-run
+`synapse setup install` after a plugin update.
 
 ## Runtime Surfaces
 
@@ -212,9 +250,24 @@ matrix.
 
 Synapse separates read and write scopes (`synapse:read`, `synapse:write`) and
 uses confirmation gates for destructive operations. `SYNAPSE_MCP_ALLOW_DESTRUCTIVE`
-can skip prompts only in loopback-safe contexts. SSH host trust is delegated to
-OpenSSH known-hosts behavior, and command execution uses execvp/argv semantics
-without shell interpolation.
+can skip prompts only in loopback-safe contexts. Host `protocol` is authoritative
+and defaults to SSH when omitted; local execution requires the explicit built-in
+`local` host or `protocol: "local"`. SSH host trust is delegated to OpenSSH
+known-hosts behavior, and command execution uses execvp/argv semantics without
+shell interpolation. `scout beam` enforces both endpoints' configured read roots,
+blocks sensitive and symlinked paths, and caps each transfer at 64 MiB.
+
+`scout exec` and `scout emit` accept only these 18 typed commands
+(`ALLOWED_READ_COMMANDS` in `src/synapse/command_policy.rs`):
+
+`cat`, `head`, `tail`, `grep`, `rg`, `ls`, `tree`, `wc`, `uniq`, `diff`, `stat`,
+`file`, `du`, `df`, `pwd`, `hostname`, `uptime`, `whoami`
+
+`git` is deliberately excluded, as are shells, interpreters, network clients, and
+mutating tools (`EXEC_DENYLIST`). There is no `find` or `sort` in the allowlist —
+use the dedicated `scout find` action for filesystem search. Per-host custom
+commands may be enabled via `execAllowlist`, but receive a zero-argument policy
+until a typed argument policy is registered.
 
 ## Distribution Contract
 
@@ -226,7 +279,7 @@ Distribution/version invariants:
 
 - The npm package downloads the matching GitHub Release binary.
 - The installed binary remains `synapse`.
-- `server.json` must point at `ghcr.io/jmagar/synapse:<version>`.
+- `server.json` must point at `ghcr.io/dinglebear-ai/synapse:<version>`.
 - Plugin manifests stay versionless where marketplaces derive identity from git
   state.
 - Generated docs and schemas must come from source-controlled generation
@@ -235,7 +288,7 @@ Distribution/version invariants:
 ## Verification
 
 ```bash
-python3 /home/jmagar/workspace/soma/scripts/check-readme-guide.py README.md
+just validate-plugin          # plugin manifests, MCP config, monitors, skills
 npm --prefix packages/synapse-rmcp run check
 cargo fmt --check
 cargo check
@@ -267,40 +320,6 @@ present; local operator usage can stay on stdio.
   policy.
 - SSH errors: verify OpenSSH known_hosts, mux/socket availability, and host
   reachability outside Synapse first.
-
-## npm / npx
-
-Run the stdio MCP server or CLI without a manual binary install:
-
-```bash
-npx -y synapse-rmcp --help
-```
-
-MCP clients can use the same launcher:
-
-```json
-{
-  "mcpServers": {
-    "synapse": {
-      "command": "npx",
-      "args": ["-y", "synapse-rmcp"]
-    }
-  }
-}
-```
-
-The npm package downloads the `synapse` binary from GitHub Releases during `postinstall` and keeps the release tag aligned with `packages/synapse-rmcp/package.json`.
-
-Across the rmcp family, naming follows `repo=<service>-rmcp`, `npm=<service>-rmcp`, and `CLI=r<service>`. Synapse is the exception: the npm package is `synapse-rmcp`, but the installed CLI and binary alias remain `synapse`.
-
-## Surfaces
-
-| Surface | Status | Purpose |
-|---|---:|---|
-| MCP | Required | Agent-facing `flux` and `scout` tools |
-| CLI | Required | Scriptable parity surface |
-| REST | Present | Thin local action endpoint |
-| Web | Present | Lightweight static admin shell |
 
 ## Tools and Actions
 
@@ -390,7 +409,7 @@ Across the rmcp family, naming follows `repo=<service>-rmcp`, `npm=<service>-rmc
 | `delta` | `synapse:read` | Compare files or content; requires `source_host`, `source_path`; then either `target_host`+`target_path` or `content` |
 | `exec` | `synapse:write` | Execute allowlisted command (destructive, execvp); requires `host`, `command`; optional `path`, `args`, `timeout_secs` |
 | `emit` | `synapse:write` | Multi-host execution (destructive); requires `targets` array, `command`; optional `args`, `timeout_secs` |
-| `beam` | `synapse:write` | File transfer between hosts (destructive); requires `source_host`, `source_path`, `dest_host`, `dest_path` |
+| `beam` | `synapse:write` | Bounded root-confined file transfer (destructive); requires `source_host`, `source_path`, `dest_host`, `dest_path`; both paths must be under configured Scout/Compose roots |
 
 #### `scout zfs` — ZFS introspection (3 subactions)
 
@@ -426,7 +445,7 @@ the following features from the original TypeScript server are **not yet ported*
 | Feature | Description |
 |---|---|
 | `claude/channel` notifications | Original forwards Docker events and log tails as `notifications/claude/channel` MCP notifications. No equivalent exists in Rust. |
-| Templated MCP resources | Original exposes `synapse://hosts/{host}`, `synapse://hosts/{host}/stacks`, `synapse://stacks`, `synapse://stacks/{host}/{stack}`, `synapse://stacks/{host}/{stack}/env`, `synapse://containers/{host}`, `synapse://containers/{host}/{id}`. Rust exposes schema resources, `synapse://hosts`, `synapse://compose/projects`, and help resources. |
+| Templated MCP resources | Original exposes `synapse://hosts/{host}`, `synapse://hosts/{host}/stacks`, `synapse://stacks`, `synapse://stacks/{host}/{stack}`, `synapse://stacks/{host}/{stack}/env`, `synapse://containers/{host}`, `synapse://containers/{host}/{id}`. Rust exposes tool-specific schema and help resources plus read-scoped `synapse://hosts`, `synapse://compose/projects`, `synapse://status`, and `synapse://activity`. |
 | Root SSH login gate | Original gates `sshUser=root` through elicitation unless `SYNAPSE_ALLOW_ROOT_LOGIN=true`. Rust has destructive-operation elicitation but no root-login gate. |
 | TOFU fingerprint store | Original persists fingerprints to `~/.config/synapse/known_hosts.json` and rejects changed fingerprints. Rust uses strict OpenSSH `known_hosts` with wildcard warnings — different operator behavior. |
 | `SYNAPSE_EXCLUDE_HOSTS` | Original env var to exclude hosts from fleet discovery is absent in Rust. |
@@ -452,10 +471,13 @@ Key environment variables:
 | `SYNAPSE_MCP_NO_AUTH` | `false` | Disable auth for loopback development only. |
 | `SYNAPSE_NOAUTH` | `false` | Delegate auth/authz to an isolated trusted upstream gateway. |
 | `SYNAPSE_MCP_ALLOW_DESTRUCTIVE` | `false` | Skip destructive-operation confirmation prompts (loopback only). |
-| `SYNAPSE_MCP_MAX_CONCURRENCY` | `50` | Maximum simultaneous in-flight requests on `/mcp` and `/v1/synapse`. Excess requests receive HTTP 429 with `Retry-After`. Set to `0` to disable. `/health`, `/ready`, and `/status` are exempt. |
+| `SYNAPSE_MCP_MAX_CONCURRENCY` | `50` | Maximum simultaneous in-flight operational requests. Excess requests receive HTTP 429 with `Retry-After`. Set to `0` to disable. Public probes, OAuth discovery, and static assets are exempt from concurrency shedding. |
+| `SYNAPSE_MCP_PUBLIC_URL` | unset | OAuth public URL; HTTPS required except loopback development. |
+| `SYNAPSE_HOSTS_CONFIG` | unset | Inline host topology. Omitted host protocols default to SSH; local execution requires `protocol: "local"`. |
 
-See `.env.example` for the full list of variables and `docs/CONFIG.md` for auth
-configuration details.
+See `.env.example` for the full list of variables, `docs/CONFIG.md` for
+configuration details, and `docs/SECURITY.md` for transport, path, transfer,
+container, and CI runner trust boundaries.
 
 ## Run
 
@@ -538,17 +560,17 @@ Source-of-truth docs and code are split as follows:
 
 ## Related Servers
 
-- `unifi-rmcp / rustifi` - UniFi controller REST API bridge.
-- `tailscale-rmcp / rustscale` - Tailscale API bridge for devices, users, and tailnet operations.
-- `unraid-rmcp / unrust` - Unraid GraphQL bridge for NAS and server management.
-- `apprise-rmcp` - Apprise notification fan-out bridge for many delivery backends.
-- `gotify-rmcp` - Gotify push notification bridge for sends, messages, apps, and clients.
-- `arcane-rmcp` - Arcane Docker management bridge for containers and related resources.
-- `yarr-rmcp` - Media-stack bridge for Sonarr, Radarr, Prowlarr, Plex, and related services.
-- `ytdl-mcp` - Media download and metadata workflow server.
+- `runifi` - UniFi controller REST API bridge.
+- `rtailscale` - Tailscale API bridge for devices, users, and tailnet operations.
+- `unraid` / `runraid` - Unraid GraphQL bridge for NAS and server management.
+- `rapprise` - Apprise notification fan-out bridge for many delivery backends.
+- `rgotify` - Gotify push notification bridge for sends, messages, apps, and clients.
+- `rarcane` - Arcane Docker management bridge for containers and related resources.
+- `yarr` - Media-stack bridge for Sonarr, Radarr, Prowlarr, Plex, and related services.
+- `rytdl` - Media download and metadata workflow server.
 - `cortex` - Syslog and homelab log aggregation MCP server.
 - `axon` - RAG, crawl, scrape, extract, and semantic search project.
-- `lab` - Homelab control plane and Labby gateway project.
+- `labby` - Homelab control plane and Labby gateway project.
 - `lumen` - Local semantic code search MCP server.
 - `nugs` - Project/package management helper for local agent workflows.
 - `agentcast` - Agent transcript and activity publishing project.

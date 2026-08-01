@@ -14,11 +14,11 @@ permissions:
 
 env:
   CARGO_INCREMENTAL: "0"
-  SOLDR_CACHE_DIR: ${{ github.workspace }}/../.soldr-cache
 
 jobs:
   release-meta:
-    runs-on: [self-hosted, unraid]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
     outputs:
       tag_name: ${{ steps.meta.outputs.tag_name }}
       release_name: ${{ steps.meta.outputs.release_name }}
@@ -68,16 +68,17 @@ jobs:
             artifact: synapse-linux-x86_64
             archive: synapse-x86_64.tar.gz
             ext: ""
-    runs-on: [self-hosted, unraid]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           ref: ${{ needs.release-meta.outputs.tag_name }}
 
-      - name: Install Rust + soldr
-        uses: ./.github/actions/setup-rust-soldr
+      - name: Install Rust and kache
+        uses: ./.github/actions/setup-rust-kache
         with:
-          toolchain: 1.90.0
+          toolchain: 1.97.1
           targets: ${{ matrix.target }}
 
       - name: Build web assets
@@ -121,7 +122,8 @@ jobs:
 
   publish-release:
     needs: [release-meta, build]
-    runs-on: [self-hosted, unraid]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
     steps:
       - name: Download release assets
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.0
@@ -139,7 +141,8 @@ jobs:
 
   npm:
     needs: [release-meta, publish-release]
-    runs-on: [self-hosted, unraid]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
     permissions:
       contents: read
       id-token: write
@@ -151,6 +154,11 @@ jobs:
         with:
           node-version: 22
           registry-url: https://registry.npmjs.org
+
+      - name: Validate npm publication identity
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm whoami >/dev/null
 
       - name: Verify npm package version matches release tag
         id: npm-version
@@ -181,7 +189,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if npm view "synapse-rmcp@${{ steps.npm-version.outputs.version }}" version >/dev/null 2>&1; then
+          if npm view "@dinglebear/synapse@${{ steps.npm-version.outputs.version }}" version >/dev/null 2>&1; then
             echo "exists=true" >> "$GITHUB_OUTPUT"
           else
             echo "exists=false" >> "$GITHUB_OUTPUT"
@@ -200,12 +208,12 @@ jobs:
           cache="$(mktemp -d)"
           trap 'rm -rf "$cache"' EXIT
           for attempt in {1..12}; do
-            if npm view "synapse-rmcp@${{ steps.npm-version.outputs.version }}" version >/dev/null 2>&1; then
+            if npm view "@dinglebear/synapse@${{ steps.npm-version.outputs.version }}" version >/dev/null 2>&1; then
               break
             fi
             if [[ "$attempt" == 12 ]]; then
-              npm view "synapse-rmcp@${{ steps.npm-version.outputs.version }}" version
+              npm view "@dinglebear/synapse@${{ steps.npm-version.outputs.version }}" version
             fi
             sleep 5
           done
-          npm_config_cache="$cache" npx -y "synapse-rmcp@${{ steps.npm-version.outputs.version }}" --version
+          npm_config_cache="$cache" npx -y "@dinglebear/synapse@${{ steps.npm-version.outputs.version }}" --version

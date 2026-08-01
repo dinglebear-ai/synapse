@@ -13,7 +13,7 @@
 //! - **`bollard::Docker` is cheap to Clone** (internally `Arc<ClientType>` +
 //!   `Arc<hyper>`), so each cache entry holds it **by value** inside a
 //!   [`BollardClient`] bundle. For remote hosts the bundle also owns the
-//!   [`ForwardedSocket`] + `Arc<PooledSession>` that keep the unix socket alive;
+//!   `ForwardedSocket` + `Arc<PooledSession>` that keep the unix socket alive;
 //!   bollard's `Docker` is only valid while that forward lives, so the bundle is
 //!   the unit of caching (handed out as `Arc<BollardClient>`).
 //! - **Per-host cache keyed by `HostConfig.name`.** One `BollardClient` per

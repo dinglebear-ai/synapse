@@ -1,3 +1,9 @@
+---
+title: "synapse Quickstart"
+created: 2026-05-22
+updated: 2026-07-30
+---
+
 # synapse Quickstart
 
 This guide gets a local checkout running with loopback-only no-auth MCP HTTP,

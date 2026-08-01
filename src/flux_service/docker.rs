@@ -5,7 +5,7 @@
 //!
 //! Mirrors [`container_read`](super::container_read): the **pure** per-host
 //! functions here operate on the segregated `&dyn …Ops` trait objects so they are
-//! fully unit-testable with [`MockDockerClient`](crate::docker_client::MockDockerClient).
+//! fully unit-testable with `MockDockerClient`.
 //! [`FluxService`](super::FluxService) resolves hosts, acquires the cached bollard
 //! client, drives fanout for the read-only ops, and enforces the destructive gate
 //! for `pull`/`build`/`rmi`/`prune` **before** calling these functions.

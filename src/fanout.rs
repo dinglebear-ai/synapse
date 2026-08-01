@@ -162,7 +162,7 @@ impl<T, E: std::fmt::Display> FanoutOutcome<T, E> {
 ///
 /// # Concurrency model
 ///
-/// Uses [`FuturesUnordered`] + [`Arc<Semaphore>`]. The semaphore permit is
+/// Uses `FuturesUnordered` + [`Arc<Semaphore>`]. The semaphore permit is
 /// acquired **inside** each future (not before pushing to the set) to prevent
 /// deadlocks under load.
 ///

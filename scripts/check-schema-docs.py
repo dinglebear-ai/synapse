@@ -107,6 +107,12 @@ def render() -> str:
     actions = extract_actions()
     scopes = extract_scope_for_actions()
     lines = [
+        "---",
+        'title: "synapse MCP Schema Contract"',
+        "created: 2026-08-01",
+        "updated: 2026-08-01",
+        "---",
+        "",
         "# synapse MCP Schema Contract",
         "",
         "`synapse` exposes two MCP tools: `flux` and `scout`.",

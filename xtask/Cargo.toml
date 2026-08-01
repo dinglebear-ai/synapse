@@ -13,10 +13,17 @@
 
 [package]
 name = "xtask"
-version = "1.0.0"
-edition = "2021"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
 # Exclude from crates.io — this is a private automation crate.
 publish = false
+
+[lints]
+workspace = true
 
 [dependencies]
 # TEMPLATE: anyhow for ergonomic errors, walkdir for filesystem traversal.

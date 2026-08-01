@@ -21,7 +21,7 @@ fn plugin_manifests_exist_for_all_supported_hosts() {
         "plugins/synapse/.claude-plugin/plugin.json",
         "plugins/synapse/.codex-plugin/plugin.json",
         "plugins/synapse/gemini-extension.json",
-        "plugins/synapse/mcp.json",
+        "plugins/synapse/.mcp.json",
         "plugins/synapse/monitors/monitors.json",
         "plugins/synapse/skills/synapse/SKILL.md",
     ] {
@@ -34,7 +34,7 @@ fn plugin_manifests_share_identity_and_connection_settings() {
     let claude = json("plugins/synapse/.claude-plugin/plugin.json");
     let codex = json("plugins/synapse/.codex-plugin/plugin.json");
     let gemini = json("plugins/synapse/gemini-extension.json");
-    let mcp = json("plugins/synapse/mcp.json");
+    let mcp = json("plugins/synapse/.mcp.json");
 
     assert_eq!(claude["name"], "synapse");
     assert_eq!(codex["name"], "synapse");

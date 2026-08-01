@@ -1,3 +1,9 @@
+---
+title: "Authentication"
+created: 2026-05-22
+updated: 2026-07-30
+---
+
 # Authentication
 
 Synapse supports **static bearer tokens** and **OAuth 2.0** for the Streamable

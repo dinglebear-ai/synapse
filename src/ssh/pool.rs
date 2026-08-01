@@ -44,7 +44,7 @@ fn instant_to_nanos(t: Instant) -> u64 {
 /// A pooled SSH session: one multiplexed `openssh::Session` plus the per-host
 /// exec semaphore and a last-activity timestamp for idle eviction.
 ///
-/// `last_used_nanos` stores nanoseconds since [`instant_epoch`] as an
+/// `last_used_nanos` stores nanoseconds since `instant_epoch` as an
 /// [`AtomicU64`], replacing the former `std::sync::Mutex<Instant>`.  This is
 /// lock-free and avoids mutex contention in async contexts (A-M4 / P-M5).
 pub struct PooledSession {
