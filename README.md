@@ -75,14 +75,14 @@ Use the npm launcher for stdio MCP or CLI access without a manual binary
 install:
 
 ```bash
-npx -y synapse-rmcp --help
-npx -y synapse-rmcp mcp
+npx -y @dinglebear/synapse --help
+npx -y @dinglebear/synapse mcp
 ```
 
 For a permanent command:
 
 ```bash
-npm i -g synapse-rmcp
+npm i -g @dinglebear/synapse
 synapse --version
 ```
 
@@ -107,7 +107,7 @@ at `~/.synapse` on the host and `/data` in the container.
 The first-screen 30-second path is:
 
 ```bash
-npx -y synapse-rmcp mcp
+npx -y @dinglebear/synapse mcp
 ```
 
 Then configure an MCP client with stdio:

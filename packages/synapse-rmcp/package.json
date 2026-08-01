@@ -1,5 +1,5 @@
 {
-  "name": "synapse-rmcp",
+  "name": "@dinglebear/synapse",
   "version": "0.6.2",
   "description": "MCP server and CLI for host and container operations: Docker and Compose control, SSH, host inspection, logs, ZFS, and safe file transfer.",
   "license": "MIT",
@@ -19,12 +19,16 @@
     "bin/",
     "lib/",
     "scripts/",
-    "README.md"
+    "README.md",
+    "LICENSE*",
+    "package.json"
   ],
   "scripts": {
     "postinstall": "node scripts/install.js",
     "test": "node --test",
-    "check": "node --check bin/synapse.js && node --check scripts/install.js && node --check lib/platform.js"
+    "check": "node --check bin/synapse.js && node --check scripts/install.js && node --check lib/platform.js && node --check scripts/sync-readme.js && node --check scripts/check-package.js && node scripts/check-package.js",
+    "prepack": "node scripts/sync-readme.js",
+    "prepublishOnly": "node scripts/check-package.js --release"
   },
   "engines": {
     "node": ">=18"
@@ -49,5 +53,12 @@
     "codex",
     "gemini"
   ],
-  "mcpName": "ai.dinglebear/synapse-rmcp"
+  "mcpName": "ai.dinglebear/synapse",
+  "publishConfig": {
+    "access": "public"
+  },
+  "author": {
+    "name": "dinglebear.ai",
+    "url": "https://dinglebear.ai"
+  }
 }
