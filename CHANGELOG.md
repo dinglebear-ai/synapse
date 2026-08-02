@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
                Format: ## [X.Y.Z] — YYYY-MM-DD
                Use Added / Changed / Deprecated / Removed / Fixed / Security headers. -->
 
+## [1.0.0](https://github.com/dinglebear-ai/synapse/compare/v0.6.2...v1.0.0) (2026-07-29)
+
+
+### ⚠ BREAKING CHANGES
+
+* complete Synapse identity cutover ([#80](https://github.com/dinglebear-ai/synapse/issues/80))
+
+### Added
+
+* complete Synapse identity cutover ([#80](https://github.com/dinglebear-ai/synapse/issues/80)) ([cf1f3f9](https://github.com/dinglebear-ai/synapse/commit/cf1f3f9ef5925b28f5a5a1ca2d8da5af28815cc2))
+
 ## [0.6.2](https://github.com/dinglebear-ai/synapse/compare/v0.6.1...v0.6.2) (2026-07-28)
 
 
@@ -100,8 +111,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **JSON logging mode** — set `LOG_FORMAT=json` or `RUST_LOG_FORMAT=json` to emit structured NDJSON log lines instead of the default human-readable format.
 - **Rust edition 2024** — workspace updated to `edition = "2024"`. Release profile now uses `lto = "thin"` and `strip = "symbols"`.
 - **`rust-toolchain.toml` added** — pins the toolchain channel for reproducible builds.
-- **x86_64-only releases.** The release and installer contract now publishes
-  and accepts Linux x86_64 binaries only.
+- **Dropped arm64 support.** The `Docker Publish` workflow previously also built
+  `linux/arm64` under QEMU emulation, which made the emulated Rust release build
+  exceed the job timeout and cancel every run; it now builds `linux/amd64` only.
+  `install.sh` no longer claims to support arm64 hosts (no `aarch64` release
+  binary is published) and instead points arm64 users to a source build, and the
+  CI docs were corrected to match. Re-add arm64 via a native runner matrix if it
+  is needed.
 
 ## [0.5.2] — 2026-06-11
 
@@ -401,7 +417,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `lefthook.yml` — minimal pre-commit hooks (diff_check, toml_fmt, env_guard)
 - `.github/workflows/ci.yml` — CI: fmt, clippy, nextest, taplo, audit, gitleaks
 - `.github/workflows/docker-publish.yml` — multi-platform Docker build + Trivy scan
-- `.github/workflows/release.yml` — release binaries for Linux
+- `.github/workflows/release.yml` — release binaries for linux/amd64 and linux/arm64
 - `config.example.toml` — fully annotated config template
 - `.env.example` — documented secrets template
 - `CHANGELOG.md` following Keep a Changelog format

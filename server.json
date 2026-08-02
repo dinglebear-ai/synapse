@@ -3,7 +3,7 @@
   "name": "ai.dinglebear/synapse",
   "title": "Synapse RMCP",
   "description": "MCP server and CLI for host and container operations: Docker and Compose control, SSH, host inspection, logs, ZFS, and safe file transfer.",
-  "version": "0.6.2",
+  "version": "1.0.0",
   "websiteUrl": "https://github.com/dinglebear-ai/synapse",
   "repository": {
     "url": "https://github.com/dinglebear-ai/synapse",
@@ -25,7 +25,7 @@
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
       "identifier": "@dinglebear/synapse",
-      "version": "0.6.2",
+      "version": "1.0.0",
       "runtimeHint": "npx",
       "packageArguments": [
         {
@@ -67,7 +67,7 @@
           "format": "string",
           "isRequired": false,
           "isSecret": false,
-          "placeholder": "v0.6.2"
+          "placeholder": "v1.0.0"
         },
         {
           "name": "SYNAPSE_RMCP_REPO",
@@ -105,11 +105,11 @@
       "namespace": "ai.dinglebear",
       "dnsDomain": "dinglebear.ai",
       "distribution": {
-        "npm": "@dinglebear/synapse@0.6.2",
+        "npm": "@dinglebear/synapse@1.0.0",
         "nodePackage": "@dinglebear/synapse"
       },
       "buildInfo": {
-        "version": "0.6.2",
+        "version": "1.0.0",
         "repository": "https://github.com/dinglebear-ai/synapse"
       }
     }
