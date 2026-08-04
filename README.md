@@ -1,7 +1,6 @@
 # synapse-rmcp
 
-MCP server and CLI for host and container operations: Docker and Compose control,
-SSH, host inspection, logs, ZFS, and safe file transfer.
+Host, Docker, Compose, SSH, logs, ZFS, and file operations over MCP and CLI.
 
 Synapse is a full-parity Rust port of
 [synapse-mcp](https://github.com/dinglebear-ai/synapse-mcp), built with the
