@@ -47,7 +47,7 @@ homepage.workspace = true
 repository.workspace = true
 categories = ["command-line-utilities", "virtualization", "filesystem", "network-programming", "development-tools"]
 keywords = ["mcp", "docker", "ssh", "zfs", "homelab"]
-description = "MCP server and CLI for host and container operations: Docker and Compose control, SSH, host inspection, logs, ZFS, and safe file transfer."
+description = "Host, Docker, Compose, SSH, logs, ZFS, and file operations over MCP and CLI."
 publish = false
 autobins = false
 

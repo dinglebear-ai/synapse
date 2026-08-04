@@ -2,7 +2,7 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "ai.dinglebear/synapse",
   "title": "Synapse RMCP",
-  "description": "MCP server and CLI for host and container operations: Docker and Compose control, SSH, host inspection, logs, ZFS, and safe file transfer.",
+  "description": "Host, Docker, Compose, SSH, logs, ZFS, and file operations over MCP and CLI.",
   "version": "1.0.0",
   "websiteUrl": "https://github.com/dinglebear-ai/synapse",
   "repository": {
