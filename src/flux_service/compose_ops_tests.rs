@@ -140,7 +140,7 @@ fn plain_down_with_force_is_accepted() {
 
 // ─── argv construction ────────────────────────────────────────────────────────
 
-const HOST: &str = "dookie";
+const HOST: &str = "devhost";
 const PROJECT: &str = "myapp";
 const CONFIG: &str = "/compose/myapp/docker-compose.yml";
 

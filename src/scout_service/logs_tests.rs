@@ -127,15 +127,15 @@ fn ssh_host() -> HostConfig {
 }
 
 const SYSLOG_SAMPLE: &str = "\
-May 29 12:00:01 dookie kernel: [    0.000000] Linux version 7.0.0
-May 29 12:00:02 dookie systemd[1]: Starting Network Time Synchronization
-May 29 12:00:03 dookie sshd[1234]: Accepted publickey for jmagar
+May 29 12:00:01 devhost kernel: [    0.000000] Linux version 7.0.0
+May 29 12:00:02 devhost systemd[1]: Starting Network Time Synchronization
+May 29 12:00:03 devhost sshd[1234]: Accepted publickey for jmagar
 ";
 
 const JOURNAL_SAMPLE: &str = "\
-May 29 12:00:00 dookie kernel: systemd[1]: Started
-May 29 12:00:01 dookie sshd[1234]: Accepted publickey
-May 29 12:00:02 dookie nginx[5678]: 127.0.0.1 - GET /health
+May 29 12:00:00 devhost kernel: systemd[1]: Started
+May 29 12:00:01 devhost sshd[1234]: Accepted publickey
+May 29 12:00:02 devhost nginx[5678]: 127.0.0.1 - GET /health
 ";
 
 const DMESG_SAMPLE: &str = "\
@@ -147,8 +147,8 @@ const DMESG_SAMPLE: &str = "\
 ";
 
 const AUTH_SAMPLE: &str = "\
-May 29 12:00:01 dookie sshd[1234]: Accepted publickey for jmagar from 192.168.1.10
-May 29 12:00:02 dookie sudo[5678]: jmagar : TTY=pts/0 ; PWD=/home/jmagar ; USER=root
+May 29 12:00:01 devhost sshd[1234]: Accepted publickey for jmagar from 192.168.1.10
+May 29 12:00:02 devhost sudo[5678]: jmagar : TTY=pts/0 ; PWD=/home/jmagar ; USER=root
 ";
 
 // ─── syslog tests ────────────────────────────────────────────────────────────

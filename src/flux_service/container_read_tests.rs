@@ -42,11 +42,11 @@ async fn list_no_filter_returns_all_host_tagged() {
         summary("nginx", "nginx:latest", ContainerSummaryStateEnum::RUNNING),
         summary("db", "postgres:16", ContainerSummaryStateEnum::EXITED),
     ]);
-    let out = list_on_host(&client, "dookie", &ListFilters::default())
+    let out = list_on_host(&client, "devhost", &ListFilters::default())
         .await
         .unwrap();
     assert_eq!(out.len(), 2);
-    assert_eq!(out[0]["host"], "dookie");
+    assert_eq!(out[0]["host"], "devhost");
     assert_eq!(out[0]["name"], "nginx");
 }
 

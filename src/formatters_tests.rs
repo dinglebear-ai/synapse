@@ -299,7 +299,7 @@ fn docker_df_unavailable() {
 #[test]
 fn host_resources_basic_structure() {
     let data = json!({
-        "host": "squirts",
+        "host": "edgehost",
         "cpu_cores": 8,
         "cpu_percent": 45.5,
         "mem_used_mb": 8192,
@@ -330,7 +330,7 @@ fn host_resources_basic_structure() {
 
     // Host section header
     assert!(
-        output.contains("### squirts"),
+        output.contains("### edgehost"),
         "must have host section header"
     );
 
@@ -591,7 +591,7 @@ fn container_logs_preview_for_long_output() {
 #[test]
 fn container_logs_render_current_service_payload_shape() {
     let data = json!({
-        "host": "dookie",
+        "host": "devhost",
         "container": "nginx",
         "count": 2,
         "lines": ["ready", "served request"],
@@ -599,7 +599,7 @@ fn container_logs_render_current_service_payload_shape() {
 
     let output = render_container_logs_markdown(&data);
 
-    assert!(output.contains("Container Logs for nginx (dookie)"));
+    assert!(output.contains("Container Logs for nginx (devhost)"));
     assert!(output.contains("Lines returned: 2 | truncated: no"));
     assert!(output.contains("ready"));
     assert!(output.contains("served request"));
@@ -612,7 +612,7 @@ fn container_logs_render_current_service_payload_shape() {
 #[test]
 fn host_status_mixed_states() {
     let data = json!([
-        {"name": "squirts", "connected": true, "container_count": 10, "running_count": 8},
+        {"name": "edgehost", "connected": true, "container_count": 10, "running_count": 8},
         {"name": "boops", "connected": false, "container_count": 0, "running_count": 0, "error": "Timeout"}
     ]);
     let output = render_host_status_markdown(&data);
@@ -621,9 +621,9 @@ fn host_status_mixed_states() {
     assert!(output.contains("Legend:"));
     // Offline host appears first (severity-first)
     let boops_pos = output.find("boops").unwrap();
-    let squirts_pos = output.find("squirts").unwrap();
+    let edgehost_pos = output.find("edgehost").unwrap();
     assert!(
-        boops_pos < squirts_pos,
+        boops_pos < edgehost_pos,
         "offline host must appear before online host (severity-first)"
     );
     assert!(
@@ -645,14 +645,14 @@ fn host_status_mixed_states() {
 fn scout_nodes_basic() {
     let data = json!({
         "hosts": [
-            {"name": "squirts", "host": "squirts.local", "protocol": "ssh"},
+            {"name": "edgehost", "host": "edgehost.local", "protocol": "ssh"},
             {"name": "boops", "host": "boops.local", "protocol": "ssh"}
         ]
     });
     let output = render_scout_nodes_markdown(&data);
     assert!(output.starts_with("Scout Nodes"));
     assert!(output.contains("Hosts: 2"));
-    assert!(output.contains("squirts"));
+    assert!(output.contains("edgehost"));
     assert!(output.contains("boops"));
     // Table format
     assert!(output.contains("| Host |"));
@@ -661,28 +661,28 @@ fn scout_nodes_basic() {
 #[test]
 fn scout_peek_file() {
     let data = json!({
-        "host": "squirts",
+        "host": "edgehost",
         "path": "/etc/hostname",
         "kind": "file",
-        "content": "squirts\n"
+        "content": "edgehost\n"
     });
     let output = render_scout_peek_markdown(&data);
-    assert!(output.contains("File Read: squirts:/etc/hostname"));
+    assert!(output.contains("File Read: edgehost:/etc/hostname"));
     assert!(output.contains("Size:"));
-    assert!(output.contains("squirts"));
+    assert!(output.contains("edgehost"));
     assert!(output.contains("```"), "must have code block");
 }
 
 #[test]
 fn scout_peek_directory() {
     let data = json!({
-        "host": "squirts",
+        "host": "edgehost",
         "path": "/etc",
         "kind": "directory",
         "entries": ["hostname", "hosts", "passwd"]
     });
     let output = render_scout_peek_markdown(&data);
-    assert!(output.contains("Directory Listing: squirts:/etc"));
+    assert!(output.contains("Directory Listing: edgehost:/etc"));
     assert!(output.contains("Items: 3"));
     assert!(output.contains("hostname"));
 }
@@ -690,7 +690,7 @@ fn scout_peek_directory() {
 #[test]
 fn scout_exec_success() {
     let data = json!({
-        "host": "squirts",
+        "host": "edgehost",
         "path": "/tmp",
         "command": "uptime",
         "exit_code": 0,
@@ -699,7 +699,7 @@ fn scout_exec_success() {
     });
     let output = render_scout_exec_markdown(&data);
     assert!(output.starts_with('✓'), "success must use ✓ symbol");
-    assert!(output.contains("Command Execution: squirts:/tmp"));
+    assert!(output.contains("Command Execution: edgehost:/tmp"));
     assert!(output.contains("Exit: 0"));
     assert!(output.contains("uptime"));
     assert!(
@@ -711,7 +711,7 @@ fn scout_exec_success() {
 #[test]
 fn scout_exec_failure() {
     let data = json!({
-        "host": "squirts",
+        "host": "edgehost",
         "path": "/tmp",
         "command": "cat /nonexistent",
         "exit_code": 1,
@@ -726,12 +726,12 @@ fn scout_exec_failure() {
 #[test]
 fn scout_syslog_basic() {
     let data = json!({
-        "host": "squirts",
+        "host": "edgehost",
         "lines_requested": 50,
-        "logs": "Feb 13 11:00:00 squirts sshd: ok\nFeb 13 11:00:01 squirts kernel: info"
+        "logs": "Feb 13 11:00:00 edgehost sshd: ok\nFeb 13 11:00:01 edgehost kernel: info"
     });
     let output = render_scout_syslog_markdown(&data);
-    assert!(output.starts_with("Syslog: squirts"));
+    assert!(output.starts_with("Syslog: edgehost"));
     assert!(output.contains("Lines requested: 50 | Returned: 2"));
     assert!(output.contains("As of (UTC):"));
     assert!(output.contains("sshd"));
@@ -740,16 +740,16 @@ fn scout_syslog_basic() {
 #[test]
 fn scout_syslog_renders_current_service_payload_shape() {
     let data = json!({
-        "host": "squirts",
+        "host": "edgehost",
         "subaction": "syslog",
         "lines": 100,
         "grep": "sshd",
-        "output": "Jun 12 10:00:00 squirts sshd: Accepted publickey\nJun 12 10:00:01 squirts sshd: session opened"
+        "output": "Jun 12 10:00:00 edgehost sshd: Accepted publickey\nJun 12 10:00:01 edgehost sshd: session opened"
     });
 
     let output = render_scout_syslog_markdown(&data);
 
-    assert!(output.starts_with("Syslog: squirts"));
+    assert!(output.starts_with("Syslog: edgehost"));
     assert!(output.contains("Lines requested: 100 | Returned: 2 | truncated: no | Filter: sshd"));
     assert!(output.contains("Accepted publickey"));
     assert!(output.contains("session opened"));
@@ -758,11 +758,11 @@ fn scout_syslog_renders_current_service_payload_shape() {
 #[test]
 fn scout_zfs_pools_annotates_health() {
     let data = json!({
-        "host": "squirts",
+        "host": "edgehost",
         "pools": "NAME    SIZE   ALLOC  FREE    HEALTH  ALTROOT\ntank    10.9T  8.2T   2.7T    ONLINE  -\nbad_pool 1T 0.5T 0.5T DEGRADED -"
     });
     let output = render_scout_zfs_pools_markdown(&data);
-    assert!(output.starts_with("ZFS Pools: squirts"));
+    assert!(output.starts_with("ZFS Pools: edgehost"));
     assert!(output.contains('●'), "ONLINE pool must have ● symbol");
     assert!(output.contains('⚠'), "DEGRADED pool must have ⚠ symbol");
 }

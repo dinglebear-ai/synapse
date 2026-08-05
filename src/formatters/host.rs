@@ -35,7 +35,7 @@ use crate::formatters::{format_timestamp, str_field};
 /// | Host    | Status              | Containers | Running |
 /// |---------|---------------------|------------|---------|
 /// | boops   | ○ Offline (Timeout) | 0          | 0       |
-/// | squirts | ● Online            | 10         | 8       |
+/// | edgehost | ● Online            | 10         | 8       |
 /// ```
 pub fn render_host_status_markdown(data: &Value) -> String {
     // data may be a single host status object or an array
@@ -147,7 +147,7 @@ pub fn render_host_status_markdown(data: &Value) -> String {
 /// Host Resources
 /// As of (UTC): 11:45:30 | 02/13/2026
 ///
-/// ### squirts
+/// ### edgehost
 /// - Uptime: 10 days
 /// - Load: 1.0, 1.5, 2.0
 /// - CPU: 8 cores @ 95% ⚠
@@ -277,7 +277,7 @@ pub fn render_host_resources_markdown(data: &Value) -> String {
 /// # Example output
 ///
 /// ```text
-/// Port Mappings - squirts
+/// Port Mappings - edgehost
 ///
 /// | Port | Protocol | State | Source |
 /// |------|----------|-------|--------|

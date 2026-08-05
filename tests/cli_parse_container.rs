@@ -29,7 +29,7 @@ fn container_list_filters_parse() {
         "container",
         "list",
         "--host",
-        "dookie",
+        "devhost",
         "--state",
         "running",
         "--name-filter",
@@ -43,7 +43,7 @@ fn container_list_filters_parse() {
     match cmd {
         Some(Command::FluxContainer(args)) => {
             assert_eq!(args.subaction, "list");
-            assert_eq!(args.host.as_deref(), Some("dookie"));
+            assert_eq!(args.host.as_deref(), Some("devhost"));
             assert_eq!(args.state.as_deref(), Some("running"));
             assert_eq!(args.name_filter.as_deref(), Some("nginx"));
             assert_eq!(args.image_filter.as_deref(), Some("nginx"));
@@ -216,7 +216,7 @@ fn container_exec_options_before_command_are_parsed_as_synapse_options() {
         "container",
         "exec",
         "--host",
-        "dookie",
+        "devhost",
         "--container-id",
         "abc",
         "--timeout",
@@ -227,7 +227,7 @@ fn container_exec_options_before_command_are_parsed_as_synapse_options() {
     .unwrap();
     match cmd {
         Some(Command::FluxContainer(args)) => {
-            assert_eq!(args.host.as_deref(), Some("dookie"));
+            assert_eq!(args.host.as_deref(), Some("devhost"));
             assert_eq!(args.container_id.as_deref(), Some("abc"));
             assert_eq!(args.exec_timeout_ms, Some(5000));
             assert_eq!(args.command, ["printenv"]);

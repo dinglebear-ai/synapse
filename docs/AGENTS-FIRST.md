@@ -102,8 +102,8 @@ $ synapse scout nodes
   43   other-thing        idle     1h ago
 
 # Full detail: --verbose or specific action
-$ synapse scout peek --host dookie --path /etc/hostname
-$ synapse scout peek --host dookie --path /etc/hostname --json
+$ synapse scout peek --host devhost --path /etc/hostname
+$ synapse scout peek --host devhost --path /etc/hostname --json
 ```
 
 ## Documentation contract

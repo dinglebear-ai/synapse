@@ -32,7 +32,7 @@ Completed a multi-phase review of the current Synapse diff, fixed the review fin
 - `target_docker_hosts()` originally performed serial daemon discovery before all-host fanout; this was changed to concurrent `fanout`.
 - Docker daemon ID extraction was changed from JSON pointer access to typed `SystemInfo.id`.
 - `flux container exec --command ...` now has explicit parser coverage for flag-looking argv after `--command`.
-- Live-safe validation confirmed `local` is deduped when it points at the same Docker daemon as `dookie`.
+- Live-safe validation confirmed `local` is deduped when it points at the same Docker daemon as `devhost`.
 - A short-TTL daemon-ID cache was considered and skipped because live evidence did not justify the added complexity.
 
 ## Technical Decisions

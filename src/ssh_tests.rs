@@ -42,14 +42,14 @@ async fn try_localhost_session() -> Option<Session> {
 
 #[test]
 fn parse_socket_pid_simple_host() {
-    assert_eq!(parse_socket_pid("synapse-dookie-12345.sock"), Some(12345));
+    assert_eq!(parse_socket_pid("synapse-devhost-12345.sock"), Some(12345));
 }
 
 #[test]
 fn parse_socket_pid_hyphenated_host() {
     // Host names contain hyphens — pid must be parsed from the RIGHT.
     assert_eq!(
-        parse_socket_pid("synapse-dookie-prod-01-67890.sock"),
+        parse_socket_pid("synapse-devhost-prod-01-67890.sock"),
         Some(67890)
     );
 }
@@ -57,9 +57,9 @@ fn parse_socket_pid_hyphenated_host() {
 #[test]
 fn parse_socket_pid_rejects_foreign() {
     assert_eq!(parse_socket_pid("other-thing-1.sock"), None);
-    assert_eq!(parse_socket_pid("synapse-dookie.sock"), None); // no pid
-    assert_eq!(parse_socket_pid("synapse-dookie-notapid.sock"), None);
-    assert_eq!(parse_socket_pid("synapse-dookie-12345.txt"), None);
+    assert_eq!(parse_socket_pid("synapse-devhost.sock"), None); // no pid
+    assert_eq!(parse_socket_pid("synapse-devhost-notapid.sock"), None);
+    assert_eq!(parse_socket_pid("synapse-devhost-12345.txt"), None);
 }
 
 // ── startup sweep ───────────────────────────────────────────────────────────
@@ -151,12 +151,12 @@ fn scan_known_hosts_missing_file_is_none() {
 
 #[test]
 fn forward_socket_path_uses_private_runtime_directory() {
-    let p = forward_socket_path(&host("dookie")).unwrap();
+    let p = forward_socket_path(&host("devhost")).unwrap();
     let name = p.file_name().unwrap().to_str().unwrap();
     assert!(name.starts_with("synapse-"));
     assert!(name.ends_with(".sock"));
     assert!(
-        !name.contains("dookie"),
+        !name.contains("devhost"),
         "host aliases must not enter socket paths"
     );
     assert_eq!(parse_socket_pid(name), Some(std::process::id()));

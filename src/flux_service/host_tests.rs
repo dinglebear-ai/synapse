@@ -106,9 +106,9 @@ fn parse_loadavg_zero_on_empty() {
 #[tokio::test]
 async fn info_returns_host_and_uname() {
     let exec = MockExec::new();
-    exec.add("uname", "Linux dookie 6.1.0 #1 SMP x86_64 GNU/Linux\n");
-    let v = info_on_host(&exec, "dookie").await.unwrap();
-    assert_eq!(v["host"], "dookie");
+    exec.add("uname", "Linux devhost 6.1.0 #1 SMP x86_64 GNU/Linux\n");
+    let v = info_on_host(&exec, "devhost").await.unwrap();
+    assert_eq!(v["host"], "devhost");
     assert!(v["info"].as_str().unwrap().contains("Linux"));
 }
 
@@ -121,8 +121,8 @@ async fn uptime_returns_host_and_string() {
         "uptime",
         " 10:00:00 up 5 days, 3:12,  2 users,  load average: 0.15, 0.20, 0.18\n",
     );
-    let v = uptime_on_host(&exec, "dookie").await.unwrap();
-    assert_eq!(v["host"], "dookie");
+    let v = uptime_on_host(&exec, "devhost").await.unwrap();
+    assert_eq!(v["host"], "devhost");
     assert!(v["uptime"].as_str().unwrap().contains("up"));
 }
 
@@ -189,8 +189,10 @@ async fn services_returns_host_and_cleaned_text() {
         "systemctl",
         "UNIT             LOAD   ACTIVE SUB\nssh.service      loaded active running\n",
     );
-    let v = services_on_host(&exec, "dookie", None, None).await.unwrap();
-    assert_eq!(v["host"], "dookie");
+    let v = services_on_host(&exec, "devhost", None, None)
+        .await
+        .unwrap();
+    assert_eq!(v["host"], "devhost");
     assert!(v["services"].as_str().unwrap().contains("ssh.service"));
 }
 
@@ -203,8 +205,8 @@ async fn network_returns_ip_addr_output() {
         "ip",
         "1: lo: <LOOPBACK> mtu 65536\n    link/loopback 00:00:00:00:00:00\n2: eth0: <BROADCAST>\n",
     );
-    let v = network_on_host(&exec, "dookie").await.unwrap();
-    assert_eq!(v["host"], "dookie");
+    let v = network_on_host(&exec, "devhost").await.unwrap();
+    assert_eq!(v["host"], "devhost");
     assert!(v["network"].as_str().unwrap().contains("lo"));
 }
 
@@ -214,8 +216,8 @@ async fn network_falls_back_to_proc_net_dev() {
     // ip will return exit_code=1 (error response)
     exec.add_err("ip", "ip: not found");
     exec.add("cat", "Inter-|   Receive\nlo: 0 0 0\n");
-    let v = network_on_host(&exec, "tootie").await.unwrap();
-    assert_eq!(v["host"], "tootie");
+    let v = network_on_host(&exec, "nashost").await.unwrap();
+    assert_eq!(v["host"], "nashost");
     // should have fallen back
     assert!(v["network"].as_str().is_some());
 }
@@ -229,8 +231,8 @@ async fn mounts_returns_df_output() {
         "df",
         "Filesystem   Size  Used Avail\n/dev/sda1     50G   20G  30G\n",
     );
-    let v = mounts_on_host(&exec, "dookie").await.unwrap();
-    assert_eq!(v["host"], "dookie");
+    let v = mounts_on_host(&exec, "devhost").await.unwrap();
+    assert_eq!(v["host"], "devhost");
     assert!(v["mounts"].as_str().unwrap().contains("/dev/sda1"));
 }
 
@@ -244,7 +246,7 @@ async fn doctor_check_resources_pass() {
         "MemTotal:       16384000 kB\nMemAvailable:   10000000 kB\n",
     );
     exec.add("df", "Filesystem Size\n/dev/sda1   50G\n");
-    let r = doctor_check_resources(&exec, "dookie").await;
+    let r = doctor_check_resources(&exec, "devhost").await;
     assert_eq!(r.status, CheckStatus::Pass);
     assert_eq!(r.check, "resources");
 }
@@ -258,7 +260,7 @@ async fn doctor_check_resources_warns_high_mem() {
         "MemTotal:       100000 kB\nMemAvailable:   5000 kB\n",
     );
     exec.add("df", "Filesystem Size\n/dev/sda1   50G\n");
-    let r = doctor_check_resources(&exec, "dookie").await;
+    let r = doctor_check_resources(&exec, "devhost").await;
     assert_eq!(r.status, CheckStatus::Warn);
 }
 
@@ -269,7 +271,7 @@ async fn doctor_check_network_counts_ifaces() {
         "ip",
         "1: lo: <LOOPBACK>\n2: eth0: <BROADCAST>\n3: docker0: <BROADCAST>\n",
     );
-    let r = doctor_check_network(&exec, "dookie").await;
+    let r = doctor_check_network(&exec, "devhost").await;
     assert_eq!(r.status, CheckStatus::Pass);
     assert!(r.detail.contains('3'));
 }
@@ -302,8 +304,8 @@ async fn doctor_aggregates_checks() {
     exec.add("ip", "1: lo: <LOOPBACK>\n");
 
     let checks = vec!["resources".to_owned(), "network".to_owned()];
-    let v = doctor_on_host(&exec, "dookie", &checks, vec![]).await;
-    assert_eq!(v["host"], "dookie");
+    let v = doctor_on_host(&exec, "devhost", &checks, vec![]).await;
+    assert_eq!(v["host"], "devhost");
     let checks_arr = v["checks"].as_array().unwrap();
     assert_eq!(checks_arr.len(), 2);
     assert!(v["summary"].as_str().unwrap().contains("pass"));
@@ -313,7 +315,7 @@ async fn doctor_aggregates_checks() {
 async fn doctor_unknown_check_fails() {
     let exec = MockExec::new();
     let checks = vec!["nonexistent".to_owned()];
-    let v = doctor_on_host(&exec, "dookie", &checks, vec![]).await;
+    let v = doctor_on_host(&exec, "devhost", &checks, vec![]).await;
     let checks_arr = v["checks"].as_array().unwrap();
     assert_eq!(checks_arr[0]["status"], "fail");
 }
@@ -326,7 +328,7 @@ async fn doctor_pre_results_are_included() {
         status: CheckStatus::Pass,
         detail: "Docker 24.0".to_owned(),
     }];
-    let v = doctor_on_host(&exec, "dookie", &[], pre).await;
+    let v = doctor_on_host(&exec, "devhost", &[], pre).await;
     let checks_arr = v["checks"].as_array().unwrap();
     assert_eq!(checks_arr.len(), 1);
     assert_eq!(checks_arr[0]["check"], "docker");
@@ -353,6 +355,6 @@ fn is_local_respects_ssh_protocol_for_loopback_endpoint() {
 fn is_local_rejects_remote_host() {
     let mut h = crate::synapse::HostConfig::local();
     h.protocol = crate::synapse::HostProtocol::Ssh;
-    h.host = "dookie".to_owned();
+    h.host = "devhost".to_owned();
     assert!(!is_local_host(&h));
 }
