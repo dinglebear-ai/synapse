@@ -95,8 +95,8 @@ impl SshExecutor for MockExec {
 
 fn host_with_paths(paths: &[&str]) -> HostConfig {
     HostConfig {
-        name: "tootie".into(),
-        host: "tootie".into(),
+        name: "nashost".into(),
+        host: "nashost".into(),
         port: None,
         protocol: HostProtocol::Ssh,
         ssh_user: None,

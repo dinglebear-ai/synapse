@@ -31,7 +31,7 @@ using the `server.json` manifest at the repo root.
 
 | Field | Current value |
 |---|---|
-| `name` | `tv.tootie/synapse` |
+| `name` | `tv.nashost/synapse` |
 | `repository.url` | `https://github.com/dinglebear-ai/synapse` |
 | `packages[0].identifier` | `ghcr.io/dinglebear-ai/synapse:<version>` |
 | Hosted remote | Not declared; add `remotes` only when a public hosted `/mcp` endpoint exists |
@@ -60,11 +60,11 @@ For other platforms, check the
 
 ```bash
 ./mcp-publisher login dns \
-  --domain tv.tootie \
+  --domain tv.nashost \
   --private-key "$MCP_PRIVATE_KEY"
 ```
 
-The private key must correspond to a DNS TXT record published at `_mcp.tv.tootie`.
+The private key must correspond to a DNS TXT record published at `_mcp.tv.nashost`.
 Use the registry docs for the exact TXT record format.
 
 ### GitHub namespace fallback
@@ -86,7 +86,7 @@ This reads `server.json` from the current directory and submits it to the
 registry. On success, the server appears at:
 
 ```text
-https://registry.modelcontextprotocol.io/servers/tv.tootie/synapse
+https://registry.modelcontextprotocol.io/servers/tv.nashost/synapse
 ```
 
 ## Version Management
@@ -118,7 +118,7 @@ tag before calling the publisher:
   env:
     MCP_PRIVATE_KEY: ${{ secrets.MCP_PRIVATE_KEY }}
   run: |
-    ./mcp-publisher login dns --domain tv.tootie --private-key "$MCP_PRIVATE_KEY"
+    ./mcp-publisher login dns --domain tv.nashost --private-key "$MCP_PRIVATE_KEY"
     ./mcp-publisher publish
 ```
 
@@ -127,7 +127,7 @@ tag before calling the publisher:
 ### "Name not in your namespace"
 
 Authenticate for the domain or GitHub user that prefixes the manifest `name`.
-For `tv.tootie/synapse`, use DNS auth for `tv.tootie`.
+For `tv.nashost/synapse`, use DNS auth for `tv.nashost`.
 
 ### "Invalid schema"
 

@@ -34,13 +34,13 @@ fn current_scout_payloads_render_their_data_in_default_markdown() {
         (
             "ps",
             None,
-            json!({"host":"dookie","header":"USER PID %MEM","rows":["root 42 9.5"]}),
+            json!({"host":"devhost","header":"USER PID %MEM","rows":["root 42 9.5"]}),
             "root 42 9.5",
         ),
         (
             "find",
             None,
-            json!({"host":"dookie","path":"/etc","pattern":"*.conf","files":["/etc/app.conf"]}),
+            json!({"host":"devhost","path":"/etc","pattern":"*.conf","files":["/etc/app.conf"]}),
             "/etc/app.conf",
         ),
         (
@@ -78,7 +78,7 @@ fn peek_tree_and_emit_render_current_envelopes() {
         "peek",
         None,
         None,
-        &json!({"host":"dookie","path":"/srv","depth":2,"tree":"/srv/app"}),
+        &json!({"host":"devhost","path":"/srv","depth":2,"tree":"/srv/app"}),
     )
     .unwrap();
     assert!(tree.contains("/srv/app"), "{tree}");
@@ -87,10 +87,10 @@ fn peek_tree_and_emit_render_current_envelopes() {
         "emit",
         None,
         None,
-        &json!({"command":"uptime","status":"all_ok","results":[{"host":"dookie","ok":true}]}),
+        &json!({"command":"uptime","status":"all_ok","results":[{"host":"devhost","ok":true}]}),
     )
     .unwrap();
-    assert!(emit.contains("dookie"), "{emit}");
+    assert!(emit.contains("devhost"), "{emit}");
     assert!(emit.contains("all_ok"), "{emit}");
 }
 
@@ -101,10 +101,10 @@ fn unmatched_action_markdown_preserves_values_not_only_field_names() {
         "container",
         Some("stats"),
         None,
-        &json!({"host":"dookie","container":"api","cpu_percent":12.5}),
+        &json!({"host":"devhost","container":"api","cpu_percent":12.5}),
     )
     .unwrap();
-    assert!(rendered.contains("dookie"), "{rendered}");
+    assert!(rendered.contains("devhost"), "{rendered}");
     assert!(rendered.contains("12.5"), "{rendered}");
 }
 
@@ -376,7 +376,7 @@ fn docker_df_unavailable() {
 #[test]
 fn host_resources_basic_structure() {
     let data = json!({
-        "host": "squirts",
+        "host": "edgehost",
         "cpu_cores": 8,
         "cpu_percent": 45.5,
         "mem_used_mb": 8192,
@@ -407,7 +407,7 @@ fn host_resources_basic_structure() {
 
     // Host section header
     assert!(
-        output.contains("### squirts"),
+        output.contains("### edgehost"),
         "must have host section header"
     );
 
@@ -668,7 +668,7 @@ fn container_logs_preview_for_long_output() {
 #[test]
 fn container_logs_render_current_service_payload_shape() {
     let data = json!({
-        "host": "dookie",
+        "host": "devhost",
         "container": "nginx",
         "count": 2,
         "lines": ["ready", "served request"],
@@ -676,7 +676,7 @@ fn container_logs_render_current_service_payload_shape() {
 
     let output = render_container_logs_markdown(&data);
 
-    assert!(output.contains("Container Logs for nginx (dookie)"));
+    assert!(output.contains("Container Logs for nginx (devhost)"));
     assert!(output.contains("Lines returned: 2 | truncated: no"));
     assert!(output.contains("ready"));
     assert!(output.contains("served request"));
@@ -689,7 +689,7 @@ fn container_logs_render_current_service_payload_shape() {
 #[test]
 fn host_status_mixed_states() {
     let data = json!([
-        {"name": "squirts", "connected": true, "container_count": 10, "running_count": 8},
+        {"name": "edgehost", "connected": true, "container_count": 10, "running_count": 8},
         {"name": "boops", "connected": false, "container_count": 0, "running_count": 0, "error": "Timeout"}
     ]);
     let output = render_host_status_markdown(&data);
@@ -698,9 +698,9 @@ fn host_status_mixed_states() {
     assert!(output.contains("Legend:"));
     // Offline host appears first (severity-first)
     let boops_pos = output.find("boops").unwrap();
-    let squirts_pos = output.find("squirts").unwrap();
+    let edgehost_pos = output.find("edgehost").unwrap();
     assert!(
-        boops_pos < squirts_pos,
+        boops_pos < edgehost_pos,
         "offline host must appear before online host (severity-first)"
     );
     assert!(

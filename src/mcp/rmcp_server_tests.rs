@@ -90,7 +90,7 @@ fn parsed_high_risk_subactions_have_expected_scopes() {
             json!({
                 "action": "compose",
                 "subaction": "logs",
-                "host": "dookie",
+                "host": "devhost",
                 "project": "stack"
             }),
             READ_SCOPE,
@@ -99,7 +99,7 @@ fn parsed_high_risk_subactions_have_expected_scopes() {
             json!({
                 "action": "compose",
                 "subaction": "down",
-                "host": "dookie",
+                "host": "devhost",
                 "project": "stack"
             }),
             WRITE_SCOPE,
@@ -108,7 +108,7 @@ fn parsed_high_risk_subactions_have_expected_scopes() {
             json!({
                 "action": "compose",
                 "subaction": "restart",
-                "host": "dookie",
+                "host": "devhost",
                 "project": "stack"
             }),
             WRITE_SCOPE,
@@ -126,21 +126,21 @@ fn parsed_high_risk_subactions_have_expected_scopes() {
 
     let scout_cases = [
         (
-            json!({"action": "logs", "host": "dookie", "subaction": "journal"}),
+            json!({"action": "logs", "host": "devhost", "subaction": "journal"}),
             READ_SCOPE,
         ),
         (
-            json!({"action": "zfs", "host": "dookie", "subaction": "snapshots"}),
+            json!({"action": "zfs", "host": "devhost", "subaction": "snapshots"}),
             READ_SCOPE,
         ),
         (
-            json!({"action": "exec", "host": "dookie", "command": "hostname"}),
+            json!({"action": "exec", "host": "devhost", "command": "hostname"}),
             WRITE_SCOPE,
         ),
         (
             json!({
                 "action": "emit",
-                "targets": [{"host": "dookie"}],
+                "targets": [{"host": "devhost"}],
                 "command": "hostname"
             }),
             WRITE_SCOPE,
@@ -148,9 +148,9 @@ fn parsed_high_risk_subactions_have_expected_scopes() {
         (
             json!({
                 "action": "beam",
-                "source_host": "dookie",
+                "source_host": "devhost",
                 "source_path": "/tmp/a",
-                "dest_host": "tootie",
+                "dest_host": "nashost",
                 "dest_path": "/tmp/b"
             }),
             WRITE_SCOPE,
