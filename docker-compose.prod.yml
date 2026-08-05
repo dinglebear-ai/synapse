@@ -55,6 +55,7 @@ services:
       # externally), override: SYNAPSE_MCP_BIND_HOST=0.0.0.0 in your .env and
       # change the mapping to: "${SYNAPSE_MCP_BIND_HOST:-127.0.0.1}:..."
       - "${SYNAPSE_MCP_BIND_HOST:-127.0.0.1}:${SYNAPSE_MCP_HOST_PORT:-40080}:40080/tcp"
+      - "10.1.0.6:${SYNAPSE_MCP_HOST_PORT:-40080}:40080/tcp"
     volumes:
       # Persistent appdata — config.toml, .env, auth.db, JWT key. The binary reads
       # config.toml / .env from here (it maps to /data inside the container).
