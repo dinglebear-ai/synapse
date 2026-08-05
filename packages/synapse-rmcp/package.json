@@ -1,8 +1,8 @@
 {
   "name": "@dinglebear/synapse",
   "version": "1.0.0",
+  "license": "AGPL-3.0-only",
   "description": "Host, Docker, Compose, SSH, logs, ZFS, and file operations over MCP and CLI.",
-  "license": "MIT",
   "homepage": "https://github.com/dinglebear-ai/synapse#readme",
   "repository": {
     "type": "git",
