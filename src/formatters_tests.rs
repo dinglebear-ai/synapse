@@ -621,9 +621,9 @@ fn host_status_mixed_states() {
     assert!(output.contains("Legend:"));
     // Offline host appears first (severity-first)
     let boops_pos = output.find("boops").unwrap();
-    let squirts_pos = output.find("edgehost").unwrap();
+    let edgehost_pos = output.find("edgehost").unwrap();
     assert!(
-        boops_pos < squirts_pos,
+        boops_pos < edgehost_pos,
         "offline host must appear before online host (severity-first)"
     );
     assert!(

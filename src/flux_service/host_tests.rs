@@ -189,7 +189,9 @@ async fn services_returns_host_and_cleaned_text() {
         "systemctl",
         "UNIT             LOAD   ACTIVE SUB\nssh.service      loaded active running\n",
     );
-    let v = services_on_host(&exec, "devhost", None, None).await.unwrap();
+    let v = services_on_host(&exec, "devhost", None, None)
+        .await
+        .unwrap();
     assert_eq!(v["host"], "devhost");
     assert!(v["services"].as_str().unwrap().contains("ssh.service"));
 }
