@@ -11,6 +11,21 @@ fn defines_flux_and_scout_tools() {
 }
 
 #[test]
+fn flux_description_enumerates_host_subactions() {
+    let flux = tool_definitions()
+        .iter()
+        .find(|tool| tool["name"] == "flux")
+        .expect("flux schema should exist");
+    let description = flux["description"].as_str().unwrap_or_default();
+
+    assert!(
+        description
+            .contains("host (status/info/uptime/resources/services/network/mounts/ports/doctor)"),
+        "flux description should make every host subaction discoverable: {description}"
+    );
+}
+
+#[test]
 fn schemas_disallow_unknown_top_level_properties() {
     for tool in tool_definitions() {
         assert_eq!(tool["inputSchema"]["additionalProperties"], false);

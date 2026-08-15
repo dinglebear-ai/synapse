@@ -44,8 +44,13 @@ pub async fn ps(
         );
     }
 
-    // `ps aux --sort -<field>` (descending order).
-    let sort_arg = format!("-{sort_val}");
+    // GNU ps calls the memory percentage field `%mem`; `mem` is our stable API
+    // name and is not itself a valid sort specifier.
+    let sort_key = match sort_val {
+        "mem" => "%mem",
+        other => other,
+    };
+    let sort_arg = format!("-{sort_key}");
     let args = &["aux", "--sort", sort_arg.as_str()];
 
     let output = if is_local_host(host) {
@@ -53,6 +58,14 @@ pub async fn ps(
     } else {
         RemoteExec { executor, host }.run("ps", args).await?
     };
+
+    if !output.success() {
+        let exit = output
+            .exit_code
+            .map_or_else(|| "unknown".to_owned(), |code| code.to_string());
+        let stderr = output.stderr.trim();
+        bail!("ps on {} failed with exit code {exit}: {stderr}", host.name);
+    }
 
     let raw = output.stdout;
     let limit = limit.unwrap_or(50) as usize;

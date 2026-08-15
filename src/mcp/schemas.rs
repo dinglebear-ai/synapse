@@ -27,7 +27,7 @@ fn build_tool_definitions() -> Vec<Value> {
     let mut definitions = vec![
         json!({
             "name": "flux",
-            "description": "Docker infrastructure management for synapse. Supports docker (info/df/images/networks/volumes/pull/build/rmi/prune), container (list/inspect/logs/stats/top/search/start/stop/restart/pause/resume/pull/recreate/exec), host status, and compose (list/status/up/down/restart/recreate/logs/build/pull/refresh) actions across configured hosts. build/rmi/prune, compose down/restart/recreate, and container stop/recreate/exec are destructive and require confirmation.",
+            "description": "Docker infrastructure management for synapse. Supports docker (info/df/images/networks/volumes/pull/build/rmi/prune), container (list/inspect/logs/stats/top/search/start/stop/restart/pause/resume/pull/recreate/exec), host (status/info/uptime/resources/services/network/mounts/ports/doctor), and compose (list/status/up/down/restart/recreate/logs/build/pull/refresh) actions across configured hosts. build/rmi/prune, compose down/restart/recreate, and container stop/recreate/exec are destructive and require confirmation.",
             "inputSchema": {
                 "type": "object",
                 "properties": {

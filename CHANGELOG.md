@@ -18,6 +18,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pin the shared Rust cache action to Kache 0.13.0 so hosted and self-hosted jobs use the same stabilized daemon protocol.
 - Add an explicit LAN-only production port binding while retaining the configurable primary bind address.
 
+### Fixed
+
+- Map `scout ps sort=mem` to GNU `ps`'s `%mem` field and report command failures instead of returning empty successful results.
+- List every `flux host` subaction in the MCP tool description used by catalog discovery.
+
 ## [1.0.0](https://github.com/dinglebear-ai/synapse/compare/v0.6.2...v1.0.0) (2026-07-29)
 
 
