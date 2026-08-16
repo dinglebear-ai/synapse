@@ -149,6 +149,21 @@ async fn peek_tree(
             )
             .await?
             .require_success("remote tree")?;
-        Ok(json!({ "host": host.name, "path": path, "depth": depth, "tree": out.stdout }))
+        let payload: Value = serde_json::from_str(out.stdout.trim())
+            .with_context(|| format!("parse remote tree for {path} on {}", host.name))?;
+        let tree = payload["items"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .filter_map(Value::as_str)
+            .collect::<Vec<_>>()
+            .join("\n");
+        Ok(json!({
+            "host": host.name,
+            "path": path,
+            "depth": depth,
+            "tree": tree,
+            "truncated": payload["truncated"].as_bool().unwrap_or(false),
+        }))
     }
 }

@@ -64,6 +64,28 @@ fn command_output_sanitizes_and_bounds_diagnostics() {
     assert!(error.ends_with('…'), "{error:?}");
 }
 
+#[test]
+fn command_output_sanitizes_and_bounds_operation_label() {
+    let operation = format!("probe\nspoofed{}", "x".repeat(300));
+    let error = CommandOutput {
+        stdout: String::new(),
+        stderr: String::new(),
+        exit_code: Some(2),
+    }
+    .require_success(&operation)
+    .unwrap_err()
+    .to_string();
+
+    assert!(!error.contains('\n'), "{error:?}");
+    assert!(error.contains("probe\\nspoofed"), "{error:?}");
+    assert!(error.contains("… failed with exit code 2"), "{error:?}");
+    assert!(
+        error.len() < 180,
+        "operation label was not bounded: {}",
+        error.len()
+    );
+}
+
 /// Try to connect to localhost over SSH; returns `None` if unreachable so the
 /// caller can skip. Uses the real connect path (5s timeout, strict host keys).
 async fn try_localhost_session() -> Option<Session> {

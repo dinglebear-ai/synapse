@@ -17,6 +17,10 @@ use serde_json::Value;
 
 use crate::formatters::{format_timestamp, str_field, truncate};
 
+#[cfg(test)]
+#[path = "container_tests.rs"]
+mod tests;
+
 // ──────────────────────────────────────────────
 // Symbols
 // ──────────────────────────────────────────────
@@ -67,12 +71,18 @@ pub fn render_container_list_markdown(data: &Value) -> String {
         return format!("Docker Containers\n\n✗ {error}");
     }
 
-    // Parse NDJSON (one object per line)
-    let containers: Vec<Value> = stdout
-        .lines()
-        .filter(|l| !l.trim().is_empty())
-        .filter_map(|l| serde_json::from_str(l).ok())
-        .collect();
+    // Current service responses carry structured containers; retain NDJSON compatibility.
+    let containers: Vec<Value> = data
+        .get("containers")
+        .and_then(Value::as_array)
+        .cloned()
+        .unwrap_or_else(|| {
+            stdout
+                .lines()
+                .filter(|line| !line.trim().is_empty())
+                .filter_map(|line| serde_json::from_str(line).ok())
+                .collect()
+        });
 
     if containers.is_empty() {
         return "Docker Containers\n\nNo containers found.".to_owned();
@@ -81,7 +91,13 @@ pub fn render_container_list_markdown(data: &Value) -> String {
     // Determine states for legend
     let states: std::collections::HashSet<String> = containers
         .iter()
-        .map(|c| str_field(c, "State").to_ascii_lowercase())
+        .map(|c| {
+            c.get("State")
+                .or_else(|| c.get("state"))
+                .and_then(Value::as_str)
+                .unwrap_or("—")
+                .to_ascii_lowercase()
+        })
         .collect();
     let has_multiple_states = states.len() > 1;
 
@@ -100,21 +116,41 @@ pub fn render_container_list_markdown(data: &Value) -> String {
 
     // Sort: running first, then restarting, then stopped (severity-first §12)
     let mut sorted = containers.clone();
-    sorted.sort_by_key(
-        |c| match str_field(c, "State").to_ascii_lowercase().as_str() {
+    sorted.sort_by_key(|c| {
+        match c
+            .get("State")
+            .or_else(|| c.get("state"))
+            .and_then(Value::as_str)
+            .unwrap_or("—")
+            .to_ascii_lowercase()
+            .as_str()
+        {
             "running" => 2u8,
             "paused" | "restarting" => 1,
             _ => 0,
-        },
-    );
+        }
+    });
     sorted.reverse(); // highest severity (running) first for containers
 
     for c in &sorted {
         // docker --format '{{json .}}' names: ID, Names, Image, Status, State, Ports
-        let name = str_field(c, "Names");
+        let name = c
+            .get("Names")
+            .or_else(|| c.get("name"))
+            .and_then(Value::as_str)
+            .unwrap_or("—");
         let name = name.trim_start_matches('/');
-        let state = str_field(c, "State").to_ascii_lowercase();
-        let image = str_field(c, "Image");
+        let state = c
+            .get("State")
+            .or_else(|| c.get("state"))
+            .and_then(Value::as_str)
+            .unwrap_or("—")
+            .to_ascii_lowercase();
+        let image = c
+            .get("Image")
+            .or_else(|| c.get("image"))
+            .and_then(Value::as_str)
+            .unwrap_or("—");
         let symbol = container_status_symbol(&state);
 
         let name_col = truncate(name, 25);
@@ -135,7 +171,7 @@ pub fn render_container_list_markdown(data: &Value) -> String {
 
 /// Format `docker container inspect <id>` output as markdown.
 ///
-/// Accepts the `stdout` field which is a JSON array from inspect.
+/// Accepts the current `container` object or the legacy `stdout` JSON array.
 ///
 /// # Example output
 ///
@@ -162,14 +198,22 @@ pub fn render_container_inspect_markdown(data: &Value) -> String {
         return format!("Container Inspect\n\n✗ {error}");
     }
 
-    let stdout = data.get("stdout").and_then(|v| v.as_str()).unwrap_or("[]");
-    let arr: Vec<Value> = serde_json::from_str(stdout).unwrap_or_default();
-    let info = match arr.first() {
-        Some(v) => v,
+    let legacy: Vec<Value> = data
+        .get("stdout")
+        .and_then(Value::as_str)
+        .and_then(|stdout| serde_json::from_str(stdout).ok())
+        .unwrap_or_default();
+    let info = match data.get("container").filter(|value| value.is_object()) {
+        Some(value) => value,
+        None if !legacy.is_empty() => &legacy[0],
         None => return "Container Inspect\n\nNo data returned.".to_owned(),
     };
 
-    let name = info.get("Name").and_then(|v| v.as_str()).unwrap_or("—");
+    let name = info
+        .get("Name")
+        .or_else(|| info.get("name"))
+        .and_then(Value::as_str)
+        .unwrap_or("—");
     let name = name.trim_start_matches('/');
 
     let state = info.get("State").cloned().unwrap_or_default();
@@ -182,7 +226,8 @@ pub fn render_container_inspect_markdown(data: &Value) -> String {
     let network = info.get("NetworkSettings").cloned().unwrap_or_default();
 
     let mut lines: Vec<String> = Vec::new();
-    lines.push(format!("Container: {name}"));
+    let host = data.get("host").and_then(Value::as_str).unwrap_or("local");
+    lines.push(format!("Container: {name} ({host})"));
     lines.push(String::new());
 
     // State section
@@ -206,7 +251,12 @@ pub fn render_container_inspect_markdown(data: &Value) -> String {
 
     // Config section
     lines.push("**Configuration**".to_owned());
-    lines.push(format!("- Image: {}", str_field(&config, "Image")));
+    let image = config
+        .get("Image")
+        .or_else(|| info.get("image"))
+        .and_then(Value::as_str)
+        .unwrap_or("—");
+    lines.push(format!("- Image: {image}"));
     let cmd_val = config.get("Cmd").cloned().unwrap_or_default();
     let cmd: Vec<&str> = cmd_val
         .as_array()

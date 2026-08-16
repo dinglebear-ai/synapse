@@ -272,7 +272,11 @@ async fn remote_find_uses_fixed_bounded_walker_and_argv_limit() {
                     exit_code: Some(0),
                 }),
                 "python3" => Ok(CommandOutput {
-                    stdout: "/tmp/root/a.log\n/tmp/root/b.log\n".into(),
+                    stdout: serde_json::json!({
+                        "items": ["/tmp/root/a.log", "/tmp/root/b.log"],
+                        "truncated": false,
+                    })
+                    .to_string(),
                     stderr: String::new(),
                     exit_code: Some(0),
                 }),
@@ -291,6 +295,7 @@ async fn remote_find_uses_fixed_bounded_walker_and_argv_limit() {
         .await
         .unwrap();
     assert_eq!(result["count"], 2);
+    assert_eq!(result["truncated"], false);
     let calls = exec.calls.lock().unwrap();
     let walker = calls.iter().find(|call| call.0 == "python3").unwrap();
     assert_eq!(walker.1[0], "-c");
@@ -298,6 +303,64 @@ async fn remote_find_uses_fixed_bounded_walker_and_argv_limit() {
     assert_eq!(&walker.1[walker.1.len() - 2], "2");
     assert_eq!(walker.1.last().unwrap(), "10000");
     assert!(walker.1[1].contains("os.scandir"));
+}
+
+#[tokio::test]
+async fn remote_walk_propagates_explicit_truncation_metadata() {
+    struct TruncatedWalkExec;
+
+    #[async_trait]
+    impl SshExecutor for TruncatedWalkExec {
+        async fn exec(
+            &self,
+            _: &HostConfig,
+            program: &str,
+            _: &[&str],
+        ) -> anyhow::Result<CommandOutput> {
+            match program {
+                "realpath" => Ok(CommandOutput {
+                    stdout: "/tmp/root\n".into(),
+                    stderr: String::new(),
+                    exit_code: Some(0),
+                }),
+                "python3" => Ok(CommandOutput {
+                    stdout: serde_json::json!({
+                        "items": ["/tmp/root", "/tmp/root/a"],
+                        "truncated": true,
+                    })
+                    .to_string(),
+                    stderr: String::new(),
+                    exit_code: Some(0),
+                }),
+                other => anyhow::bail!("unexpected program: {other}"),
+            }
+        }
+    }
+
+    let mut host = HostConfig::local();
+    host.name = "remote".into();
+    host.host = "remote.example".into();
+    host.protocol = crate::synapse::HostProtocol::Ssh;
+    host.scout_read_roots = vec!["/tmp".into()];
+
+    let tree = peek(&host, &TruncatedWalkExec, "/tmp/root", true, 3)
+        .await
+        .unwrap();
+    assert_eq!(tree["tree"], "/tmp/root\n/tmp/root/a");
+    assert_eq!(tree["truncated"], true);
+
+    let found = find(
+        &host,
+        &TruncatedWalkExec,
+        "/tmp/root",
+        "*",
+        Some(3),
+        Some(1),
+    )
+    .await
+    .unwrap();
+    assert_eq!(found["count"], 1);
+    assert_eq!(found["truncated"], true);
 }
 
 #[tokio::test]

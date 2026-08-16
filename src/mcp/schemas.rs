@@ -182,7 +182,7 @@ fn operation_branches(tool: crate::actions::OperationTool) -> Vec<Value> {
             let mut branch = operation_branch(spec.action, spec.subaction, spec.required_params);
             if spec.action == "container" && spec.subaction == Some("list") {
                 branch["properties"]["state"] = json!({
-                    "enum": ["running", "exited", "paused", "restarting", "all"]
+                    "enum": crate::actions::CONTAINER_STATES
                 });
             }
             if !spec.required_any.is_empty() {

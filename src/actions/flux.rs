@@ -11,6 +11,12 @@ use super::{
     optional_u32_param, optional_u64_param, required_string_param,
 };
 
+/// Closed set accepted by the container-list state filter.
+///
+/// The MCP schema imports this value so parser validation and advertised
+/// values cannot drift apart.
+pub(crate) const CONTAINER_STATES: &[&str] = &["running", "exited", "paused", "restarting", "all"];
+
 mod compose;
 mod container;
 mod docker;
@@ -169,7 +175,7 @@ impl super::SynapseAction {
                 }
                 let state = optional_string_param(args, "state")?;
                 if let Some(state) = state.as_deref()
-                    && !["running", "exited", "paused", "restarting", "all"].contains(&state)
+                    && !CONTAINER_STATES.contains(&state)
                 {
                     anyhow::bail!(
                         "invalid container state `{state}`; expected running, exited, paused, restarting, or all"

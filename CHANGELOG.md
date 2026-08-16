@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Reject non-zero exits from affected Scout and Flux host reads and Compose list discovery instead of returning successful empty envelopes.
 - Treat failed host doctor probes and failed `scout emit` commands as failures, even when their transport completed successfully.
 - Prevent host-port pagination overflow and align the Flux schema with host `limit`, service, and state parameters.
+- Bound and safely fence structured Markdown, retain container-inspect secret redaction, and expose Scout traversal truncation accurately.
 
 ## [1.0.0](https://github.com/dinglebear-ai/synapse/compare/v0.6.2...v1.0.0) (2026-07-29)
 

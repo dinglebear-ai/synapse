@@ -394,13 +394,29 @@ async fn doctor_services_preserves_real_failures_and_warns_without_systemd() {
     );
 
     let exec = MockExec::new();
-    exec.add_err(
-        "systemctl",
-        "System has not been booted with systemd as init system",
+    exec.responses.lock().unwrap().insert(
+        "systemctl".to_owned(),
+        CommandOutput {
+            stdout: String::new(),
+            stderr: "systemctl unavailable".to_owned(),
+            exit_code: Some(127),
+        },
     );
     let unsupported = doctor_check_services(&exec, "container").await;
     assert_eq!(unsupported.status, CheckStatus::Warn);
-    assert!(unsupported.detail.contains("not been booted with systemd"));
+    assert!(unsupported.detail.contains("systemd not available"));
+
+    let exec = MockExec::new();
+    exec.responses.lock().unwrap().insert(
+        "systemctl".to_owned(),
+        CommandOutput {
+            stdout: String::new(),
+            stderr: "System has not been booted with systemd as init system (PID 1).".to_owned(),
+            exit_code: Some(1),
+        },
+    );
+    let unsupported = doctor_check_services(&exec, "container").await;
+    assert_eq!(unsupported.status, CheckStatus::Warn);
 }
 
 #[tokio::test]

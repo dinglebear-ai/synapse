@@ -254,22 +254,9 @@ pub async fn services_on_host(
 pub async fn network_on_host(exec: &dyn HostExec, host_name: &str) -> Result<Value> {
     let (output, source) = match exec.run("ip", &["addr", "show"]).await {
         Ok(out) if out.success() => (out.stdout, "ip_addr"),
-        Ok(out) if command_is_unavailable(&out) => {
-            // Fallback: /proc/net/dev — always available on Linux
-            let out = exec
-                .run("cat", &["/proc/net/dev"])
-                .await?
-                .require_success("read /proc/net/dev")?;
-            (out.stdout, "proc_net_dev")
-        }
+        Ok(out) if command_is_unavailable(&out) => proc_net_dev(exec).await?,
         Ok(out) => return Err(out.require_success("ip addr show").unwrap_err()),
-        Err(error) if error_is_command_unavailable(&error) => {
-            let out = exec
-                .run("cat", &["/proc/net/dev"])
-                .await?
-                .require_success("read /proc/net/dev")?;
-            (out.stdout, "proc_net_dev")
-        }
+        Err(error) if error_is_command_unavailable(&error) => proc_net_dev(exec).await?,
         Err(error) => return Err(error),
     };
     Ok(json!({
@@ -279,6 +266,14 @@ pub async fn network_on_host(exec: &dyn HostExec, host_name: &str) -> Result<Val
     }))
 }
 
+async fn proc_net_dev(exec: &dyn HostExec) -> Result<(String, &'static str)> {
+    let out = exec
+        .run("cat", &["/proc/net/dev"])
+        .await?
+        .require_success("read /proc/net/dev")?;
+    Ok((out.stdout, "proc_net_dev"))
+}
+
 fn command_is_unavailable(output: &CommandOutput) -> bool {
     output.exit_code == Some(127)
         || output
@@ -286,6 +281,13 @@ fn command_is_unavailable(output: &CommandOutput) -> bool {
             .to_ascii_lowercase()
             .contains("command not found")
         || output.stderr.trim().eq_ignore_ascii_case("ip: not found")
+}
+
+fn systemd_is_unavailable(output: &CommandOutput) -> bool {
+    output.exit_code == Some(127)
+        || output
+            .stderr
+            .contains("System has not been booted with systemd as init system")
 }
 
 fn error_is_command_unavailable(error: &anyhow::Error) -> bool {
@@ -460,10 +462,21 @@ pub async fn doctor_check_processes(exec: &dyn HostExec) -> CheckResult {
 }
 
 /// Run the `services` check sub-probe (systemd accessible).
-pub async fn doctor_check_services(exec: &dyn HostExec, host_name: &str) -> CheckResult {
-    match services_on_host(exec, host_name, Some("failed"), None).await {
-        Ok(r) => {
-            let text = r.get("services").and_then(Value::as_str).unwrap_or("");
+pub async fn doctor_check_services(exec: &dyn HostExec, _host_name: &str) -> CheckResult {
+    match exec
+        .run(
+            "systemctl",
+            &[
+                "list-units",
+                "--type=service",
+                "--no-pager",
+                "--state=failed",
+            ],
+        )
+        .await
+    {
+        Ok(output) if output.success() => {
+            let text = strip_systemctl_footer(&output.stdout);
             let failed_count = text
                 .lines()
                 .filter(|l| {
@@ -485,12 +498,14 @@ pub async fn doctor_check_services(exec: &dyn HostExec, host_name: &str) -> Chec
                 }
             }
         }
-        Err(error) => {
-            let detail = error.to_string();
-            let unavailable = detail.contains("not been booted with systemd")
-                || detail.contains("systemd not available")
-                || detail.contains("command not found")
-                || detail.contains("exit code 127");
+        Ok(output) => {
+            // Exit 127 is the exec contract's structured "command missing"
+            // signal. Do not classify localized systemd stderr text.
+            let unavailable = systemd_is_unavailable(&output);
+            let detail = output
+                .require_success("systemctl list-units")
+                .unwrap_err()
+                .to_string();
             CheckResult {
                 check: "services".into(),
                 status: if unavailable {
@@ -502,6 +517,22 @@ pub async fn doctor_check_services(exec: &dyn HostExec, host_name: &str) -> Chec
                     format!("systemd not available: {detail}")
                 } else {
                     detail
+                },
+            }
+        }
+        Err(error) => {
+            let unavailable = error_is_command_unavailable(&error);
+            CheckResult {
+                check: "services".into(),
+                status: if unavailable {
+                    CheckStatus::Warn
+                } else {
+                    CheckStatus::Fail
+                },
+                detail: if unavailable {
+                    format!("systemd not available: {error}")
+                } else {
+                    error.to_string()
                 },
             }
         }

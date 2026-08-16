@@ -1,6 +1,6 @@
 //! Scout filesystem operations: bounded `peek`, `find`, and `delta` reads.
 
-use anyhow::{Result, bail};
+use anyhow::{Context, Result, bail};
 use serde_json::{Value, json};
 
 #[cfg(test)]
@@ -30,11 +30,12 @@ pub(super) const WALK_MAX_VISITED: usize = 10_000;
 
 /// Fixed remote walker. User values are separate argv entries and never become
 /// source code or shell text. The process exits as soon as `limit` is reached.
-pub(super) const REMOTE_WALK_SCRIPT: &str = r#"import fnmatch, os, stat, sys
+pub(super) const REMOTE_WALK_SCRIPT: &str = r#"import fnmatch, json, os, stat, sys
 mode, root, rel, display, pattern = sys.argv[1:6]
 max_depth, limit, visit_limit = map(int, sys.argv[6:9])
 visited = [0]
-emitted = [0]
+items = []
+truncated = [False]
 def open_beneath(root, rel):
     fd = os.open('/', os.O_RDONLY | os.O_DIRECTORY)
     for part in [p for p in root.split('/') if p] + [p for p in rel.split('/') if p]:
@@ -42,22 +43,23 @@ def open_beneath(root, rel):
         os.close(fd); fd = nxt
     return fd
 def walk(fd, shown, depth):
-    if visited[0] >= visit_limit or emitted[0] >= limit:
+    if visited[0] >= visit_limit:
+        truncated[0] = True
         return
     visited[0] += 1
     kind = os.fstat(fd).st_mode
     is_dir, is_file = stat.S_ISDIR(kind), stat.S_ISREG(kind)
     if mode == 'tree' or (is_file and fnmatch.fnmatch(os.path.basename(shown), pattern)):
-        print(shown)
-        emitted[0] += 1
-        if emitted[0] >= limit:
+        if len(items) >= limit:
+            truncated[0] = True
             return
+        items.append(shown)
     if not is_dir or depth >= max_depth:
         return
     try:
         with os.scandir(fd) as entries:
             for entry in entries:
-                if visited[0] >= visit_limit or emitted[0] >= limit: break
+                if truncated[0]: break
                 try:
                     child = os.open(entry.name, os.O_RDONLY | os.O_NOFOLLOW, dir_fd=fd)
                 except OSError:
@@ -69,6 +71,7 @@ def walk(fd, shown, depth):
 fd = open_beneath(root, rel)
 try: walk(fd, display, 0)
 finally: os.close(fd)
+print(json.dumps({'items': items, 'truncated': truncated[0]}))
 "#;
 
 pub(super) const REMOTE_READ_SCRIPT: &str = r#"import json, os, stat, sys
@@ -157,14 +160,17 @@ pub async fn find(
             .run("python3", &remote_args)
             .await?
             .require_success("remote find")?;
-        let files = out
-            .stdout
-            .lines()
-            .filter(|line| !line.is_empty())
+        let payload: Value = serde_json::from_str(out.stdout.trim())
+            .with_context(|| format!("parse remote find for {path} on {}", host.name))?;
+        let files = payload["items"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .filter_map(Value::as_str)
             .take(limit)
             .map(ToOwned::to_owned)
             .collect::<Vec<_>>();
-        let truncated = files.len() >= limit;
+        let truncated = payload["truncated"].as_bool().unwrap_or(false);
         (files, truncated)
     };
 

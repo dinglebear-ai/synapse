@@ -115,24 +115,48 @@ impl CommandOutput {
     }
 
     pub fn require_success(self, operation: &str) -> Result<Self> {
-        if self.success() {
-            return Ok(self);
+        if let Some(message) =
+            command_failure_diagnostic(operation, self.exit_code, &self.stdout, &self.stderr)
+        {
+            bail!(message);
         }
-
-        let exit = self
-            .exit_code
-            .map_or_else(|| "unknown".to_owned(), |code| code.to_string());
-        let detail = if self.stderr.trim().is_empty() {
-            self.stdout.trim()
-        } else {
-            self.stderr.trim()
-        };
-        if detail.is_empty() {
-            bail!("{operation} failed with exit code {exit}");
-        }
-        let detail = sanitize_diagnostic(detail, 512);
-        bail!("{operation} failed with exit code {exit}: {detail}")
+        Ok(self)
     }
+}
+
+/// Build a terminal- and log-safe diagnostic for a failed subprocess.
+///
+/// Keeping this here ensures local, SSH, and fanout callers apply the same
+/// control-character escaping and output bounds.
+pub(crate) fn command_failure_diagnostic(
+    operation: &str,
+    exit_code: Option<i32>,
+    stdout: &str,
+    stderr: &str,
+) -> Option<String> {
+    if exit_code == Some(0) {
+        return None;
+    }
+
+    let operation = sanitize_diagnostic(operation.trim(), 128);
+    let operation = if operation.is_empty() {
+        "operation"
+    } else {
+        &operation
+    };
+    let exit = exit_code.map_or_else(|| "unknown".to_owned(), |code| code.to_string());
+    let detail = if stderr.trim().is_empty() {
+        stdout.trim()
+    } else {
+        stderr.trim()
+    };
+    if detail.is_empty() {
+        return Some(format!("{operation} failed with exit code {exit}"));
+    }
+    let detail = sanitize_diagnostic(detail, 512);
+    Some(format!(
+        "{operation} failed with exit code {exit}: {detail}"
+    ))
 }
 
 fn sanitize_diagnostic(input: &str, max_len: usize) -> String {

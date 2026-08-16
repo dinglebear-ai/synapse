@@ -20,20 +20,20 @@
 //! - [`host`]      — `render_host_*_markdown`
 //! - [`scout`]     — `render_scout_*_markdown`
 
+use std::io::{self, Write};
+
 pub mod compose;
 pub mod container;
 pub mod docker;
 pub mod host;
 pub mod scout;
 
+const GENERIC_MARKDOWN_MAX_BYTES: usize = 16 * 1024;
+
 // Unit tests live in a sidecar file — see src/formatters_tests.rs.
 #[cfg(test)]
 #[path = "formatters_tests.rs"]
 mod tests;
-
-#[cfg(test)]
-#[path = "formatters_contract_tests.rs"]
-mod contract_tests;
 
 /// Output format requested by the caller.
 ///
@@ -122,6 +122,7 @@ pub fn render_action_output(
         ("flux", "docker", Some("images")) => docker::render_docker_images_markdown(v),
         ("flux", "docker", Some("networks")) => docker::render_docker_networks_markdown(v),
         ("flux", "docker", Some("volumes")) => docker::render_docker_volumes_markdown(v),
+        ("flux", "container", Some("inspect")) => container::render_container_inspect_markdown(v),
         ("flux", "container", Some("logs")) => container::render_container_logs_markdown(v),
         ("flux", "container", Some("start")) => container::render_container_start_markdown(v),
         ("flux", "container", Some("stop")) => container::render_container_stop_markdown(v),
@@ -161,11 +162,75 @@ fn render_generic_markdown(value: &serde_json::Value) -> String {
         serde_json::Value::Number(v) => v.to_string(),
         serde_json::Value::String(v) => v.clone(),
         serde_json::Value::Array(_) | serde_json::Value::Object(_) => {
-            let json = serde_json::to_string_pretty(value)
-                .unwrap_or_else(|error| format!("{{\"error\":\"{error}\"}}"));
-            format!("Result\n\n```json\n{json}\n```")
+            let (json, truncated) = bounded_pretty_json(value, GENERIC_MARKDOWN_MAX_BYTES);
+            let notice = if truncated {
+                "\n\nOutput truncated at 16 KiB. Use `response_format: \"json\"` for the full result."
+            } else {
+                ""
+            };
+            format!(
+                "Result\n\n{}{notice}",
+                markdown_code_block(Some("json"), &json)
+            )
         }
     }
+}
+
+struct BoundedWriter {
+    bytes: Vec<u8>,
+    limit: usize,
+    truncated: bool,
+}
+
+impl Write for BoundedWriter {
+    fn write(&mut self, buffer: &[u8]) -> io::Result<usize> {
+        let remaining = self.limit.saturating_sub(self.bytes.len());
+        let written = remaining.min(buffer.len());
+        self.bytes.extend_from_slice(&buffer[..written]);
+        if written < buffer.len() {
+            self.truncated = true;
+            return Err(io::Error::other("formatted output limit reached"));
+        }
+        Ok(written)
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        Ok(())
+    }
+}
+
+fn bounded_pretty_json(value: &serde_json::Value, limit: usize) -> (String, bool) {
+    let mut writer = BoundedWriter {
+        bytes: Vec::with_capacity(limit.min(4096)),
+        limit,
+        truncated: false,
+    };
+    let result = serde_json::to_writer_pretty(&mut writer, value);
+    if writer.truncated {
+        return (
+            serde_json::json!({
+                "truncated": true,
+                "message": "Structured result exceeded the Markdown rendering limit"
+            })
+            .to_string(),
+            true,
+        );
+    }
+    if result.is_err() {
+        return ("Unable to serialize result".to_owned(), false);
+    }
+    (String::from_utf8_lossy(&writer.bytes).into_owned(), false)
+}
+
+pub(crate) fn markdown_code_block(language: Option<&str>, content: &str) -> String {
+    let longest_run = content
+        .split(|character| character != '`')
+        .map(str::len)
+        .max()
+        .unwrap_or(0);
+    let fence = "`".repeat(longest_run.saturating_add(1).max(3));
+    let language = language.unwrap_or("");
+    format!("{fence}{language}\n{content}\n{fence}")
 }
 
 /// Return the current UTC time formatted per STYLE.md §3.6.

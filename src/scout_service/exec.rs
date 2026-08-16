@@ -290,20 +290,17 @@ pub async fn emit(
                 .await
                 .map_err(|_| format!("timed out after {}s", timeout.as_secs()))?
                 .map_err(|e| e.to_string())?;
-            if value.get("exit_code").and_then(Value::as_i64) != Some(0) {
-                let exit = value
-                    .get("exit_code")
-                    .map_or_else(|| "unknown".to_owned(), Value::to_string);
-                let stderr = value
-                    .get("stderr")
-                    .and_then(Value::as_str)
-                    .unwrap_or("")
-                    .trim();
-                return Err(if stderr.is_empty() {
-                    format!("command exited with status {exit}")
-                } else {
-                    format!("command exited with status {exit}: {stderr}")
-                });
+            let exit_code = value
+                .get("exit_code")
+                .and_then(Value::as_i64)
+                .and_then(|code| i32::try_from(code).ok());
+            if let Some(diagnostic) = crate::ssh::command_failure_diagnostic(
+                &format!("{cmd} on {}", host.name),
+                exit_code,
+                value.get("stdout").and_then(Value::as_str).unwrap_or(""),
+                value.get("stderr").and_then(Value::as_str).unwrap_or(""),
+            ) {
+                return Err(diagnostic);
             }
             Ok(value)
         }
