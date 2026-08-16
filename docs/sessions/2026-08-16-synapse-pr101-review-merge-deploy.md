@@ -6,7 +6,7 @@ head: e31fb0e27c95f4b788ff94f5fdfe90f8ff069815
 working directory: /home/jmagar/workspace/synapse
 worktree: /home/jmagar/workspace/synapse
 pr: "#101 fix: repair scout memory sort discovery (https://github.com/dinglebear-ai/synapse/pull/101)"
-beads: rmcp-template-9dw0, rmcp-template-9dw0.1, rmcp-template-9dw0.2, rmcp-template-9dw0.3, rmcp-template-9dw0.4, rmcp-template-9dw0.5, rmcp-template-9dw0.6, rmcp-template-9dw0.7, rmcp-template-9dw0.8, rmcp-template-9dw0.9, rmcp-template-1ned, rmcp-template-hn9w, rmcp-template-pmdp, rmcp-template-bsau, rmcp-template-6gkz, rmcp-template-yjje, rmcp-template-ogi0
+beads: rmcp-template-9dw0, rmcp-template-9dw0.1, rmcp-template-9dw0.2, rmcp-template-9dw0.3, rmcp-template-9dw0.4, rmcp-template-9dw0.5, rmcp-template-9dw0.6, rmcp-template-9dw0.7, rmcp-template-9dw0.8, rmcp-template-9dw0.9, rmcp-template-1ned, rmcp-template-hn9w, rmcp-template-pmdp, rmcp-template-bsau, rmcp-template-6gkz, rmcp-template-yjje, rmcp-template-ogi0, rmcp-template-80eh
 ---
 
 # Synapse PR #101 review, merge, and deployment
@@ -110,6 +110,7 @@ The squash merge `e31fb0e` contains the following complete file set.
 | `rmcp-template-6gkz` | Merge PR #101 and deploy Synapse to Dookie | created, claimed, closed | closed | Tracked merge and live rollout |
 | `rmcp-template-yjje` | Fix CodeQL Rust job pnpm bootstrap | created | open | Tracks post-merge `npm: command not found` failure |
 | `rmcp-template-ogi0` | Document external env-file production Compose deployment | created | open | Tracks deployment-doc/helper drift |
+| `rmcp-template-80eh` | Restore offline organization CI runner pools blocking Synapse PR #102 | created | open | Tracks the infrastructure blocker preventing this session log from landing |
 
 ## Repository Maintenance
 
@@ -120,7 +121,7 @@ The squash merge `e31fb0e` contains the following complete file set.
 ### Beads
 
 - Read every session bead before closeout. Completed review and deployment beads remain closed with observed verification evidence.
-- Created `rmcp-template-yjje` and `rmcp-template-ogi0` for the two known remaining tasks, then pushed Beads state with `bd dolt push`.
+- Created `rmcp-template-yjje`, `rmcp-template-ogi0`, and `rmcp-template-80eh` for the known remaining tasks, then pushed Beads state with `bd dolt push`.
 
 ### Worktrees and branches
 
@@ -164,6 +165,8 @@ The squash merge `e31fb0e` contains the following complete file set.
 - A health polling loop used zsh's read-only variable `status`; the container had already started, and the retry used `health_state` and confirmed `healthy`.
 - Direct MCP calls to `10.1.0.6` initially received `403 Forbidden: Host header is not allowed`; using the configured allowed Host header produced authenticated success. A deliberate `dookie` SSH call also failed because port 22 was refused, so the code-path verification used the explicit `local` host.
 - Post-merge CodeQL run `31927188347` failed in `Install pnpm` with `npm: command not found`; tracked as `rmcp-template-yjje`.
+- Direct push of this generated session artifact to protected `main` was rejected with `GH006`, so docs-only PR #102 was opened from `session-log/2026-08-16-synapse-pr101-review-merge-deploy`.
+- Repository auto-merge is disabled, and every required PR #102 check remained queued because all queried `dinglebear-ai` self-hosted runners were offline. Branch protection was not bypassed; the pushed PR is intentionally left open and the blocker is tracked as `rmcp-template-80eh`.
 
 ## Behavior Changes (Before/After)
 
@@ -218,6 +221,7 @@ The squash merge `e31fb0e` contains the following complete file set.
 
 ## Next Steps
 
-1. Claim `rmcp-template-yjje`, repair the CodeQL Rust-job bootstrap, and rerun CodeQL on `main`.
-2. Claim `rmcp-template-ogi0`, update production Compose examples and extend `check-runtime-current.sh` for `--env-file` plus multiple `-f` files.
+1. Claim `rmcp-template-80eh`, restore the organization runner pools, let PR #102 checks complete, and merge the docs-only PR without bypassing branch protection.
+2. Claim `rmcp-template-yjje`, repair the CodeQL Rust-job bootstrap, and rerun CodeQL on `main`.
+3. Claim `rmcp-template-ogi0`, update production Compose examples and extend `check-runtime-current.sh` for `--env-file` plus multiple `-f` files.
 3. Optionally publish and pin an immutable image for merge SHA `e31fb0e`, then recreate the service from that registry artifact and repeat authenticated MCP verification.
