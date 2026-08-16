@@ -44,6 +44,42 @@ impl SshExecutor for AlwaysFailExec {
     }
 }
 
+struct NonZeroExec;
+
+#[async_trait]
+impl SshExecutor for NonZeroExec {
+    async fn exec(&self, _: &HostConfig, _: &str, _: &[&str]) -> Result<CommandOutput> {
+        Ok(CommandOutput {
+            stdout: String::new(),
+            stderr: "command failed".into(),
+            exit_code: Some(7),
+        })
+    }
+}
+
+#[tokio::test]
+async fn emit_counts_nonzero_commands_as_failures() {
+    let mut host = HostConfig::local();
+    host.name = "remote".into();
+    host.host = "remote.example".into();
+    host.protocol = crate::synapse::HostProtocol::Ssh;
+    let target = super::EmitTarget { host, path: None };
+    let result = super::emit(
+        &[target],
+        Arc::new(NonZeroExec),
+        &ApproveConfirmer,
+        "uptime",
+        &[],
+        None,
+    )
+    .await
+    .unwrap();
+    assert_eq!(result["status"], "all_failed");
+    assert_eq!(result["succeeded"], 0);
+    assert_eq!(result["failed"], 1);
+    assert_eq!(result["results"][0]["ok"], false);
+}
+
 struct SlowExec;
 
 #[async_trait]

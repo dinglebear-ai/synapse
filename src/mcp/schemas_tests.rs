@@ -42,12 +42,26 @@ fn flux_schema_includes_host_parser_fields() {
         .expect("flux schema should exist");
     let props = &flux["inputSchema"]["properties"];
 
-    for field in ["protocol", "offset", "checks"] {
+    for field in ["protocol", "limit", "offset", "checks"] {
         assert!(
             props[field].is_object(),
             "flux schema should expose parser-supported field {field}"
         );
     }
+
+    assert!(props["state"]["enum"].is_null());
+    assert!(
+        props["state"]["description"]
+            .as_str()
+            .unwrap_or_default()
+            .contains("host services")
+    );
+    assert!(
+        props["service"]["description"]
+            .as_str()
+            .unwrap_or_default()
+            .contains("host services")
+    );
 
     let host_description = props["host"]["description"].as_str().unwrap_or_default();
     assert!(host_description.contains("host services/mounts/ports/doctor"));

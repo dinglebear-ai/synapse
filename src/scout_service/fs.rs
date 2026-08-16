@@ -155,7 +155,8 @@ pub async fn find(
         ];
         let out = RemoteExec { executor, host }
             .run("python3", &remote_args)
-            .await?;
+            .await?
+            .require_success("remote find")?;
         let files = out
             .stdout
             .lines()

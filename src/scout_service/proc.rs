@@ -129,7 +129,8 @@ pub async fn df(
         LocalExec.run("df", &args).await?
     } else {
         RemoteExec { executor, host }.run("df", &args).await?
-    };
+    }
+    .require_success("df")?;
 
     Ok(json!({
         "host": host.name,

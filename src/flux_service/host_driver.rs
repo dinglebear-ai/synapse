@@ -24,6 +24,10 @@ use crate::scout;
 #[path = "host_driver_tests.rs"]
 mod tests;
 
+fn page_has_more(total: usize, offset: usize, returned: usize) -> bool {
+    offset.saturating_add(returned) < total
+}
+
 impl FluxService {
     /// Quick connectivity probe: docker info + container count (+ failed services
     /// when systemd is available) per target host(s). Fans out when `host` is None.
@@ -262,7 +266,7 @@ impl FluxService {
         let off = offset.unwrap_or(0);
         let lim = limit.unwrap_or(usize::MAX);
         let paginated: Vec<Value> = ports.into_iter().skip(off).take(lim).collect();
-        let has_more = off + lim < total;
+        let has_more = page_has_more(total, off, paginated.len());
 
         Ok(json!({
             "host": h.name,

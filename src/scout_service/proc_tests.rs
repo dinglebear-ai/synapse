@@ -125,3 +125,12 @@ fn df_rejects_relative_path() {
     let result = rt.block_on(super::df(&host, &NoopExec, Some("relative/path")));
     assert!(result.is_err(), "relative path must be rejected");
 }
+
+#[test]
+fn df_reports_nonzero_command_exit() {
+    let error = tokio::runtime::Runtime::new()
+        .unwrap()
+        .block_on(super::df(&ssh_host(), &PsExec, None))
+        .expect_err("non-zero df exit must not become empty disk usage");
+    assert!(error.to_string().contains("exit code 1"), "{error}");
+}

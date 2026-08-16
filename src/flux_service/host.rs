@@ -76,7 +76,7 @@ pub fn is_local_host(host: &HostConfig) -> bool {
 
 /// Run `uname -a` and return a structured info payload.
 pub async fn info_on_host(exec: &dyn HostExec, host_name: &str) -> Result<Value> {
-    let out = exec.run("uname", &["-a"]).await?;
+    let out = exec.run("uname", &["-a"]).await?.require_success("uname")?;
     Ok(json!({
         "host": host_name,
         "info": out.stdout.trim(),
@@ -87,7 +87,7 @@ pub async fn info_on_host(exec: &dyn HostExec, host_name: &str) -> Result<Value>
 
 /// Run `uptime` and return a structured uptime payload.
 pub async fn uptime_on_host(exec: &dyn HostExec, host_name: &str) -> Result<Value> {
-    let out = exec.run("uptime", &[]).await?;
+    let out = exec.run("uptime", &[]).await?.require_success("uptime")?;
     Ok(json!({
         "host": host_name,
         "uptime": out.stdout.trim(),
@@ -138,9 +138,15 @@ pub fn parse_loadavg(raw: &str) -> Value {
 
 /// Collect CPU/memory/disk metrics for one host.
 pub async fn resources_on_host(exec: &dyn HostExec, host_name: &str) -> Result<Value> {
-    let meminfo_out = exec.run("cat", &["/proc/meminfo"]).await?;
-    let loadavg_out = exec.run("cat", &["/proc/loadavg"]).await?;
-    let df_out = exec.run("df", &["-h"]).await?;
+    let meminfo_out = exec
+        .run("cat", &["/proc/meminfo"])
+        .await?
+        .require_success("read /proc/meminfo")?;
+    let loadavg_out = exec
+        .run("cat", &["/proc/loadavg"])
+        .await?
+        .require_success("read /proc/loadavg")?;
+    let df_out = exec.run("df", &["-h"]).await?.require_success("df")?;
 
     let memory = parse_meminfo(&meminfo_out.stdout);
     let load = parse_loadavg(&loadavg_out.stdout);
@@ -230,7 +236,10 @@ pub async fn services_on_host(
         args.push(svc.as_str());
     }
 
-    let out = exec.run("systemctl", &args).await?;
+    let out = exec
+        .run("systemctl", &args)
+        .await?
+        .require_success("systemctl list-units")?;
     let cleaned = strip_systemctl_footer(&out.stdout);
     Ok(json!({
         "host": host_name,
@@ -247,7 +256,10 @@ pub async fn network_on_host(exec: &dyn HostExec, host_name: &str) -> Result<Val
         Ok(out) if out.exit_code == Some(0) => out.stdout,
         _ => {
             // Fallback: /proc/net/dev — always available on Linux
-            let out = exec.run("cat", &["/proc/net/dev"]).await?;
+            let out = exec
+                .run("cat", &["/proc/net/dev"])
+                .await?
+                .require_success("read /proc/net/dev")?;
             out.stdout
         }
     };
@@ -261,7 +273,7 @@ pub async fn network_on_host(exec: &dyn HostExec, host_name: &str) -> Result<Val
 
 /// Show mounted filesystems via `df -h` (matches synapse-mcp which uses df).
 pub async fn mounts_on_host(exec: &dyn HostExec, host_name: &str) -> Result<Value> {
-    let out = exec.run("df", &["-h"]).await?;
+    let out = exec.run("df", &["-h"]).await?.require_success("df")?;
     Ok(json!({
         "host": host_name,
         "mounts": out.stdout.trim(),
@@ -359,10 +371,15 @@ pub async fn doctor_check_network(exec: &dyn HostExec, host_name: &str) -> Check
 /// Run the `logs` check sub-probe (journald accessible).
 pub async fn doctor_check_logs(exec: &dyn HostExec) -> CheckResult {
     match exec.run("journalctl", &["-n", "1", "--no-pager"]).await {
-        Ok(_) => CheckResult {
+        Ok(out) if out.success() => CheckResult {
             check: "logs".into(),
             status: CheckStatus::Pass,
             detail: "journald accessible".into(),
+        },
+        Ok(out) => CheckResult {
+            check: "logs".into(),
+            status: CheckStatus::Fail,
+            detail: out.require_success("journalctl").unwrap_err().to_string(),
         },
         Err(e) => CheckResult {
             check: "logs".into(),
@@ -375,7 +392,7 @@ pub async fn doctor_check_logs(exec: &dyn HostExec) -> CheckResult {
 /// Run the `processes` check sub-probe.
 pub async fn doctor_check_processes(exec: &dyn HostExec) -> CheckResult {
     match exec.run("ps", &["--no-header", "-e"]).await {
-        Ok(out) => {
+        Ok(out) if out.success() => {
             let count = out.stdout.lines().filter(|l| !l.trim().is_empty()).count();
             CheckResult {
                 check: "processes".into(),
@@ -383,6 +400,11 @@ pub async fn doctor_check_processes(exec: &dyn HostExec) -> CheckResult {
                 detail: format!("{count} process(es) running"),
             }
         }
+        Ok(out) => CheckResult {
+            check: "processes".into(),
+            status: CheckStatus::Fail,
+            detail: out.require_success("ps").unwrap_err().to_string(),
+        },
         Err(e) => CheckResult {
             check: "processes".into(),
             status: CheckStatus::Fail,

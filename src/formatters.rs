@@ -118,10 +118,7 @@ pub fn render_action_output(
         ("flux", "docker", Some("images")) => docker::render_docker_images_markdown(v),
         ("flux", "docker", Some("networks")) => docker::render_docker_networks_markdown(v),
         ("flux", "docker", Some("volumes")) => docker::render_docker_volumes_markdown(v),
-        ("flux", "container", Some("list")) => container::render_container_list_markdown(v),
-        ("flux", "container", Some("inspect")) => container::render_container_inspect_markdown(v),
         ("flux", "container", Some("logs")) => container::render_container_logs_markdown(v),
-        ("flux", "container", Some("search")) => container::render_container_search_markdown(v),
         ("flux", "container", Some("start")) => container::render_container_start_markdown(v),
         ("flux", "container", Some("stop")) => container::render_container_stop_markdown(v),
         ("flux", "container", Some("restart")) => container::render_container_restart_markdown(v),
@@ -136,15 +133,8 @@ pub fn render_action_output(
         ("flux", "compose", Some("logs")) => compose::render_compose_logs_markdown(v),
         ("scout", "nodes", _) => scout::render_scout_nodes_markdown(v),
         ("scout", "peek", _) => scout::render_scout_peek_markdown(v),
-        ("scout", "find", _) => scout::render_scout_find_markdown(v),
-        ("scout", "ps", _) => scout::render_scout_ps_markdown(v),
         ("scout", "df", _) => scout::render_scout_df_markdown(v),
-        ("scout", "delta", _) => scout::render_scout_diff_markdown(v),
-        ("scout", "exec", _) | ("scout", "emit", _) => scout::render_scout_exec_markdown(v),
-        ("scout", "beam", _) => scout::render_scout_transfer_markdown(v),
-        ("scout", "zfs", Some("pools")) => scout::render_scout_zfs_pools_markdown(v),
-        ("scout", "zfs", Some("datasets")) => scout::render_scout_zfs_datasets_markdown(v),
-        ("scout", "zfs", Some("snapshots")) => scout::render_scout_zfs_snapshots_markdown(v),
+        ("scout", "exec", _) => scout::render_scout_exec_markdown(v),
         ("scout", "logs", Some("syslog")) => scout::render_scout_syslog_markdown(v),
         ("scout", "logs", Some("journal")) => scout::render_scout_journal_markdown(v),
         ("scout", "logs", Some("dmesg")) => scout::render_scout_dmesg_markdown(v),
@@ -166,14 +156,10 @@ fn render_generic_markdown(value: &serde_json::Value) -> String {
         serde_json::Value::Bool(v) => v.to_string(),
         serde_json::Value::Number(v) => v.to_string(),
         serde_json::Value::String(v) => v.clone(),
-        serde_json::Value::Array(items) => format!("Result\n\n{} item(s)", items.len()),
-        serde_json::Value::Object(map) => {
-            let keys = map.keys().cloned().collect::<Vec<_>>().join(", ");
-            if keys.is_empty() {
-                "Result\n\nNo fields".to_owned()
-            } else {
-                format!("Result\n\nFields: {keys}")
-            }
+        serde_json::Value::Array(_) | serde_json::Value::Object(_) => {
+            let json = serde_json::to_string_pretty(value)
+                .unwrap_or_else(|error| format!("{{\"error\":\"{error}\"}}"));
+            format!("Result\n\n```json\n{json}\n```")
         }
     }
 }

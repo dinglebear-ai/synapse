@@ -62,6 +62,13 @@ fn flux_with_hosts(hosts: Vec<HostConfig>) -> FluxService {
     FluxService::new(Arc::new(StubRepo { hosts }))
 }
 
+#[test]
+fn host_ports_has_more_does_not_overflow_without_limit() {
+    assert!(!super::page_has_more(3, 1, 2));
+    assert!(super::page_has_more(3, 1, 1));
+    assert!(!super::page_has_more(3, usize::MAX, 0));
+}
+
 // ── empty fanout shapes ───────────────────────────────────────────────────────
 
 #[tokio::test]

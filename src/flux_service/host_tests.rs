@@ -126,6 +126,24 @@ async fn uptime_returns_host_and_string() {
     assert!(v["uptime"].as_str().unwrap().contains("up"));
 }
 
+#[tokio::test]
+async fn host_reads_and_doctor_reject_nonzero_command_outputs() {
+    let exec = MockExec::new();
+    exec.add_err("uname", "uname denied");
+    assert!(info_on_host(&exec, "dookie").await.is_err());
+
+    let exec = MockExec::new();
+    exec.add_err("journalctl", "journal denied");
+    assert_eq!(doctor_check_logs(&exec).await.status, CheckStatus::Fail);
+
+    let exec = MockExec::new();
+    exec.add_err("ps", "ps denied");
+    assert_eq!(
+        doctor_check_processes(&exec).await.status,
+        CheckStatus::Fail
+    );
+}
+
 // ─── resources_on_host ─────────────────────────────────────────────────────────
 
 #[tokio::test]

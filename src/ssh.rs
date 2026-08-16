@@ -113,6 +113,21 @@ impl CommandOutput {
     pub fn success(&self) -> bool {
         self.exit_code == Some(0)
     }
+
+    pub fn require_success(self, operation: &str) -> Result<Self> {
+        if self.success() {
+            return Ok(self);
+        }
+
+        let exit = self
+            .exit_code
+            .map_or_else(|| "unknown".to_owned(), |code| code.to_string());
+        let detail = self.stderr.trim();
+        if detail.is_empty() {
+            bail!("{operation} failed with exit code {exit}");
+        }
+        bail!("{operation} failed with exit code {exit}: {detail}")
+    }
 }
 
 /// Object-safe SSH executor — the seam downstream beads (scout, flux) depend on.

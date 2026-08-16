@@ -88,6 +88,11 @@ pub fn render_scout_peek_markdown(data: &Value) -> String {
     let path = str_field(data, "path");
     let kind = str_field(data, "kind");
 
+    if let Some(tree) = data.get("tree").and_then(Value::as_str) {
+        let depth = data.get("depth").and_then(Value::as_u64).unwrap_or(0);
+        return format!("Directory Tree: {host}:{path}\nDepth: {depth}\n\n```\n{tree}\n```");
+    }
+
     match kind {
         "file" => {
             let content = data.get("content").and_then(|v| v.as_str()).unwrap_or("");

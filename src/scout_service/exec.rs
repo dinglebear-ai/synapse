@@ -286,10 +286,26 @@ pub async fn emit(
                 }
             };
 
-            tokio::time::timeout(timeout, fut)
+            let value = tokio::time::timeout(timeout, fut)
                 .await
                 .map_err(|_| format!("timed out after {}s", timeout.as_secs()))?
-                .map_err(|e| e.to_string())
+                .map_err(|e| e.to_string())?;
+            if value.get("exit_code").and_then(Value::as_i64) != Some(0) {
+                let exit = value
+                    .get("exit_code")
+                    .map_or_else(|| "unknown".to_owned(), Value::to_string);
+                let stderr = value
+                    .get("stderr")
+                    .and_then(Value::as_str)
+                    .unwrap_or("")
+                    .trim();
+                return Err(if stderr.is_empty() {
+                    format!("command exited with status {exit}")
+                } else {
+                    format!("command exited with status {exit}: {stderr}")
+                });
+            }
+            Ok(value)
         }
     })
     .await;

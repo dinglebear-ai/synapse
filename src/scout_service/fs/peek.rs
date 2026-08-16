@@ -148,7 +148,8 @@ async fn peek_tree(
                     &visit_limit,
                 ],
             )
-            .await?;
+            .await?
+            .require_success("remote tree")?;
         Ok(json!({ "host": host.name, "path": path, "depth": depth, "tree": out.stdout }))
     }
 }
