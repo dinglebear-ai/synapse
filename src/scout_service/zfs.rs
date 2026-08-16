@@ -61,6 +61,7 @@ pub async fn pools(
             host.name
         );
     }
+    let output = output.require_success("zpool list")?;
 
     let parsed = parse_tabular(&output.stdout);
     Ok(json!({
@@ -123,6 +124,7 @@ pub async fn datasets(
             host.name
         );
     }
+    let output = output.require_success("zfs list")?;
 
     let parsed = parse_tabular(&output.stdout);
     Ok(json!({
@@ -172,6 +174,7 @@ pub async fn snapshots(
             host.name
         );
     }
+    let output = output.require_success("zfs snapshot list")?;
 
     let parsed = parse_tabular(&output.stdout);
     let limit_n = limit.map(|l| l as usize);

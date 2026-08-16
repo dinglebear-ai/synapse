@@ -44,6 +44,87 @@ impl SshExecutor for AlwaysFailExec {
     }
 }
 
+struct NonZeroExec;
+
+#[async_trait]
+impl SshExecutor for NonZeroExec {
+    async fn exec(&self, _: &HostConfig, _: &str, _: &[&str]) -> Result<CommandOutput> {
+        Ok(CommandOutput {
+            stdout: String::new(),
+            stderr: "command failed".into(),
+            exit_code: Some(7),
+        })
+    }
+}
+
+struct UnsafeDiagnosticExec;
+
+#[async_trait]
+impl SshExecutor for UnsafeDiagnosticExec {
+    async fn exec(&self, _: &HostConfig, _: &str, _: &[&str]) -> Result<CommandOutput> {
+        Ok(CommandOutput {
+            stdout: String::new(),
+            stderr: format!("bad\nforged\u{1b}[2J{}", "x".repeat(700)),
+            exit_code: Some(9),
+        })
+    }
+}
+
+#[tokio::test]
+async fn emit_counts_nonzero_commands_as_failures() {
+    let mut host = HostConfig::local();
+    host.name = "remote".into();
+    host.host = "remote.example".into();
+    host.protocol = crate::synapse::HostProtocol::Ssh;
+    let target = super::EmitTarget { host, path: None };
+    let result = super::emit(
+        &[target],
+        Arc::new(NonZeroExec),
+        &ApproveConfirmer,
+        "uptime",
+        &[],
+        None,
+    )
+    .await
+    .unwrap();
+    assert_eq!(result["status"], "all_failed");
+    assert_eq!(result["succeeded"], 0);
+    assert_eq!(result["failed"], 1);
+    assert_eq!(result["results"][0]["ok"], false);
+}
+
+#[tokio::test]
+async fn emit_sanitizes_and_bounds_nonzero_command_diagnostics() {
+    let mut host = HostConfig::local();
+    host.name = "remote\nforged".into();
+    host.host = "remote.example".into();
+    host.protocol = crate::synapse::HostProtocol::Ssh;
+    let target = super::EmitTarget { host, path: None };
+
+    let result = super::emit(
+        &[target],
+        Arc::new(UnsafeDiagnosticExec),
+        &ApproveConfirmer,
+        "uptime",
+        &[],
+        None,
+    )
+    .await
+    .unwrap();
+    let error = result["results"][0]["error"].as_str().unwrap();
+
+    assert!(!error.contains('\n'), "{error:?}");
+    assert!(!error.contains('\u{1b}'), "{error:?}");
+    assert!(error.contains("remote\\nforged"), "{error:?}");
+    assert!(error.contains("bad\\nforged\\u{1b}"), "{error:?}");
+    assert!(error.ends_with('…'), "{error:?}");
+    assert!(
+        error.len() < 700,
+        "diagnostic was not bounded: {}",
+        error.len()
+    );
+}
+
 struct SlowExec;
 
 #[async_trait]

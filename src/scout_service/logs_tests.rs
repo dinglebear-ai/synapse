@@ -38,6 +38,39 @@ impl FixedExec {
             exit_code: Some(1),
         }
     }
+
+    fn fail(stderr: &str) -> Self {
+        Self {
+            stdout: String::new(),
+            stderr: stderr.to_owned(),
+            exit_code: Some(2),
+        }
+    }
+}
+
+#[test]
+fn journal_and_nonpermission_dmesg_fail_on_nonzero_exit() {
+    let rt = tokio::runtime::Runtime::new().unwrap();
+    let host = ssh_host();
+    let journal = rt.block_on(super::journal(
+        &host,
+        &FixedExec::fail("journal failed"),
+        10,
+        None,
+        None,
+        None,
+        None,
+        None,
+    ));
+    assert!(journal.unwrap_err().to_string().contains("journal failed"));
+
+    let dmesg = rt.block_on(super::dmesg(
+        &host,
+        &FixedExec::fail("bad option"),
+        10,
+        None,
+    ));
+    assert!(dmesg.unwrap_err().to_string().contains("bad option"));
 }
 
 #[async_trait]

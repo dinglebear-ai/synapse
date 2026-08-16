@@ -101,10 +101,7 @@ async fn read_remote_file(
                 &["-c", REMOTE_READ_SCRIPT, "read", &root, &relative, &count],
             )
             .await?;
-        if out.exit_code != Some(0) && !out.stderr.is_empty() {
-            bail!("read {path}: {}", out.stderr.trim());
-        }
-        Ok(out.stdout)
+        Ok(out.require_success(&format!("read {path}"))?.stdout)
     }
 }
 

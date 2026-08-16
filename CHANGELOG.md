@@ -18,6 +18,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pin the shared Rust cache action to Kache 0.13.0 so hosted and self-hosted jobs use the same stabilized daemon protocol.
 - Add an explicit LAN-only production port binding while retaining the configurable primary bind address.
 
+### Fixed
+
+- Map `scout ps sort=mem` to GNU `ps`'s `%mem` field and report command failures instead of returning empty successful results.
+- List every `flux host` subaction in the MCP tool description used by catalog discovery.
+- Preserve current Flux and Scout payload data in default Markdown responses, including directory trees and container results.
+- Reject non-zero exits from affected Scout and Flux host reads and Compose list discovery instead of returning successful empty envelopes.
+- Treat failed host doctor probes and failed `scout emit` commands as failures, even when their transport completed successfully.
+- Prevent host-port pagination overflow and align the Flux schema with host `limit`, service, and state parameters.
+- Bound and safely fence structured Markdown, retain container-inspect secret redaction, and expose Scout traversal truncation accurately.
+
 ## [1.0.0](https://github.com/dinglebear-ai/synapse/compare/v0.6.2...v1.0.0) (2026-07-29)
 
 

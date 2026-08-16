@@ -113,6 +113,71 @@ impl CommandOutput {
     pub fn success(&self) -> bool {
         self.exit_code == Some(0)
     }
+
+    pub fn require_success(self, operation: &str) -> Result<Self> {
+        if let Some(message) =
+            command_failure_diagnostic(operation, self.exit_code, &self.stdout, &self.stderr)
+        {
+            bail!(message);
+        }
+        Ok(self)
+    }
+}
+
+/// Build a terminal- and log-safe diagnostic for a failed subprocess.
+///
+/// Keeping this here ensures local, SSH, and fanout callers apply the same
+/// control-character escaping and output bounds.
+pub(crate) fn command_failure_diagnostic(
+    operation: &str,
+    exit_code: Option<i32>,
+    stdout: &str,
+    stderr: &str,
+) -> Option<String> {
+    if exit_code == Some(0) {
+        return None;
+    }
+
+    let operation = sanitize_diagnostic(operation.trim(), 128);
+    let operation = if operation.is_empty() {
+        "operation"
+    } else {
+        &operation
+    };
+    let exit = exit_code.map_or_else(|| "unknown".to_owned(), |code| code.to_string());
+    let detail = if stderr.trim().is_empty() {
+        stdout.trim()
+    } else {
+        stderr.trim()
+    };
+    if detail.is_empty() {
+        return Some(format!("{operation} failed with exit code {exit}"));
+    }
+    let detail = sanitize_diagnostic(detail, 512);
+    Some(format!(
+        "{operation} failed with exit code {exit}: {detail}"
+    ))
+}
+
+fn sanitize_diagnostic(input: &str, max_len: usize) -> String {
+    let mut output = String::new();
+    let mut truncated = false;
+    for character in input.chars() {
+        let escaped = if character.is_control() {
+            character.escape_default().to_string()
+        } else {
+            character.to_string()
+        };
+        if output.len().saturating_add(escaped.len()) > max_len {
+            truncated = true;
+            break;
+        }
+        output.push_str(&escaped);
+    }
+    if truncated {
+        output.push('…');
+    }
+    output
 }
 
 /// Object-safe SSH executor — the seam downstream beads (scout, flux) depend on.

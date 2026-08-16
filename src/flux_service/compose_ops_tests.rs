@@ -44,10 +44,32 @@ impl MockExec {
         );
     }
 
+    fn add_compose_failure(&self, subcommand: &str, stderr: &str) {
+        let key = format!("docker compose {subcommand}");
+        self.responses.lock().unwrap().insert(
+            key,
+            CommandOutput {
+                stdout: String::new(),
+                stderr: stderr.to_owned(),
+                exit_code: Some(1),
+            },
+        );
+    }
+
     /// Retrieve the argv slice from the last `run()` call.
     fn last_argv(&self) -> Vec<String> {
         self.last_args.lock().unwrap().clone()
     }
+}
+
+#[tokio::test]
+async fn compose_list_rejects_nonzero_exit() {
+    let exec = MockExec::new();
+    exec.add_compose_failure("ls", "docker unavailable");
+    let error = list_on_host(&exec, HOST)
+        .await
+        .expect_err("compose list failure must not become an empty success");
+    assert!(error.to_string().contains("docker unavailable"), "{error}");
 }
 
 #[async_trait::async_trait]
@@ -63,7 +85,11 @@ impl super::super::host::HostExec for MockExec {
         // args[] (excluding program "docker"):
         //   args[0] = "compose", args[1] = "-f", args[2] = config_file
         //   args[3] = subcommand
-        let sub = args.get(3).copied().unwrap_or("");
+        let sub = if args.get(1) == Some(&"ls") {
+            "ls"
+        } else {
+            args.get(3).copied().unwrap_or("")
+        };
         let key = format!("{program} compose {sub}");
         let responses = self.responses.lock().unwrap();
         match responses.get(&key) {

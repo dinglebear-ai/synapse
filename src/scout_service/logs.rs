@@ -226,7 +226,8 @@ pub async fn journal(
         RemoteExec { executor, host }
             .run("journalctl", &argv)
             .await?
-    };
+    }
+    .require_success("journalctl")?;
 
     let filtered = apply_grep(output.stdout, grep);
     Ok(json!({
@@ -303,6 +304,7 @@ pub async fn dmesg(
             Ok(permission_error_response(host, &out.stderr))
         }
         Ok(out) => {
+            let out = out.require_success("dmesg")?;
             let filtered = apply_grep(out.stdout, grep);
             // Tail lines locally.
             let output_lines: Vec<&str> = filtered.trim().lines().collect();

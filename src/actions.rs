@@ -12,6 +12,7 @@ pub(crate) mod scout;
 // ── Re-exports (keep crate::actions::X resolving for all callers) ─────────────
 
 pub use dispatch::{execute_service_action, is_confirmation_denied, is_validation_error};
+pub(crate) use flux::CONTAINER_STATES;
 pub use flux::{ComposeArgs, ContainerArgs, DockerArgs, HostArgs};
 pub use operations::{
     OPERATION_SPECS, OperationSpec, OperationTool, OperationTransport, operation,

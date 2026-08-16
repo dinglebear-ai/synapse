@@ -13,7 +13,11 @@
 
 use serde_json::Value;
 
-use crate::formatters::{format_bytes, format_timestamp, str_field};
+use crate::formatters::{format_bytes, format_timestamp, markdown_code_block, str_field};
+
+#[cfg(test)]
+#[path = "scout_tests.rs"]
+mod tests;
 
 // ──────────────────────────────────────────────
 // Scout nodes
@@ -88,13 +92,40 @@ pub fn render_scout_peek_markdown(data: &Value) -> String {
     let path = str_field(data, "path");
     let kind = str_field(data, "kind");
 
+    if let Some(tree) = data.get("tree").and_then(Value::as_str) {
+        let depth = data.get("depth").and_then(Value::as_u64).unwrap_or(0);
+        let truncated = data
+            .get("truncated")
+            .and_then(Value::as_bool)
+            .unwrap_or(false);
+        return format!(
+            "Directory Tree: {host}:{path}\nDepth: {depth} | truncated: {}\n\n{}",
+            if truncated { "yes" } else { "no" },
+            markdown_code_block(None, tree)
+        );
+    }
+
     match kind {
         "file" => {
             let content = data.get("content").and_then(|v| v.as_str()).unwrap_or("");
-            let size_bytes = content.len() as u64;
+            let size_bytes = data
+                .get("size_bytes")
+                .and_then(Value::as_u64)
+                .unwrap_or(content.len() as u64);
+            let truncated = data
+                .get("truncated")
+                .and_then(Value::as_bool)
+                .unwrap_or(false);
             let title = format!("File Read: {host}:{path}");
-            let summary = format!("Size: {} | truncated: no", format_bytes(size_bytes));
-            format!("{title}\n{summary}\n\n```\n{content}\n```")
+            let summary = format!(
+                "Size: {} | truncated: {}",
+                format_bytes(size_bytes),
+                if truncated { "yes" } else { "no" }
+            );
+            format!(
+                "{title}\n{summary}\n\n{}",
+                markdown_code_block(None, content)
+            )
         }
         "directory" => {
             let entries: Vec<String> = data

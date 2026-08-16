@@ -27,7 +27,7 @@ fn build_tool_definitions() -> Vec<Value> {
     let mut definitions = vec![
         json!({
             "name": "flux",
-            "description": "Docker infrastructure management for synapse. Supports docker (info/df/images/networks/volumes/pull/build/rmi/prune), container (list/inspect/logs/stats/top/search/start/stop/restart/pause/resume/pull/recreate/exec), host status, and compose (list/status/up/down/restart/recreate/logs/build/pull/refresh) actions across configured hosts. build/rmi/prune, compose down/restart/recreate, and container stop/recreate/exec are destructive and require confirmation.",
+            "description": "Docker infrastructure management for synapse. Supports docker (info/df/images/networks/volumes/pull/build/rmi/prune), container (list/inspect/logs/stats/top/search/start/stop/restart/pause/resume/pull/recreate/exec), host (status/info/uptime/resources/services/network/mounts/ports/doctor), and compose (list/status/up/down/restart/recreate/logs/build/pull/refresh) actions across configured hosts. build/rmi/prune, compose down/restart/recreate, and container stop/recreate/exec are destructive and require confirmation.",
             "inputSchema": {
                 "type": "object",
                 "properties": {
@@ -42,7 +42,7 @@ fn build_tool_definitions() -> Vec<Value> {
                     "project": { "type": "string", "description": "compose: project name (required for all compose subactions except list/refresh)." },
                     "remove_volumes": { "type": "boolean", "description": "compose down: also remove named volumes. Requires force=true to prevent accidental data loss." },
                     "force": { "type": "boolean", "description": "docker rmi/prune: must be true. compose down with remove_volumes=true: must be true." },
-                    "service": { "type": "string", "description": "compose logs/status/build/pull: restrict to a single service name." },
+                    "service": { "type": "string", "description": "compose logs/status/build/pull: restrict to a single service name. host services: optionally restrict to one systemd service." },
                     "dangling_only": { "type": "boolean", "description": "docker images: only list dangling (untagged) images." },
                     "image": { "type": "string", "description": "docker pull/rmi: image reference (e.g. nginx:latest)." },
                     "context": { "type": "string", "description": "docker build: absolute build context path (no .., ~, or $ expansion)." },
@@ -52,9 +52,10 @@ fn build_tool_definitions() -> Vec<Value> {
                     "prune_target": { "type": "string", "enum": ["containers", "images", "volumes", "networks", "buildcache", "all"], "description": "docker prune: what to prune. 'all' prunes containers, images, volumes, networks, AND build cache." },
                     "container_id": { "type": "string", "description": "Container id or name (required for inspect/logs/top; optional for stats)." },
                     "lines": { "type": "integer", "minimum": 1, "maximum": 500, "description": "container logs / compose logs: tail line count (default 50 for container; all for compose)." },
-                    "state": { "type": "string", "enum": ["running", "exited", "paused", "restarting", "all"], "description": "container list: filter by state (default all)." },
+                    "state": { "type": "string", "description": "container list: filter by Docker state (default all). host services: systemd unit state such as active, failed, or all." },
                     "protocol": { "type": "string", "enum": ["tcp", "udp"], "description": "host ports: optional protocol filter." },
                     "offset": { "type": "integer", "minimum": 0, "description": "host ports: pagination offset." },
+                    "limit": { "type": "integer", "minimum": 1, "description": "host ports: maximum port mappings returned." },
                     "checks": { "type": "string", "description": "host doctor: comma-separated checks to run (default docker,containers,resources,network,services,logs,processes)." },
                     "name_filter": { "type": "string", "description": "container list: partial match on container name." },
                     "image_filter": { "type": "string", "description": "container list: partial match on image." },
@@ -179,6 +180,11 @@ fn operation_branches(tool: crate::actions::OperationTool) -> Vec<Value> {
     crate::actions::operations_for_tool(tool)
         .map(|spec| {
             let mut branch = operation_branch(spec.action, spec.subaction, spec.required_params);
+            if spec.action == "container" && spec.subaction == Some("list") {
+                branch["properties"]["state"] = json!({
+                    "enum": crate::actions::CONTAINER_STATES
+                });
+            }
             if !spec.required_any.is_empty() {
                 branch["oneOf"] = Value::Array(
                     spec.required_any

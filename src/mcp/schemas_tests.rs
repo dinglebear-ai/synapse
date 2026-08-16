@@ -1,4 +1,5 @@
 use super::{flux_operation_branches, scout_operation_branches, tool_definitions};
+use serde_json::json;
 
 #[test]
 fn defines_flux_and_scout_tools() {
@@ -8,6 +9,21 @@ fn defines_flux_and_scout_tools() {
         .map(|tool| tool["name"].as_str().unwrap())
         .collect::<Vec<_>>();
     assert_eq!(names, vec!["flux", "scout"]);
+}
+
+#[test]
+fn flux_description_enumerates_host_subactions() {
+    let flux = tool_definitions()
+        .iter()
+        .find(|tool| tool["name"] == "flux")
+        .expect("flux schema should exist");
+    let description = flux["description"].as_str().unwrap_or_default();
+
+    assert!(
+        description
+            .contains("host (status/info/uptime/resources/services/network/mounts/ports/doctor)"),
+        "flux description should make every host subaction discoverable: {description}"
+    );
 }
 
 #[test]
@@ -27,16 +43,45 @@ fn flux_schema_includes_host_parser_fields() {
         .expect("flux schema should exist");
     let props = &flux["inputSchema"]["properties"];
 
-    for field in ["protocol", "offset", "checks"] {
+    for field in ["protocol", "limit", "offset", "checks"] {
         assert!(
             props[field].is_object(),
             "flux schema should expose parser-supported field {field}"
         );
     }
 
+    assert!(props["state"]["enum"].is_null());
+    assert!(
+        props["state"]["description"]
+            .as_str()
+            .unwrap_or_default()
+            .contains("host services")
+    );
+    assert!(
+        props["service"]["description"]
+            .as_str()
+            .unwrap_or_default()
+            .contains("host services")
+    );
+
     let host_description = props["host"]["description"].as_str().unwrap_or_default();
     assert!(host_description.contains("host services/mounts/ports/doctor"));
     assert!(host_description.contains("compose ops including list"));
+}
+
+#[test]
+fn container_list_branch_preserves_closed_state_values() {
+    let branch = flux_operation_branches()
+        .into_iter()
+        .find(|branch| {
+            branch["properties"]["action"]["const"].as_str() == Some("container")
+                && branch["properties"]["subaction"]["const"].as_str() == Some("list")
+        })
+        .expect("container list branch");
+    assert_eq!(
+        branch["properties"]["state"]["enum"],
+        json!(["running", "exited", "paused", "restarting", "all"])
+    );
 }
 
 #[test]

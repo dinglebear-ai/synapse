@@ -149,6 +149,36 @@ fn pools_returns_error_when_zpool_not_found() {
 }
 
 #[test]
+fn zfs_reads_reject_generic_nonzero_exits() {
+    let rt = tokio::runtime::Runtime::new().unwrap();
+    let host = ssh_host();
+    for result in [
+        rt.block_on(super::pools(
+            &host,
+            &FixedExec::fail("permission denied"),
+            None,
+        )),
+        rt.block_on(super::datasets(
+            &host,
+            &FixedExec::fail("permission denied"),
+            None,
+            None,
+            false,
+        )),
+        rt.block_on(super::snapshots(
+            &host,
+            &FixedExec::fail("permission denied"),
+            None,
+            None,
+            None,
+        )),
+    ] {
+        let error = result.expect_err("non-zero ZFS command must fail");
+        assert!(error.to_string().contains("permission denied"), "{error}");
+    }
+}
+
+#[test]
 fn pools_with_pool_filter() {
     let rt = tokio::runtime::Runtime::new().unwrap();
     let host = ssh_host();

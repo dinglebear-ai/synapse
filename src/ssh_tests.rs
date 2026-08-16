@@ -31,6 +31,61 @@ fn host(name: &str) -> HostConfig {
     }
 }
 
+#[test]
+fn command_output_require_success_rejects_unknown_and_empty_failures() {
+    let error = CommandOutput {
+        stdout: String::new(),
+        stderr: String::new(),
+        exit_code: None,
+    }
+    .require_success("remote probe")
+    .unwrap_err();
+
+    let message = error.to_string();
+    assert!(message.contains("remote probe"), "{message}");
+    assert!(message.contains("unknown"), "{message}");
+}
+
+#[test]
+fn command_output_sanitizes_and_bounds_diagnostics() {
+    let error = CommandOutput {
+        stdout: String::new(),
+        stderr: format!("danger\u{1b}[2J\roverwrite{}", "x".repeat(600)),
+        exit_code: Some(1),
+    }
+    .require_success("probe")
+    .unwrap_err()
+    .to_string();
+
+    assert!(!error.contains('\u{1b}'), "{error:?}");
+    assert!(!error.contains('\r'), "{error:?}");
+    assert!(error.contains("\\u{1b}"), "{error:?}");
+    assert!(error.contains("\\r"), "{error:?}");
+    assert!(error.ends_with('…'), "{error:?}");
+}
+
+#[test]
+fn command_output_sanitizes_and_bounds_operation_label() {
+    let operation = format!("probe\nspoofed{}", "x".repeat(300));
+    let error = CommandOutput {
+        stdout: String::new(),
+        stderr: String::new(),
+        exit_code: Some(2),
+    }
+    .require_success(&operation)
+    .unwrap_err()
+    .to_string();
+
+    assert!(!error.contains('\n'), "{error:?}");
+    assert!(error.contains("probe\\nspoofed"), "{error:?}");
+    assert!(error.contains("… failed with exit code 2"), "{error:?}");
+    assert!(
+        error.len() < 180,
+        "operation label was not bounded: {}",
+        error.len()
+    );
+}
+
 /// Try to connect to localhost over SSH; returns `None` if unreachable so the
 /// caller can skip. Uses the real connect path (5s timeout, strict host keys).
 async fn try_localhost_session() -> Option<Session> {

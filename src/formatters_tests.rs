@@ -25,11 +25,88 @@ use crate::formatters::{
         render_docker_networks_markdown, render_docker_volumes_markdown,
     },
     host::{render_host_resources_markdown, render_host_status_markdown},
-    scout::{
-        render_scout_exec_markdown, render_scout_nodes_markdown, render_scout_peek_markdown,
-        render_scout_syslog_markdown, render_scout_zfs_pools_markdown,
-    },
+    render_action_output,
 };
+
+#[test]
+fn current_scout_payloads_render_their_data_in_default_markdown() {
+    let cases = [
+        (
+            "ps",
+            None,
+            json!({"host":"dookie","header":"USER PID %MEM","rows":["root 42 9.5"]}),
+            "root 42 9.5",
+        ),
+        (
+            "find",
+            None,
+            json!({"host":"dookie","path":"/etc","pattern":"*.conf","files":["/etc/app.conf"]}),
+            "/etc/app.conf",
+        ),
+        (
+            "delta",
+            None,
+            json!({"source":"a:/one","target":"b:/two","diff":"-old\n+new"}),
+            "a:/one",
+        ),
+        (
+            "zfs",
+            Some("pools"),
+            json!({"host":"shart","header":"NAME HEALTH","rows":["tank ONLINE"]}),
+            "tank ONLINE",
+        ),
+        (
+            "beam",
+            None,
+            json!({"source":"a:/one","destination":"b:/two","status":"transferred","bytes":12}),
+            "b:/two",
+        ),
+    ];
+    for (action, subaction, payload, expected) in cases {
+        let rendered = render_action_output("scout", action, subaction, None, &payload).unwrap();
+        assert!(
+            rendered.contains(expected),
+            "{action}/{subaction:?} dropped {expected:?}: {rendered}"
+        );
+    }
+}
+
+#[test]
+fn peek_tree_and_emit_render_current_envelopes() {
+    let tree = render_action_output(
+        "scout",
+        "peek",
+        None,
+        None,
+        &json!({"host":"dookie","path":"/srv","depth":2,"tree":"/srv/app"}),
+    )
+    .unwrap();
+    assert!(tree.contains("/srv/app"), "{tree}");
+    let emit = render_action_output(
+        "scout",
+        "emit",
+        None,
+        None,
+        &json!({"command":"uptime","status":"all_ok","results":[{"host":"dookie","ok":true}]}),
+    )
+    .unwrap();
+    assert!(emit.contains("dookie"), "{emit}");
+    assert!(emit.contains("all_ok"), "{emit}");
+}
+
+#[test]
+fn unmatched_action_markdown_preserves_values_not_only_field_names() {
+    let rendered = render_action_output(
+        "flux",
+        "container",
+        Some("stats"),
+        None,
+        &json!({"host":"dookie","container":"api","cpu_percent":12.5}),
+    )
+    .unwrap();
+    assert!(rendered.contains("dookie"), "{rendered}");
+    assert!(rendered.contains("12.5"), "{rendered}");
+}
 
 // ──────────────────────────────────────────────
 // ResponseFormat::parse
@@ -635,136 +712,6 @@ fn host_status_mixed_states() {
         "offline host must have ○ symbol"
     );
     assert!(output.contains("Timeout"), "error message must be shown");
-}
-
-// ──────────────────────────────────────────────
-// Scout formatters
-// ──────────────────────────────────────────────
-
-#[test]
-fn scout_nodes_basic() {
-    let data = json!({
-        "hosts": [
-            {"name": "squirts", "host": "squirts.local", "protocol": "ssh"},
-            {"name": "boops", "host": "boops.local", "protocol": "ssh"}
-        ]
-    });
-    let output = render_scout_nodes_markdown(&data);
-    assert!(output.starts_with("Scout Nodes"));
-    assert!(output.contains("Hosts: 2"));
-    assert!(output.contains("squirts"));
-    assert!(output.contains("boops"));
-    // Table format
-    assert!(output.contains("| Host |"));
-}
-
-#[test]
-fn scout_peek_file() {
-    let data = json!({
-        "host": "squirts",
-        "path": "/etc/hostname",
-        "kind": "file",
-        "content": "squirts\n"
-    });
-    let output = render_scout_peek_markdown(&data);
-    assert!(output.contains("File Read: squirts:/etc/hostname"));
-    assert!(output.contains("Size:"));
-    assert!(output.contains("squirts"));
-    assert!(output.contains("```"), "must have code block");
-}
-
-#[test]
-fn scout_peek_directory() {
-    let data = json!({
-        "host": "squirts",
-        "path": "/etc",
-        "kind": "directory",
-        "entries": ["hostname", "hosts", "passwd"]
-    });
-    let output = render_scout_peek_markdown(&data);
-    assert!(output.contains("Directory Listing: squirts:/etc"));
-    assert!(output.contains("Items: 3"));
-    assert!(output.contains("hostname"));
-}
-
-#[test]
-fn scout_exec_success() {
-    let data = json!({
-        "host": "squirts",
-        "path": "/tmp",
-        "command": "uptime",
-        "exit_code": 0,
-        "stdout": " 15:23:45 up 3 days, 2:15, 1 user",
-        "stderr": ""
-    });
-    let output = render_scout_exec_markdown(&data);
-    assert!(output.starts_with('✓'), "success must use ✓ symbol");
-    assert!(output.contains("Command Execution: squirts:/tmp"));
-    assert!(output.contains("Exit: 0"));
-    assert!(output.contains("uptime"));
-    assert!(
-        output.contains("As of (UTC):"),
-        "must have freshness timestamp"
-    );
-}
-
-#[test]
-fn scout_exec_failure() {
-    let data = json!({
-        "host": "squirts",
-        "path": "/tmp",
-        "command": "cat /nonexistent",
-        "exit_code": 1,
-        "stdout": "",
-        "stderr": "No such file or directory"
-    });
-    let output = render_scout_exec_markdown(&data);
-    assert!(output.starts_with('✗'), "failure must use ✗ symbol");
-    assert!(output.contains("Exit: 1"));
-}
-
-#[test]
-fn scout_syslog_basic() {
-    let data = json!({
-        "host": "squirts",
-        "lines_requested": 50,
-        "logs": "Feb 13 11:00:00 squirts sshd: ok\nFeb 13 11:00:01 squirts kernel: info"
-    });
-    let output = render_scout_syslog_markdown(&data);
-    assert!(output.starts_with("Syslog: squirts"));
-    assert!(output.contains("Lines requested: 50 | Returned: 2"));
-    assert!(output.contains("As of (UTC):"));
-    assert!(output.contains("sshd"));
-}
-
-#[test]
-fn scout_syslog_renders_current_service_payload_shape() {
-    let data = json!({
-        "host": "squirts",
-        "subaction": "syslog",
-        "lines": 100,
-        "grep": "sshd",
-        "output": "Jun 12 10:00:00 squirts sshd: Accepted publickey\nJun 12 10:00:01 squirts sshd: session opened"
-    });
-
-    let output = render_scout_syslog_markdown(&data);
-
-    assert!(output.starts_with("Syslog: squirts"));
-    assert!(output.contains("Lines requested: 100 | Returned: 2 | truncated: no | Filter: sshd"));
-    assert!(output.contains("Accepted publickey"));
-    assert!(output.contains("session opened"));
-}
-
-#[test]
-fn scout_zfs_pools_annotates_health() {
-    let data = json!({
-        "host": "squirts",
-        "pools": "NAME    SIZE   ALLOC  FREE    HEALTH  ALTROOT\ntank    10.9T  8.2T   2.7T    ONLINE  -\nbad_pool 1T 0.5T 0.5T DEGRADED -"
-    });
-    let output = render_scout_zfs_pools_markdown(&data);
-    assert!(output.starts_with("ZFS Pools: squirts"));
-    assert!(output.contains('●'), "ONLINE pool must have ● symbol");
-    assert!(output.contains('⚠'), "DEGRADED pool must have ⚠ symbol");
 }
 
 // ──────────────────────────────────────────────

@@ -62,7 +62,8 @@ fn validate_service_name(service: &str) -> Result<()> {
 pub async fn list_on_host(exec: &dyn HostExec, host_name: &str) -> Result<Value> {
     let out = exec
         .run("docker", &["compose", "ls", "--format", "json"])
-        .await?;
+        .await?
+        .require_success("docker compose ls")?;
     Ok(json!({
         "host": host_name,
         "raw": out.stdout.trim(),

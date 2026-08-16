@@ -1,7 +1,7 @@
 use std::fs::File;
 use std::io::Read;
 
-use anyhow::{Result, bail};
+use anyhow::{Context, Result};
 use serde_json::{Value, json};
 
 use super::{
@@ -75,11 +75,10 @@ async fn peek_remote(host: &HostConfig, executor: &dyn SshExecutor, path: &str) 
             "python3",
             &["-c", REMOTE_READ_SCRIPT, "peek", &root, &relative, &cap],
         )
-        .await?;
-    if out.exit_code != Some(0) {
-        bail!("peek: {}", out.stderr.trim());
-    }
-    let payload: Value = serde_json::from_str(out.stdout.trim())?;
+        .await?
+        .require_success(&format!("peek {path} on {}", host.name))?;
+    let payload: Value = serde_json::from_str(out.stdout.trim())
+        .with_context(|| format!("parse peek response for {path} on {}", host.name))?;
     Ok(json!({
         "host": host.name, "path": path,
         "kind": payload["kind"], "entries": payload.get("entries"),
@@ -148,7 +147,23 @@ async fn peek_tree(
                     &visit_limit,
                 ],
             )
-            .await?;
-        Ok(json!({ "host": host.name, "path": path, "depth": depth, "tree": out.stdout }))
+            .await?
+            .require_success("remote tree")?;
+        let payload: Value = serde_json::from_str(out.stdout.trim())
+            .with_context(|| format!("parse remote tree for {path} on {}", host.name))?;
+        let tree = payload["items"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .filter_map(Value::as_str)
+            .collect::<Vec<_>>()
+            .join("\n");
+        Ok(json!({
+            "host": host.name,
+            "path": path,
+            "depth": depth,
+            "tree": tree,
+            "truncated": payload["truncated"].as_bool().unwrap_or(false),
+        }))
     }
 }

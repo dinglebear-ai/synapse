@@ -126,6 +126,76 @@ async fn uptime_returns_host_and_string() {
     assert!(v["uptime"].as_str().unwrap().contains("up"));
 }
 
+#[tokio::test]
+async fn host_reads_and_doctor_reject_nonzero_command_outputs() {
+    let exec = MockExec::new();
+    exec.add_err("uname", "uname denied");
+    assert!(info_on_host(&exec, "dookie").await.is_err());
+
+    let exec = MockExec::new();
+    exec.add_err("journalctl", "journal denied");
+    assert_eq!(doctor_check_logs(&exec).await.status, CheckStatus::Fail);
+
+    let exec = MockExec::new();
+    exec.add_err("ps", "ps denied");
+    assert_eq!(
+        doctor_check_processes(&exec).await.status,
+        CheckStatus::Fail
+    );
+
+    for (program, operation) in [
+        ("uptime", "uptime"),
+        ("systemctl", "services"),
+        ("df", "mounts"),
+    ] {
+        let exec = MockExec::new();
+        exec.add_err(program, "command denied");
+        let result = match operation {
+            "uptime" => uptime_on_host(&exec, "dookie").await,
+            "services" => services_on_host(&exec, "dookie", None, None).await,
+            "mounts" => mounts_on_host(&exec, "dookie").await,
+            _ => unreachable!(),
+        };
+        assert!(result.is_err(), "{operation} accepted a non-zero exit");
+    }
+}
+
+#[tokio::test]
+async fn resources_and_network_reject_late_fallback_failures() {
+    struct ArgExec;
+
+    #[async_trait::async_trait]
+    impl HostExec for ArgExec {
+        async fn run(&self, program: &str, args: &[&str]) -> anyhow::Result<CommandOutput> {
+            let (stdout, stderr, exit_code) = match (program, args) {
+                ("cat", ["/proc/meminfo"]) => ("MemTotal: 1 kB\n", "", Some(0)),
+                ("cat", ["/proc/loadavg"]) => ("", "loadavg denied", Some(1)),
+                ("ip", _) => ("", "ip unavailable", Some(127)),
+                ("cat", ["/proc/net/dev"]) => ("", "network denied", Some(1)),
+                _ => ("", "unexpected command", Some(1)),
+            };
+            Ok(CommandOutput {
+                stdout: stdout.into(),
+                stderr: stderr.into(),
+                exit_code,
+            })
+        }
+    }
+
+    let resources = resources_on_host(&ArgExec, "dookie")
+        .await
+        .expect_err("second resource probe must fail closed");
+    assert!(
+        resources.to_string().contains("loadavg denied"),
+        "{resources}"
+    );
+
+    let network = network_on_host(&ArgExec, "dookie")
+        .await
+        .expect_err("failed network fallback must fail closed");
+    assert!(network.to_string().contains("network denied"), "{network}");
+}
+
 // ─── resources_on_host ─────────────────────────────────────────────────────────
 
 #[tokio::test]
@@ -218,6 +288,30 @@ async fn network_falls_back_to_proc_net_dev() {
     assert_eq!(v["host"], "tootie");
     // should have fallen back
     assert!(v["network"].as_str().is_some());
+    assert_eq!(v["network_source"], "proc_net_dev");
+}
+
+#[tokio::test]
+async fn network_falls_back_when_ip_executable_is_missing() {
+    struct MissingIp;
+
+    #[async_trait::async_trait]
+    impl HostExec for MissingIp {
+        async fn run(&self, program: &str, _args: &[&str]) -> anyhow::Result<CommandOutput> {
+            if program == "ip" {
+                return Err(std::io::Error::from(std::io::ErrorKind::NotFound).into());
+            }
+            Ok(CommandOutput {
+                stdout: "Inter-| Receive\nlo: 0 0\n".into(),
+                stderr: String::new(),
+                exit_code: Some(0),
+            })
+        }
+    }
+
+    let value = network_on_host(&MissingIp, "local").await.unwrap();
+    assert_eq!(value["network_source"], "proc_net_dev");
+    assert!(value["network"].as_str().unwrap().contains("lo:"));
 }
 
 // ─── mounts_on_host ───────────────────────────────────────────────────────────
@@ -272,6 +366,57 @@ async fn doctor_check_network_counts_ifaces() {
     let r = doctor_check_network(&exec, "dookie").await;
     assert_eq!(r.status, CheckStatus::Pass);
     assert!(r.detail.contains('3'));
+}
+
+#[tokio::test]
+async fn doctor_check_network_counts_proc_net_dev_interfaces() {
+    let exec = MockExec::new();
+    exec.add_err("ip", "ip: command not found");
+    exec.add(
+        "cat",
+        "Inter-| Receive | Transmit\n face |bytes\n lo: 0 0\n eth0: 1 2\n",
+    );
+    let result = doctor_check_network(&exec, "dookie").await;
+    assert_eq!(result.status, CheckStatus::Pass);
+    assert!(result.detail.contains('2'), "{}", result.detail);
+}
+
+#[tokio::test]
+async fn doctor_services_preserves_real_failures_and_warns_without_systemd() {
+    let exec = MockExec::new();
+    exec.add_err("systemctl", "permission denied");
+    let failure = doctor_check_services(&exec, "dookie").await;
+    assert_eq!(failure.status, CheckStatus::Fail);
+    assert!(
+        failure.detail.contains("permission denied"),
+        "{}",
+        failure.detail
+    );
+
+    let exec = MockExec::new();
+    exec.responses.lock().unwrap().insert(
+        "systemctl".to_owned(),
+        CommandOutput {
+            stdout: String::new(),
+            stderr: "systemctl unavailable".to_owned(),
+            exit_code: Some(127),
+        },
+    );
+    let unsupported = doctor_check_services(&exec, "container").await;
+    assert_eq!(unsupported.status, CheckStatus::Warn);
+    assert!(unsupported.detail.contains("systemd not available"));
+
+    let exec = MockExec::new();
+    exec.responses.lock().unwrap().insert(
+        "systemctl".to_owned(),
+        CommandOutput {
+            stdout: String::new(),
+            stderr: "System has not been booted with systemd as init system (PID 1).".to_owned(),
+            exit_code: Some(1),
+        },
+    );
+    let unsupported = doctor_check_services(&exec, "container").await;
+    assert_eq!(unsupported.status, CheckStatus::Warn);
 }
 
 #[tokio::test]
