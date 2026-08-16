@@ -13,6 +13,18 @@ fn ssh_host() -> HostConfig {
 }
 
 struct PsExec;
+struct NoopExec;
+
+#[async_trait]
+impl SshExecutor for NoopExec {
+    async fn exec(&self, _: &HostConfig, _: &str, _: &[&str]) -> anyhow::Result<CommandOutput> {
+        Ok(CommandOutput {
+            stdout: String::new(),
+            stderr: String::new(),
+            exit_code: Some(0),
+        })
+    }
+}
 
 #[async_trait]
 impl SshExecutor for PsExec {
@@ -78,18 +90,6 @@ fn ps_rejects_invalid_sort() {
     let rt = tokio::runtime::Runtime::new().unwrap();
     let host = HostConfig::local();
 
-    struct NoopExec;
-    #[async_trait]
-    impl SshExecutor for NoopExec {
-        async fn exec(&self, _: &HostConfig, _: &str, _: &[&str]) -> anyhow::Result<CommandOutput> {
-            Ok(CommandOutput {
-                stdout: String::new(),
-                stderr: String::new(),
-                exit_code: Some(0),
-            })
-        }
-    }
-
     let result = rt.block_on(super::ps(
         &host,
         &NoopExec,
@@ -107,20 +107,6 @@ fn ps_rejects_invalid_sort() {
 fn df_rejects_relative_path() {
     let rt = tokio::runtime::Runtime::new().unwrap();
     let host = HostConfig::local();
-
-    use crate::ssh::{CommandOutput, SshExecutor};
-    use async_trait::async_trait;
-    struct NoopExec;
-    #[async_trait]
-    impl SshExecutor for NoopExec {
-        async fn exec(&self, _: &HostConfig, _: &str, _: &[&str]) -> anyhow::Result<CommandOutput> {
-            Ok(CommandOutput {
-                stdout: String::new(),
-                stderr: String::new(),
-                exit_code: Some(0),
-            })
-        }
-    }
 
     let result = rt.block_on(super::df(&host, &NoopExec, Some("relative/path")));
     assert!(result.is_err(), "relative path must be rejected");

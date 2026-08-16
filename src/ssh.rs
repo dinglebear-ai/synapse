@@ -122,12 +122,38 @@ impl CommandOutput {
         let exit = self
             .exit_code
             .map_or_else(|| "unknown".to_owned(), |code| code.to_string());
-        let detail = self.stderr.trim();
+        let detail = if self.stderr.trim().is_empty() {
+            self.stdout.trim()
+        } else {
+            self.stderr.trim()
+        };
         if detail.is_empty() {
             bail!("{operation} failed with exit code {exit}");
         }
+        let detail = sanitize_diagnostic(detail, 512);
         bail!("{operation} failed with exit code {exit}: {detail}")
     }
+}
+
+fn sanitize_diagnostic(input: &str, max_len: usize) -> String {
+    let mut output = String::new();
+    let mut truncated = false;
+    for character in input.chars() {
+        let escaped = if character.is_control() {
+            character.escape_default().to_string()
+        } else {
+            character.to_string()
+        };
+        if output.len().saturating_add(escaped.len()) > max_len {
+            truncated = true;
+            break;
+        }
+        output.push_str(&escaped);
+    }
+    if truncated {
+        output.push('…');
+    }
+    output
 }
 
 /// Object-safe SSH executor — the seam downstream beads (scout, flux) depend on.

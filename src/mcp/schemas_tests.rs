@@ -1,4 +1,5 @@
 use super::{flux_operation_branches, scout_operation_branches, tool_definitions};
+use serde_json::json;
 
 #[test]
 fn defines_flux_and_scout_tools() {
@@ -66,6 +67,21 @@ fn flux_schema_includes_host_parser_fields() {
     let host_description = props["host"]["description"].as_str().unwrap_or_default();
     assert!(host_description.contains("host services/mounts/ports/doctor"));
     assert!(host_description.contains("compose ops including list"));
+}
+
+#[test]
+fn container_list_branch_preserves_closed_state_values() {
+    let branch = flux_operation_branches()
+        .into_iter()
+        .find(|branch| {
+            branch["properties"]["action"]["const"].as_str() == Some("container")
+                && branch["properties"]["subaction"]["const"].as_str() == Some("list")
+        })
+        .expect("container list branch");
+    assert_eq!(
+        branch["properties"]["state"]["enum"],
+        json!(["running", "exited", "paused", "restarting", "all"])
+    );
 }
 
 #[test]

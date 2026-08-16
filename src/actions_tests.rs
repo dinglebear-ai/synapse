@@ -122,6 +122,20 @@ fn parses_container_list_filters() {
 }
 
 #[test]
+fn rejects_unknown_container_state_filter() {
+    let error = SynapseAction::from_flux_args(&json!({
+        "action": "container",
+        "subaction": "list",
+        "state": "runing"
+    }))
+    .unwrap_err();
+    assert!(
+        error.to_string().contains("invalid container state"),
+        "{error}"
+    );
+}
+
+#[test]
 fn rejects_invalid_response_format_on_container() {
     let err = SynapseAction::from_flux_args(&json!({
         "action": "container",

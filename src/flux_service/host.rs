@@ -252,21 +252,46 @@ pub async fn services_on_host(
 /// Collect network interface info via `ip addr show`; falls back to
 /// `cat /proc/net/dev` if ip is unavailable.
 pub async fn network_on_host(exec: &dyn HostExec, host_name: &str) -> Result<Value> {
-    let output = match exec.run("ip", &["addr", "show"]).await {
-        Ok(out) if out.exit_code == Some(0) => out.stdout,
-        _ => {
+    let (output, source) = match exec.run("ip", &["addr", "show"]).await {
+        Ok(out) if out.success() => (out.stdout, "ip_addr"),
+        Ok(out) if command_is_unavailable(&out) => {
             // Fallback: /proc/net/dev — always available on Linux
             let out = exec
                 .run("cat", &["/proc/net/dev"])
                 .await?
                 .require_success("read /proc/net/dev")?;
-            out.stdout
+            (out.stdout, "proc_net_dev")
         }
+        Ok(out) => return Err(out.require_success("ip addr show").unwrap_err()),
+        Err(error) if error_is_command_unavailable(&error) => {
+            let out = exec
+                .run("cat", &["/proc/net/dev"])
+                .await?
+                .require_success("read /proc/net/dev")?;
+            (out.stdout, "proc_net_dev")
+        }
+        Err(error) => return Err(error),
     };
     Ok(json!({
         "host": host_name,
         "network": output.trim(),
+        "network_source": source,
     }))
+}
+
+fn command_is_unavailable(output: &CommandOutput) -> bool {
+    output.exit_code == Some(127)
+        || output
+            .stderr
+            .to_ascii_lowercase()
+            .contains("command not found")
+        || output.stderr.trim().eq_ignore_ascii_case("ip: not found")
+}
+
+fn error_is_command_unavailable(error: &anyhow::Error) -> bool {
+    error
+        .downcast_ref::<std::io::Error>()
+        .is_some_and(|error| error.kind() == std::io::ErrorKind::NotFound)
 }
 
 // ─── host:mounts ──────────────────────────────────────────────────────────────
@@ -346,14 +371,35 @@ pub async fn doctor_check_network(exec: &dyn HostExec, host_name: &str) -> Check
     match network_on_host(exec, host_name).await {
         Ok(r) => {
             let net = r.get("network").and_then(Value::as_str).unwrap_or("");
-            // Count interface blocks in `ip addr` output (lines like "1: lo:")
-            let iface_count = net
-                .lines()
-                .filter(|l| {
-                    let t = l.trim();
-                    t.starts_with(|c: char| c.is_ascii_digit()) && t.contains(':')
-                })
-                .count();
+            let source = r
+                .get("network_source")
+                .and_then(Value::as_str)
+                .unwrap_or("ip_addr");
+            let iface_count = if source == "proc_net_dev" {
+                net.lines()
+                    .filter(|line| {
+                        let trimmed = line.trim();
+                        !trimmed.is_empty()
+                            && !trimmed.starts_with("Inter-")
+                            && !trimmed.starts_with("face")
+                            && trimmed.contains(':')
+                    })
+                    .count()
+            } else {
+                net.lines()
+                    .filter(|line| {
+                        let trimmed = line.trim();
+                        trimmed.starts_with(|c: char| c.is_ascii_digit()) && trimmed.contains(':')
+                    })
+                    .count()
+            };
+            if iface_count == 0 {
+                return CheckResult {
+                    check: "network".into(),
+                    status: CheckStatus::Fail,
+                    detail: format!("no network interfaces found via {source}"),
+                };
+            }
             CheckResult {
                 check: "network".into(),
                 status: CheckStatus::Pass,
@@ -439,11 +485,26 @@ pub async fn doctor_check_services(exec: &dyn HostExec, host_name: &str) -> Chec
                 }
             }
         }
-        Err(_) => CheckResult {
-            check: "services".into(),
-            status: CheckStatus::Warn,
-            detail: "systemd not available (non-systemd host?)".into(),
-        },
+        Err(error) => {
+            let detail = error.to_string();
+            let unavailable = detail.contains("not been booted with systemd")
+                || detail.contains("systemd not available")
+                || detail.contains("command not found")
+                || detail.contains("exit code 127");
+            CheckResult {
+                check: "services".into(),
+                status: if unavailable {
+                    CheckStatus::Warn
+                } else {
+                    CheckStatus::Fail
+                },
+                detail: if unavailable {
+                    format!("systemd not available: {detail}")
+                } else {
+                    detail
+                },
+            }
+        }
     }
 }
 

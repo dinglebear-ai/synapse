@@ -180,6 +180,11 @@ fn operation_branches(tool: crate::actions::OperationTool) -> Vec<Value> {
     crate::actions::operations_for_tool(tool)
         .map(|spec| {
             let mut branch = operation_branch(spec.action, spec.subaction, spec.required_params);
+            if spec.action == "container" && spec.subaction == Some("list") {
+                branch["properties"]["state"] = json!({
+                    "enum": ["running", "exited", "paused", "restarting", "all"]
+                });
+            }
             if !spec.required_any.is_empty() {
                 branch["oneOf"] = Value::Array(
                     spec.required_any

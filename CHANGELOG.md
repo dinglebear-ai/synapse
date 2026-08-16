@@ -23,7 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Map `scout ps sort=mem` to GNU `ps`'s `%mem` field and report command failures instead of returning empty successful results.
 - List every `flux host` subaction in the MCP tool description used by catalog discovery.
 - Preserve current Flux and Scout payload data in default Markdown responses, including directory trees and container results.
-- Reject non-zero process exits from read actions and Compose discovery instead of returning successful empty envelopes.
+- Reject non-zero exits from affected Scout and Flux host reads and Compose list discovery instead of returning successful empty envelopes.
 - Treat failed host doctor probes and failed `scout emit` commands as failures, even when their transport completed successfully.
 - Prevent host-port pagination overflow and align the Flux schema with host `limit`, service, and state parameters.
 

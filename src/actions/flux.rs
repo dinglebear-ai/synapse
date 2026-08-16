@@ -162,17 +162,26 @@ impl super::SynapseAction {
                 // Validate `response_format` at the shim per B4 contract (no-op
                 // on output shape today; full rendering wiring is a separate
                 // codebase-wide concern). Invalid value → hard error.
-                if let Some(rf) = optional_string_param(args, "response_format")? {
-                    crate::formatters::ResponseFormat::parse(Some(&rf))
+                let response_format = optional_string_param(args, "response_format")?;
+                if let Some(response_format) = response_format.as_deref() {
+                    crate::formatters::ResponseFormat::parse(Some(response_format))
                         .map_err(|e| anyhow::anyhow!(e))?;
                 }
+                let state = optional_string_param(args, "state")?;
+                if let Some(state) = state.as_deref()
+                    && !["running", "exited", "paused", "restarting", "all"].contains(&state)
+                {
+                    anyhow::bail!(
+                        "invalid container state `{state}`; expected running, exited, paused, restarting, or all"
+                    );
+                }
                 Ok(Self::FluxContainer(Box::new(ContainerArgs {
-                    response_format: optional_string_param(args, "response_format")?,
+                    response_format,
                     subaction: required_string_param(args, "subaction")?,
                     container_id: optional_string_param(args, "container_id")?,
                     host: optional_string_param(args, "host")?,
                     lines: optional_u32_param(args, "lines")?,
-                    state: optional_string_param(args, "state")?,
+                    state,
                     name_filter: optional_string_param(args, "name_filter")?,
                     image_filter: optional_string_param(args, "image_filter")?,
                     label_filter: optional_string_param(args, "label_filter")?,

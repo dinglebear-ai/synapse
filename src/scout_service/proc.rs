@@ -59,13 +59,7 @@ pub async fn ps(
         RemoteExec { executor, host }.run("ps", args).await?
     };
 
-    if !output.success() {
-        let exit = output
-            .exit_code
-            .map_or_else(|| "unknown".to_owned(), |code| code.to_string());
-        let stderr = output.stderr.trim();
-        bail!("ps on {} failed with exit code {exit}: {stderr}", host.name);
-    }
+    let output = output.require_success(&format!("ps on {}", host.name))?;
 
     let raw = output.stdout;
     let limit = limit.unwrap_or(50) as usize;

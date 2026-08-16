@@ -31,6 +31,10 @@ pub mod scout;
 #[path = "formatters_tests.rs"]
 mod tests;
 
+#[cfg(test)]
+#[path = "formatters_contract_tests.rs"]
+mod contract_tests;
+
 /// Output format requested by the caller.
 ///
 /// Parse from a JSON string arg with [`ResponseFormat::parse`] (shim-layer
