@@ -63,13 +63,13 @@ fn scout_commands_parse() {
 #[test]
 fn scout_remaining_commands_parse() {
     let cmd = parse_args_from([
-        "scout", "ps", "--host", "dookie", "--sort", "mem", "--grep", "nginx", "--user", "root",
+        "scout", "ps", "--host", "devhost", "--sort", "mem", "--grep", "nginx", "--user", "root",
         "--limit", "10",
     ])
     .unwrap();
     match cmd {
         Some(Command::ScoutPs(args)) => {
-            assert_eq!(args.host, "dookie");
+            assert_eq!(args.host, "devhost");
             assert_eq!(args.sort.as_deref(), Some("mem"));
             assert_eq!(args.grep.as_deref(), Some("nginx"));
             assert_eq!(args.user.as_deref(), Some("root"));
@@ -78,10 +78,10 @@ fn scout_remaining_commands_parse() {
         other => panic!("expected ScoutPs, got {other:?}"),
     }
 
-    let cmd = parse_args_from(["scout", "df", "--host", "dookie", "--path", "/srv"]).unwrap();
+    let cmd = parse_args_from(["scout", "df", "--host", "devhost", "--path", "/srv"]).unwrap();
     match cmd {
         Some(Command::ScoutDf { host, path, .. }) => {
-            assert_eq!(host, "dookie");
+            assert_eq!(host, "devhost");
             assert_eq!(path.as_deref(), Some("/srv"));
         }
         other => panic!("expected ScoutDf, got {other:?}"),
@@ -162,7 +162,7 @@ fn scout_logs_and_zfs_variants_parse() {
         "logs",
         "journal",
         "--host",
-        "dookie",
+        "devhost",
         "--lines",
         "200",
         "--grep",
@@ -191,7 +191,7 @@ fn scout_logs_and_zfs_variants_parse() {
     }
 
     for subaction in ["syslog", "dmesg", "auth"] {
-        let cmd = parse_args_from(["scout", "logs", subaction, "--host", "dookie"]).unwrap();
+        let cmd = parse_args_from(["scout", "logs", subaction, "--host", "devhost"]).unwrap();
         match cmd {
             Some(Command::ScoutLogs(args)) => assert_eq!(args.subaction, subaction),
             other => panic!("expected ScoutLogs, got {other:?}"),
@@ -199,7 +199,7 @@ fn scout_logs_and_zfs_variants_parse() {
     }
 
     let cmd = parse_args_from([
-        "scout", "zfs", "pools", "--host", "dookie", "--pool", "tank",
+        "scout", "zfs", "pools", "--host", "devhost", "--pool", "tank",
     ])
     .unwrap();
     match cmd {
@@ -215,7 +215,7 @@ fn scout_logs_and_zfs_variants_parse() {
         "zfs",
         "snapshots",
         "--host",
-        "dookie",
+        "devhost",
         "--dataset",
         "tank/data",
         "--limit",

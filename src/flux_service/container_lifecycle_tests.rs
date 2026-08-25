@@ -57,12 +57,12 @@ fn split_image_ref_registry_only_no_slash_in_tag() {
 #[tokio::test]
 async fn lifecycle_start_records_action() {
     let client = mock();
-    let result = lifecycle_action_on_host(&client, "dookie", "my-container", "start")
+    let result = lifecycle_action_on_host(&client, "devhost", "my-container", "start")
         .await
         .unwrap();
     assert_eq!(result["action"], "start");
     assert_eq!(result["container"], "my-container");
-    assert_eq!(result["host"], "dookie");
+    assert_eq!(result["host"], "devhost");
     assert_eq!(result["ok"], true);
     let actions = client.recorded_actions();
     assert_eq!(actions.len(), 1);
@@ -134,10 +134,10 @@ async fn pull_returns_host_tagged_result() {
         pull_frames: vec![bollard::models::CreateImageInfo::default()],
         ..Default::default()
     };
-    let result = pull_image_on_host(&client, "dookie", "nginx:latest")
+    let result = pull_image_on_host(&client, "devhost", "nginx:latest")
         .await
         .unwrap();
-    assert_eq!(result["host"], "dookie");
+    assert_eq!(result["host"], "devhost");
     assert_eq!(result["image"], "nginx:latest");
     assert_eq!(result["pulled"], true);
     assert_eq!(result["events"], 1_u64);
@@ -160,8 +160,8 @@ async fn exec_returns_host_tagged_result_with_exit_code() {
         workdir: None,
         timeout_ms: EXEC_TIMEOUT_DEFAULT_MS,
     };
-    let result = exec_on_host(&client, "dookie", &params).await.unwrap();
-    assert_eq!(result["host"], "dookie");
+    let result = exec_on_host(&client, "devhost", &params).await.unwrap();
+    assert_eq!(result["host"], "devhost");
     assert_eq!(result["container"], "my-container");
     assert_eq!(result["command"][0], "echo");
     assert_eq!(result["command"][1], "hello");
@@ -228,11 +228,11 @@ async fn recreate_sequence_inspect_stop_remove_create_start() {
     };
 
     let params = RecreateParams { pull: false };
-    let result = recreate_on_host(&client, "dookie", "my-container", &params)
+    let result = recreate_on_host(&client, "devhost", "my-container", &params)
         .await
         .unwrap();
 
-    assert_eq!(result["host"], "dookie");
+    assert_eq!(result["host"], "devhost");
     assert_eq!(result["original_container"], "my-container");
     assert_eq!(result["pulled"], false);
     assert_eq!(result["status"], "recreated");
