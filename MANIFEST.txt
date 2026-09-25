@@ -1,0 +1,18 @@
+Workspace cleanup archive for dinglebear-ai/synapse
+Date: 2026-09-25
+Default: main
+
+STALE_BRANCHES 4
+STALE	chore/dependabot-off-privileged-runner	54021a7d60ab1c2c17de45c9b4d6b92a06cb5ea3
+STALE	chore/rmcp3-beta2	4f10e22cdd1d232bad4dd45e5127b8073d298e60
+STALE	chore/scrub-internal-identifiers-20260805	29b67fa091a092c2f52e0fc4ded2860903a74c97
+STALE	codex/workflow-alignment-full-20260730	8d631b7175f50e916f44781f0d60d2b681709196
+
+LOCAL_ONLY_BRANCHES 3
+LOCAL_ONLY	chore/dependabot-off-privileged-runner	54021a7d60ab1c2c17de45c9b4d6b92a06cb5ea3
+LOCAL_ONLY	chore/scrub-internal-identifiers-20260805	29b67fa091a092c2f52e0fc4ded2860903a74c97
+LOCAL_ONLY	ci/hosted-kache-minio-20260805	ec09dddc342242e9fc3914266a77ff659363b3dd
+
+STALE_WORKTREES 0
+
+WIP_SNAPSHOTS 0
