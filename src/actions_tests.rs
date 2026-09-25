@@ -100,7 +100,7 @@ fn parses_container_list_filters() {
     let action = SynapseAction::from_flux_args(&json!({
         "action": "container",
         "subaction": "list",
-        "host": "dookie",
+        "host": "devhost",
         "state": "running",
         "name_filter": "nginx",
         "image_filter": "nginx",
@@ -111,7 +111,7 @@ fn parses_container_list_filters() {
     match action {
         SynapseAction::FluxContainer(args) => {
             assert_eq!(args.subaction, "list");
-            assert_eq!(args.host.as_deref(), Some("dookie"));
+            assert_eq!(args.host.as_deref(), Some("devhost"));
             assert_eq!(args.state.as_deref(), Some("running"));
             assert_eq!(args.name_filter.as_deref(), Some("nginx"));
             assert_eq!(args.image_filter.as_deref(), Some("nginx"));

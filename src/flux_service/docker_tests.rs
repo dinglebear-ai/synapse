@@ -157,8 +157,8 @@ fn build_args_rejects_bad_context() {
 #[tokio::test]
 async fn info_on_host_is_host_tagged() {
     let mock = MockDockerClient::default();
-    let v = info_on_host(&mock, "dookie").await.unwrap();
-    assert_eq!(v["host"], "dookie");
+    let v = info_on_host(&mock, "devhost").await.unwrap();
+    assert_eq!(v["host"], "devhost");
     assert!(v.get("info").is_some());
 }
 
@@ -194,8 +194,8 @@ async fn daemon_id_preserves_missing_id_as_none() {
 #[tokio::test]
 async fn df_on_host_is_host_tagged() {
     let mock = MockDockerClient::default();
-    let v = df_on_host(&mock, "tootie").await.unwrap();
-    assert_eq!(v["host"], "tootie");
+    let v = df_on_host(&mock, "nashost").await.unwrap();
+    assert_eq!(v["host"], "nashost");
     assert!(v.get("df").is_some());
 }
 
@@ -215,9 +215,9 @@ async fn images_on_host_tags_each_image() {
         ],
         ..Default::default()
     };
-    let out = images_on_host(&mock, "dookie", false).await.unwrap();
+    let out = images_on_host(&mock, "devhost", false).await.unwrap();
     assert_eq!(out.len(), 2);
-    assert_eq!(out[0]["host"], "dookie");
+    assert_eq!(out[0]["host"], "devhost");
     assert_eq!(out[0]["id"], "sha256:aaa");
 }
 
@@ -242,9 +242,9 @@ async fn networks_on_host_tags_each() {
         }],
         ..Default::default()
     };
-    let out = networks_on_host(&mock, "dookie").await.unwrap();
+    let out = networks_on_host(&mock, "devhost").await.unwrap();
     assert_eq!(out.len(), 1);
-    assert_eq!(out[0]["host"], "dookie");
+    assert_eq!(out[0]["host"], "devhost");
 }
 
 #[tokio::test]
@@ -260,9 +260,9 @@ async fn volumes_on_host_tags_each() {
         volumes: resp,
         ..Default::default()
     };
-    let out = volumes_on_host(&mock, "dookie").await.unwrap();
+    let out = volumes_on_host(&mock, "devhost").await.unwrap();
     assert_eq!(out.len(), 1);
-    assert_eq!(out[0]["host"], "dookie");
+    assert_eq!(out[0]["host"], "devhost");
 }
 
 #[tokio::test]
@@ -274,10 +274,10 @@ async fn rmi_on_host_returns_removed() {
         }],
         ..Default::default()
     };
-    let v = rmi_on_host(&mock, "dookie", "nginx:1.25", true)
+    let v = rmi_on_host(&mock, "devhost", "nginx:1.25", true)
         .await
         .unwrap();
-    assert_eq!(v["host"], "dookie");
+    assert_eq!(v["host"], "devhost");
     assert_eq!(v["image"], "nginx:1.25");
     assert!(v.get("removed").is_some());
 }
@@ -285,10 +285,10 @@ async fn rmi_on_host_returns_removed() {
 #[tokio::test]
 async fn prune_on_host_single_target() {
     let mock = MockDockerClient::default();
-    let v = prune_on_host(&mock, "dookie", PruneTarget::Images)
+    let v = prune_on_host(&mock, "devhost", PruneTarget::Images)
         .await
         .unwrap();
-    assert_eq!(v["host"], "dookie");
+    assert_eq!(v["host"], "devhost");
     assert_eq!(v["target"], "images");
     assert!(v["pruned"]["images"].is_object() || v["pruned"].get("images").is_some());
 }
@@ -296,7 +296,7 @@ async fn prune_on_host_single_target() {
 #[tokio::test]
 async fn prune_on_host_all_aggregates_every_target() {
     let mock = MockDockerClient::default();
-    let v = prune_on_host(&mock, "dookie", PruneTarget::All)
+    let v = prune_on_host(&mock, "devhost", PruneTarget::All)
         .await
         .unwrap();
     assert_eq!(v["target"], "all");

@@ -16,7 +16,7 @@ fn flux_docker_flags_and_values_parse() {
         "docker",
         "build",
         "--host",
-        "dookie",
+        "devhost",
         "--context",
         "/srv/app",
         "--tag",
@@ -31,7 +31,7 @@ fn flux_docker_flags_and_values_parse() {
     match cmd {
         Some(Command::FluxDocker(args)) => {
             assert_eq!(args.subaction, "build");
-            assert_eq!(args.host.as_deref(), Some("dookie"));
+            assert_eq!(args.host.as_deref(), Some("devhost"));
             assert_eq!(args.context.as_deref(), Some("/srv/app"));
             assert_eq!(args.tag.as_deref(), Some("app:test"));
             assert_eq!(args.dockerfile.as_deref(), Some("Dockerfile.dev"));
@@ -42,7 +42,7 @@ fn flux_docker_flags_and_values_parse() {
     }
 
     let cmd = parse_args_from([
-        "flux", "docker", "prune", "--host", "dookie", "--target", "images", "--force",
+        "flux", "docker", "prune", "--host", "devhost", "--target", "images", "--force",
     ])
     .unwrap();
     match cmd {

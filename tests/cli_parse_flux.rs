@@ -7,7 +7,7 @@ fn flux_host_commands_parse_options() {
         "host",
         "ports",
         "--host",
-        "dookie",
+        "devhost",
         "--protocol",
         "tcp",
         "--limit",
@@ -19,7 +19,7 @@ fn flux_host_commands_parse_options() {
     match cmd {
         Some(Command::FluxHost(args)) => {
             assert_eq!(args.subaction, "ports");
-            assert_eq!(args.host.as_deref(), Some("dookie"));
+            assert_eq!(args.host.as_deref(), Some("devhost"));
             assert_eq!(args.protocol.as_deref(), Some("tcp"));
             assert_eq!(args.limit, Some(25));
             assert_eq!(args.offset, Some(50));
@@ -32,7 +32,7 @@ fn flux_host_commands_parse_options() {
         "host",
         "doctor",
         "--host",
-        "dookie",
+        "devhost",
         "--checks",
         "docker,logs",
     ])
@@ -53,7 +53,7 @@ fn flux_compose_commands_parse_options() {
         "compose",
         "down",
         "--host",
-        "tootie",
+        "nashost",
         "--project",
         "media",
         "--remove-volumes",
@@ -63,7 +63,7 @@ fn flux_compose_commands_parse_options() {
     match cmd {
         Some(Command::FluxCompose(args)) => {
             assert_eq!(args.subaction, "down");
-            assert_eq!(args.host.as_deref(), Some("tootie"));
+            assert_eq!(args.host.as_deref(), Some("nashost"));
             assert_eq!(args.project.as_deref(), Some("media"));
             assert_eq!(args.remove_volumes, Some(true));
             assert_eq!(args.force, Some(true));
@@ -76,7 +76,7 @@ fn flux_compose_commands_parse_options() {
         "compose",
         "logs",
         "--host",
-        "tootie",
+        "nashost",
         "--project",
         "media",
         "--service",
