@@ -150,23 +150,23 @@ fn flatten_list_outcome_partial_success() {
     use crate::fanout::FanoutOutcome;
     let outcome: FanoutOutcome<Vec<serde_json::Value>, String> = FanoutOutcome::PartialSuccess {
         ok: vec![(
-            "dookie".to_owned(),
-            vec![serde_json::json!({"name": "nginx", "host": "dookie"})],
+            "devhost".to_owned(),
+            vec![serde_json::json!({"name": "nginx", "host": "devhost"})],
         )],
-        errors: vec![("tootie".to_owned(), "connection refused".to_owned())],
+        errors: vec![("nashost".to_owned(), "connection refused".to_owned())],
     };
     let out = flatten_list_outcome(outcome, "containers");
     assert_eq!(out["count"], 1);
     assert_eq!(out["partial"], true);
     assert_eq!(out["containers"][0]["name"], "nginx");
-    assert_eq!(out["errors"]["tootie"], "connection refused");
+    assert_eq!(out["errors"]["nashost"], "connection refused");
 }
 
 #[test]
 fn flatten_list_outcome_all_ok_has_no_errors() {
     use crate::fanout::FanoutOutcome;
     let outcome: FanoutOutcome<Vec<serde_json::Value>, String> = FanoutOutcome::AllOk(vec![(
-        "dookie".to_owned(),
+        "devhost".to_owned(),
         vec![serde_json::json!({"name": "nginx"})],
     )]);
     let out = flatten_list_outcome(outcome, "containers");
@@ -230,10 +230,10 @@ async fn compose_list_resolves_host_via_injected_repo() {
         "myapp",
         "/compose/myapp/docker-compose.yml",
     ));
-    let mut flux = flux_with_hosts(vec![compose_host("tootie")]);
+    let mut flux = flux_with_hosts(vec![compose_host("nashost")]);
     flux.compose = Arc::new(ComposeDiscovery::new(mock.clone()));
 
-    let projects = flux.compose_list("tootie").await.unwrap();
+    let projects = flux.compose_list("nashost").await.unwrap();
 
     assert_eq!(projects.len(), 1);
     assert_eq!(projects[0].name, "myapp");
@@ -251,9 +251,9 @@ async fn compose_list_resolves_host_via_injected_repo() {
 #[tokio::test]
 async fn resolve_compose_project_reports_missing_project() {
     let mock = Arc::new(MockComposeExec::empty());
-    let mut flux = flux_with_hosts(vec![compose_host("tootie")]);
+    let mut flux = flux_with_hosts(vec![compose_host("nashost")]);
     flux.compose = Arc::new(ComposeDiscovery::new(mock));
-    let host = compose_host("tootie");
+    let host = compose_host("nashost");
 
     let err = flux
         .resolve_compose_project(&host, "missing")
@@ -269,9 +269,9 @@ async fn resolve_compose_project_reports_missing_project() {
 #[tokio::test]
 async fn resolve_compose_project_reports_project_without_config_file() {
     let mock = Arc::new(MockComposeExec::with_project_without_config("orphan"));
-    let mut flux = flux_with_hosts(vec![compose_host("tootie")]);
+    let mut flux = flux_with_hosts(vec![compose_host("nashost")]);
     flux.compose = Arc::new(ComposeDiscovery::new(mock));
-    let host = compose_host("tootie");
+    let host = compose_host("nashost");
 
     let err = flux
         .resolve_compose_project(&host, "orphan")
@@ -284,17 +284,17 @@ async fn resolve_compose_project_reports_project_without_config_file() {
 #[tokio::test]
 async fn compose_operations_report_missing_project_before_exec() {
     let mock = Arc::new(MockComposeExec::empty());
-    let mut flux = flux_with_hosts(vec![compose_host("tootie")]);
+    let mut flux = flux_with_hosts(vec![compose_host("nashost")]);
     flux.compose = Arc::new(ComposeDiscovery::new(mock.clone()));
 
     let status = flux
-        .compose_status("tootie", "missing", Some("web"))
+        .compose_status("nashost", "missing", Some("web"))
         .await
         .unwrap_err();
-    let up = flux.compose_up("tootie", "missing").await.unwrap_err();
+    let up = flux.compose_up("nashost", "missing").await.unwrap_err();
     let down = flux
         .compose_down(
-            "tootie",
+            "nashost",
             "missing",
             DownArgs {
                 remove_volumes: false,
@@ -305,16 +305,16 @@ async fn compose_operations_report_missing_project_before_exec() {
         .await
         .unwrap_err();
     let restart = flux
-        .compose_restart("tootie", "missing", &DenyConfirmer)
+        .compose_restart("nashost", "missing", &DenyConfirmer)
         .await
         .unwrap_err();
     let recreate = flux
-        .compose_recreate("tootie", "missing", &DenyConfirmer)
+        .compose_recreate("nashost", "missing", &DenyConfirmer)
         .await
         .unwrap_err();
     let logs = flux
         .compose_logs(
-            "tootie",
+            "nashost",
             "missing",
             ComposeLogOptions {
                 lines: Some(10),
@@ -325,11 +325,11 @@ async fn compose_operations_report_missing_project_before_exec() {
         .await
         .unwrap_err();
     let build = flux
-        .compose_build("tootie", "missing", Some("web"))
+        .compose_build("nashost", "missing", Some("web"))
         .await
         .unwrap_err();
     let pull = flux
-        .compose_pull("tootie", "missing", Some("web"))
+        .compose_pull("nashost", "missing", Some("web"))
         .await
         .unwrap_err();
 
@@ -348,12 +348,12 @@ async fn compose_operations_report_missing_project_before_exec() {
 #[tokio::test]
 async fn compose_down_rejects_remove_volumes_without_force_before_discovery() {
     let mock = Arc::new(MockComposeExec::empty());
-    let mut flux = flux_with_hosts(vec![compose_host("tootie")]);
+    let mut flux = flux_with_hosts(vec![compose_host("nashost")]);
     flux.compose = Arc::new(ComposeDiscovery::new(mock.clone()));
 
     let err = flux
         .compose_down(
-            "tootie",
+            "nashost",
             "missing",
             DownArgs {
                 remove_volumes: true,
@@ -374,12 +374,12 @@ async fn compose_refresh_invalidates_cached_discovery_for_one_host() {
         "myapp",
         "/compose/myapp/docker-compose.yml",
     ));
-    let mut flux = flux_with_hosts(vec![compose_host("tootie")]);
+    let mut flux = flux_with_hosts(vec![compose_host("nashost")]);
     flux.compose = Arc::new(ComposeDiscovery::new(mock.clone()));
 
-    let first = flux.compose_list("tootie").await.unwrap();
+    let first = flux.compose_list("nashost").await.unwrap();
     let calls_after_first = mock.calls();
-    let second = flux.compose_list("tootie").await.unwrap();
+    let second = flux.compose_list("nashost").await.unwrap();
     assert_eq!(first, second);
     assert_eq!(
         mock.calls(),
@@ -387,8 +387,8 @@ async fn compose_refresh_invalidates_cached_discovery_for_one_host() {
         "second list should hit cache"
     );
 
-    flux.compose_refresh(Some("tootie"));
-    let third = flux.compose_list("tootie").await.unwrap();
+    flux.compose_refresh(Some("nashost"));
+    let third = flux.compose_list("nashost").await.unwrap();
 
     assert_eq!(third, first);
     assert!(

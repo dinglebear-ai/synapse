@@ -35,7 +35,7 @@ mod tests;
 ///
 /// | Host |
 /// |------|
-/// | squirts |
+/// | edgehost |
 /// | boops |
 /// | nicks |
 /// ```text
@@ -83,9 +83,9 @@ pub fn render_scout_nodes_markdown(data: &Value) -> String {
 /// # Example output (file)
 ///
 /// ```text
-/// File Read: squirts:/etc/hostname
+/// File Read: edgehost:/etc/hostname
 /// Size: 8 B | truncated: no
-/// squirts
+/// edgehost
 /// ```
 pub fn render_scout_peek_markdown(data: &Value) -> String {
     let host = str_field(data, "host");
@@ -160,7 +160,7 @@ pub fn render_scout_peek_markdown(data: &Value) -> String {
 /// # Example output
 ///
 /// ```text
-/// ✓ Command Execution: squirts:/tmp
+/// ✓ Command Execution: edgehost:/tmp
 /// Exit: 0
 /// As of (UTC): 11:05:20 | 02/13/2026
 ///
