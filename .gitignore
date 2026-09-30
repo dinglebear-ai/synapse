@@ -107,3 +107,4 @@ CLAUDE.md.local
 # Local binary artifacts
 /bin/
 plugins/synapse2/bin/
+worktrees/
